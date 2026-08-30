@@ -1,0 +1,319 @@
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.app-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.6rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--text-muted, #888);
+  font-size: 0.9rem;
+}
+
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.step-pill {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid #7773;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.step-pill.active {
+  background: #6c5ce7;
+  color: white;
+  border-color: #6c5ce7;
+}
+
+.step-pill.done {
+  border-color: #6c5ce7;
+  color: #6c5ce7;
+}
+
+.step-pill:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.step h2 {
+  margin-top: 0;
+}
+
+.hint {
+  color: var(--text-muted, #888);
+  font-size: 0.9rem;
+  margin-top: -6px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.option-card {
+  text-align: left;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #7773;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.option-card.small {
+  padding: 10px 12px;
+}
+
+.option-card h3,
+.option-card h4 {
+  margin: 0;
+}
+
+.option-card.selected {
+  border-color: #6c5ce7;
+  background: #6c5ce71a;
+}
+
+.option-desc {
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.option-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted, #888);
+  margin: 0;
+}
+
+.option-warning {
+  font-size: 0.78rem;
+  color: #e0a800;
+  margin: 2px 0 0;
+}
+
+.sub-section {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid #7773;
+}
+
+.sub-section h3 {
+  margin-top: 0;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #7773;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.chip.selected {
+  background: #6c5ce7;
+  color: white;
+  border-color: #6c5ce7;
+}
+
+.chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.prof-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  font-size: 0.9rem;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sheet-card .ability-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ability-box {
+  min-width: 0;
+  border: 1px solid #7773;
+  border-radius: 8px;
+  padding: 8px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ability-box.final {
+  border-color: #6c5ce7;
+}
+
+.ability-label {
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+.ability-score {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.ability-mod {
+  font-size: 0.8rem;
+  color: #6c5ce7;
+}
+
+.gold-tracker {
+  font-size: 0.95rem;
+}
+
+.plain-list {
+  margin: 6px 0;
+  padding-left: 20px;
+}
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.btn.primary {
+  background: #6c5ce7;
+  color: white;
+}
+
+.btn.primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn.secondary {
+  background: transparent;
+  border: 1px solid #7773;
+}
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.sheet-card {
+  border: 1px solid #7773;
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.sheet-card h3 {
+  margin-top: 0;
+}
+
+.name-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 320px;
+  font-size: 0.9rem;
+}
+
+.name-field input {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #7773;
+  background: transparent;
+  font-size: 1rem;
+}
+
+.summary-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .ability-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body,
+  .app {
+    background: #fff;
+    color: #000;
+  }
+
+  .app {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .sheet-card,
+  .ability-box {
+    border-color: #999;
+    break-inside: avoid;
+  }
+
+  .ability-box.final {
+    border-color: #333;
+  }
+
+  .ability-mod {
+    color: #333;
+  }
+
+  .sheet-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .name-field input {
+    border: none;
+    padding: 0;
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: #000;
+  }
+}
