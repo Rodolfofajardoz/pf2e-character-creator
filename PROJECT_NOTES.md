@@ -707,6 +707,129 @@ deploys to GitHub Pages, meant every commit was an immediate production
 deploy with no review step. The branch-and-PR rule in `CLAUDE.md` exists to
 put a reviewable gate in front of that.
 
+## External audit of v0.6.4 — verification status
+
+An external audit (produced with ChatGPT, delivered as a Word document)
+reported **24 findings** against v0.6.4 / commit `fe0512d`, with IDs and
+S1–S4 severities. Every claim was checked against the actual code in the
+session that received it. Summary: **17 confirmed, 1 refuted, 6 still
+unverified.** The audit is accurate — where it gives a number, the number
+is exact.
+
+Keep this section until the 6 open items are settled; it is the handoff
+for that work.
+
+### Confirmed — real, with evidence
+
+The ones worth acting on first, because they are **silent**: the UI reports
+success, the numbers look plausible, and the error survives to the printed
+sheet.
+
+- **APP-01 — a duplicate-skill substitution can count without adding a
+  skill.** `substituteOptions` in `SkillsStep.jsx` excludes the class's
+  fixed skills and the background's own skill, but *not* skills already in
+  `character.trainedSkills`. Pick one that's already chosen and it vanishes
+  from the grid while staying in the array and still counting toward the
+  pool. Worse than the audit describes: `SummaryStep` prints the background
+  skill separately and then maps `trainedSkills`, so **the same skill
+  appears twice on the final sheet**.
+- **APP-02 — Natural Ambition leaves an orphaned class feat.** The ancestry
+  feat handler (`AncestryStep.jsx:140`) updates only `ancestryFeat` and
+  `generalFeatChoice`. `bonusClassFeat` is cleared only when the *class*
+  changes, so switching the ancestry feat away from Natural Ambition leaves
+  the bonus feat in place, still labelled "Bonus (Natural Ambition)".
+- **APP-03 — re-clicking a selected card wipes dependent choices.** The
+  three `select*` handlers reset dependent fields unconditionally and no
+  `onClick` checks whether the id was already selected. Worst in Class,
+  where it clears `knownCantrips` and `knownSpells1`.
+- **RULE-03 — feat effects never reach the calculations.** `hp` is
+  literally `ancestry.hp + cls.hp + mods.con`; there is no channel through
+  which a feat can influence any stat. Human + Fighter + Con +1 + Toughness
+  shows 19 HP instead of 20 — and the app's own Toughness entry already
+  says "Increase your maximum Hit Points by your level". Fixing this means
+  designing a structured modifier channel, not patching a formula.
+- **RULE-02 — prerequisites are displayed, never enforced.** Confirmed by
+  the app's own data: the Human ancestry feat Adapted Cantrip
+  (`ancestries.js:174`) starts its description with "Prerequisite: a
+  spellcasting class feature", and the app prints that and then lets a
+  Fighter take it.
+- **DATA-01 — 30 legacy spells.** Exactly 30 entries declare `Core Rulebook`
+  as their source: 10 cantrips and 20 rank-1, out of 135 total (42 + 93).
+  That's 22% of the catalog.
+- **DATA-02 — legacy names.** Holy Castigation, Wild Shape and Eschew
+  Materials in `classes.js`; Half-Elf and Half-Orc in `ancestries.js`. None
+  of the remaster replacements appear anywhere. The audit missed a worse
+  one: Holy Castigation's description says *"Requires good alignment"*, and
+  alignment was removed from the system by the remaster, not renamed.
+- **MOB-01/02/03 — three mobile overflows, all three measurements exact.**
+  `.spell-grid` uses `minmax(340px, 1fr)` against a container of
+  `min(1800px, 94vw)` minus 40px of padding, so it only fits from ~405px up.
+  The `+`/`−` steppers are 26×26px with a 6px gap. And `.inspect-popover`
+  is `content-box` (`box-sizing: border-box` is set only on `#root` and
+  `.app`, and it does not inherit), so 300 + 24 padding + 2 border = 326px
+  of outer box, placed at x = 8 → 334px on a 320px screen.
+
+### Refuted — do not "fix" this one
+
+- **CODE-01's staleness reading is wrong.** The audit suggests the
+  `exhaustive-deps` warning in `AbilityScoresStep.jsx` may hide a stale
+  memoized value. It doesn't: the `useMemo` lists all five values
+  `computeScoresBeforeFreeBoosts` actually reads. The dependencies are
+  already exhaustive; the rule simply can't see inside the helper and wants
+  the whole `character` object, which would recompute *more* often, not
+  less. This is exactly why the four warnings are the documented baseline.
+
+### Open — 6 rules claims needing Archives of Nethys
+
+These could not be checked because **the session's network policy blocked
+every TTRPG rules host** (`2e.aonprd.com`, `elasticsearch.aonprd.com`,
+`pf2.d20pfsrd.com`, `pathfinderwiki.com` all refused; GitHub was
+reachable). Resolving it means allowing those domains on the environment's
+network policy — and the change only takes effect in a *new* session, since
+the proxy is configured when the container is created.
+
+1. **RULE-04 — Wizard.** Is the first class feat gained at 2nd level rather
+   than 1st? What are the 1st-level class features (Arcane School, Arcane
+   Thesis)? What does the starting spellbook contain? *Broaden this:* the
+   app gives `feats1` to 15 of 16 classes — only Witch has zero, and
+   `App.jsx:83` already carries an explicit `cls.feats1.length === 0`
+   branch. Somebody previously established that classes without a 1st-level
+   class feat exist and wrote the code for it, then applied it to one class.
+   Determine the correct answer for all 16.
+2. **RULE-05 — Cleric.** The app says `"prepared or spontaneous (your
+   choice)"`. Is the class prepared-only? Are deity, divine font, doctrine
+   and sanctification 1st-level class features?
+3. **RULE-06 — ⚠ the delicate one.** Rogue and Wizard weapon proficiencies.
+   The audit claims Player Core gives Rogue simple + martial + unarmed and
+   Wizard simple + unarmed; the app carries enumerated lists instead. There
+   is real doubt the audit is right here, and **this is the only finding
+   where acting without verification would do damage** — if it's wrong and
+   we "correct" it, every Rogue gains martial proficiency they don't have
+   and a currently-correct value becomes wrong. Quote AoN directly.
+4. **RULE-08** — Does the universal option of two free boosts in place of
+   the ancestry's pattern exist? And voluntary flaws at character creation?
+5. **RULE-09** — Do Aiuvarin and Dromaar replace Half-Elf and Half-Orc as
+   versatile heritages? Are they restricted to Human? What other versatile
+   heritages does Player Core carry?
+6. **RULE-10** — Does Player Core list exactly 40 backgrounds, and are
+   Bandit, Cook, Cultist, Raised by Belief and Teacher the five missing
+   ones? The app has 35.
+
+When these are checked, cross-reference more than one source (d20pfsrd,
+PathfinderWiki, the `foundryvtt/pf2e` data on GitHub) but keep AoN
+authoritative per `CLAUDE.md`, and record any disagreement between sources
+— it usually points at an erratum or a mislabelled legacy entry.
+
+### A framing note on the audit's severities
+
+The audit rates missing level-1 subclass choices (RULE-01) S1-critical,
+the same as the orphaned-feat bug. They aren't equivalent. Subclasses are a
+**deliberately deferred, already-documented gap** — gap #3 above, and item 6
+of `ROADMAP.md`. RULE-13 (languages) is roadmap item 2. The audit never
+acknowledges that this project already tracks several of the absences it
+reports. What deserves priority is the opposite group: the bugs in features
+that *do* exist and fail silently.
+
 ## To-do list (small polish items, separate from ROADMAP.md)
 
 Not roadmap items (those are the big 9 toward v1.0, in ROADMAP.md) — just
