@@ -3,6 +3,12 @@ import { getGlossaryTerm, ABILITY_TERM_ID } from '../data/glossary';
 import { ABILITY_LABELS } from '../data/skills';
 import { tokenize } from '../utils/glossaryTokenizer';
 
+// Keep POPOVER_WIDTH in sync with .inspect-popover's width in App.css.
+// The element is border-box there, so this is its full outer width and the
+// right edge lands at x + POPOVER_WIDTH -- which has to stay on screen.
+const POPOVER_WIDTH = 300;
+const EDGE_GAP = 8;
+
 const InspectCtx = createContext(null);
 
 let popoverSeq = 0;
@@ -44,7 +50,7 @@ export function InspectProvider({ children }) {
     const popId = popoverSeq;
     setPopovers((prev) => {
       const depth = prev.length;
-      const x = Math.max(8, Math.min(rect.left + depth * 24, window.innerWidth - 328));
+      const x = Math.max(EDGE_GAP, Math.min(rect.left + depth * 24, window.innerWidth - (POPOVER_WIDTH + EDGE_GAP)));
       const y = Math.max(8, Math.min(rect.bottom + 8 + depth * 12, window.innerHeight - 120));
       return [...prev, { popId, id, x, y }];
     });

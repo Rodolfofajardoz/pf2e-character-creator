@@ -37,13 +37,39 @@ export default function AncestryStep({ character, update }) {
     if (focusKey) scrollIntoViewCentered(refs[focusKey]);
   }, [focusKey]);
 
+  // Re-clicking the ancestry you already have is a no-op, not a reset. The
+  // card stays enabled once selected (so it still reads as the active
+  // choice), which without this guard made a second click silently wipe
+  // heritage, feat and boosts.
   function selectAncestry(id) {
+    if (id === character.ancestryId) return;
     update({
       ancestryId: id,
       heritageId: null,
       ancestryFeat: null,
       ancestryFreeBoosts: [],
       generalFeatChoice: null,
+      // Natural Ambition's bonus class feat is granted by the ancestry
+      // feat, so it can't outlive the ancestry that offered it.
+      bonusClassFeat: null,
+    });
+  }
+
+  function selectHeritage(id) {
+    if (id === character.heritageId) return;
+    update({ heritageId: id, generalFeatChoice: null });
+  }
+
+  // The bonus class feat exists only while an ancestry feat that grants one
+  // (Natural Ambition) is the active choice. Switching to any other feat
+  // takes the grant away, so the pick it produced goes with it -- otherwise
+  // it survives to the summary sheet as a feat with no source.
+  function selectAncestryFeat(feat) {
+    if (feat.name === character.ancestryFeat?.name) return;
+    update({
+      ancestryFeat: feat,
+      generalFeatChoice: null,
+      bonusClassFeat: feat.grantsClassFeat ? character.bonusClassFeat : null,
     });
   }
 
@@ -121,7 +147,7 @@ export default function AncestryStep({ character, update }) {
                 <button
                   key={h.id}
                   className={`option-card small ${character.heritageId === h.id ? 'selected' : ''}`}
-                  onClick={() => update({ heritageId: h.id, generalFeatChoice: null })}
+                  onClick={() => selectHeritage(h.id)}
                 >
                   <h4>{h.name}</h4>
                   <p className="option-desc"><InspectText text={h.desc} /></p>
@@ -137,7 +163,7 @@ export default function AncestryStep({ character, update }) {
                 <button
                   key={f.name}
                   className={`option-card small ${character.ancestryFeat?.name === f.name ? 'selected' : ''}`}
-                  onClick={() => update({ ancestryFeat: f, generalFeatChoice: null })}
+                  onClick={() => selectAncestryFeat(f)}
                 >
                   <h4>{f.name}</h4>
                   <p className="option-desc"><InspectText text={f.desc} /></p>
