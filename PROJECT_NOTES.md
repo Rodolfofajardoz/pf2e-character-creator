@@ -300,10 +300,9 @@ Given full text made the old tight `.card-grid` (`minmax(220px, ...)`)
 unreadable, spell cards now use their own `.spell-grid`
 (`minmax(340px, 1fr)`) with real room to breathe. `SpellPicker` (wrapping
 `SpellCard`) adds a per-list search box (matches name or description) and
-a trait-based `<select>` filter (options derived from whatever traits
-actually appear in that tradition's pool, so e.g. a Divine list never
-offers to filter by "Fire"), plus a "Selected: ..." name summary above the
-grid so the pick list stays visible while scrolling/filtering.
+a multi-select trait filter — see "polish round 2" below for how that
+filter and the card layout evolved — plus a "Selected: ..." name summary
+above the grid so the pick list stays visible while scrolling/filtering.
 
 One data-quality check worth noting for future scraping: ~30 of the 135
 spells' `primary_source_raw` came back as "Core Rulebook" even under a
@@ -327,6 +326,35 @@ daily-preparation simulator** — matches how the rest of the app treats
 1st-level chargen (a decision made explicitly rather than assumed, since
 Cleric/Druid/Witch prepared casters technically re-choose from a wider
 pool each day in actual play).
+
+### Spell card polish round 2: multi-select trait filter, fixed card height, readable Heightened tiers
+
+A follow-up pass on the Phase 3 spell cards, after screenshots showed three
+concrete problems: only one trait filter could be active at a time, cards
+in the same grid row had visibly uneven heights/gaps because height was
+driven by description length, and multi-tier `Heightened` text read as one
+dense, unbroken paragraph.
+
+- **Trait filter**: replaced the single-select `<select>` (`.spell-trait-filter`,
+  now removed) with a `traitFilters` array and `toggleTraitFilter()` in
+  `SpellPicker` (`SpellsStep.jsx`), rendered as a row of small toggle chips
+  (`.chip.small`) plus a conditional "Clear" chip (`.chip.ghost`). Filtering
+  is OR/union across selected traits (`traitFilters.some((t) =>
+  s.traits.includes(t))`) — picking Acid and Evocation shows spells with
+  *either* trait, not just spells with both, since AoN traits are additive
+  tags, not an AND-able taxonomy players would expect.
+- **Fixed card height**: `.spell-card` now has a fixed `height: 360px`
+  instead of sizing to its content; `.spell-card-body` is `flex: 1;
+  min-height: 0; overflow-y: auto`, so long descriptions/Heightened blocks
+  scroll internally rather than stretching the card. This keeps the full
+  unabridged text (nothing was re-summarized to make it fit) while making
+  every card in a `.spell-grid` row line up — the header/trait-tag row
+  stays fixed height, only the body scrolls.
+- **Heightened tiers**: `SpellCard` already split the raw `heightened`
+  string on `/(?=Heightened \()/` into one `<p>` per tier; this round just
+  added the missing CSS (`.spell-card-heightened-tier`) — a left border
+  tick plus small padding per tier — so each `(3rd)/(5th)/(7th)/...` entry
+  reads as a distinct line instead of running together.
 
 ### Fixed: background/class skill collision (was gap #3)
 

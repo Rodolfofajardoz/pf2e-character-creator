@@ -255,7 +255,12 @@
   margin: 2px 0 0;
 }
 
-/* Spell cards: AoN-style header bar + trait tag row, in the app's palette. */
+/* Spell cards: AoN-style header bar + trait tag row, in the app's palette.
+   Fixed height (instead of sizing to content) so every card in a grid row
+   lines up — full rules text varies wildly in length, from one sentence to
+   a paragraph plus several Heightened tiers, and letting that dictate card
+   height left ragged gaps at the bottom of shorter cards. The body scrolls
+   internally instead of stretching the card. */
 .spell-card {
   text-align: left;
   padding: 0;
@@ -267,6 +272,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 360px;
   transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
 }
 
@@ -336,6 +342,9 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .spell-card-source {
@@ -367,6 +376,23 @@
 
 .spell-card-heightened {
   opacity: 0.85;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.spell-card-heightened > strong {
+  color: var(--text-h);
+  opacity: 1;
+}
+
+/* One tier per line, each prefixed with its own left border tick, so a
+   spell with several Heightened entries reads as a short list instead of
+   one dense run-on paragraph. */
+.spell-card-heightened-tier {
+  padding-left: 8px;
+  border-left: 2px solid var(--accent-border);
+  font-size: 0.78rem;
 }
 
 /* Spell cards carry full rules text, so they need real room — a tighter
@@ -383,21 +409,15 @@
   margin-top: -4px;
 }
 
-.spell-search-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 10px 0 14px;
-}
-
 .spell-search-input {
-  flex: 1 1 220px;
+  width: 100%;
   padding: 8px 10px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--panel-bg);
   color: var(--text);
   font-size: 0.9rem;
+  margin: 10px 0;
 }
 
 .spell-search-input:focus {
@@ -405,13 +425,19 @@
   border-color: var(--accent);
 }
 
-.spell-trait-filter {
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--panel-bg);
-  color: var(--text);
-  font-size: 0.85rem;
+.spell-trait-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+}
+
+.spell-trait-filter-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-right: 2px;
+  white-space: nowrap;
 }
 
 .sub-section {
@@ -462,6 +488,24 @@
 .chip:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Compact variant for trait-filter chips — same interaction/animations as
+   .chip, scaled down so a long trait list doesn't dominate the picker. */
+.chip.small {
+  padding: 3px 9px;
+  font-size: 0.72rem;
+}
+
+/* Low-emphasis variant for the trait-filter "Clear" action. */
+.chip.ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-style: dashed;
+}
+
+.chip.ghost:not(:disabled):hover {
+  color: var(--text);
 }
 
 .prof-grid {

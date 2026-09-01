@@ -60,10 +60,22 @@ function SpellCard({ spell, selected, disabled, onClick }) {
         {spell.heightened && (
           <>
             <hr className="spell-card-rule" />
-            <p className="option-desc spell-card-heightened">
-              <strong><GlossaryTerm id="heightened">Heightened</GlossaryTerm></strong>{' '}
-              <InspectText text={spell.heightened.replace(/^Heightened\s*/, '')} />
-            </p>
+            <div className="spell-card-heightened">
+              <strong><GlossaryTerm id="heightened">Heightened</GlossaryTerm></strong>
+              {/* Multi-tier entries repeat the word "Heightened" before each
+                  "(3rd)"/"(5th)"/etc. Split on that marker and drop the
+                  repeated word so each tier renders as its own short line
+                  under one heading, instead of one run-on paragraph. */}
+              {spell.heightened
+                .split(/(?=Heightened \()/)
+                .map((s) => s.trim().replace(/^Heightened\s*/, ''))
+                .filter(Boolean)
+                .map((tier, i) => (
+                  <p key={i} className="option-desc spell-card-heightened-tier">
+                    <InspectText text={tier} />
+                  </p>
+                ))}
+            </div>
           </>
         )}
       </div>
@@ -73,7 +85,7 @@ function SpellCard({ spell, selected, disabled, onClick }) {
 
 function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
   const [search, setSearch] = useState('');
-  const [traitFilter, setTraitFilter] = useState('');
+  const [traitFilters, setTraitFilters] = useState([]);
 
   const traitOptions = useMemo(() => {
     const set = new Set();
@@ -81,9 +93,13 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
     return Array.from(set).sort();
   }, [pool]);
 
+  function toggleTraitFilter(t) {
+    setTraitFilters((current) => (current.includes(t) ? current.filter((x) => x !== t) : [...current, t]));
+  }
+
   const filtered = pool.filter((s) => {
     const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.desc.toLowerCase().includes(search.toLowerCase());
-    const matchesTrait = !traitFilter || s.traits.includes(traitFilter);
+    const matchesTrait = traitFilters.length === 0 || traitFilters.some((t) => s.traits.includes(t));
     return matchesSearch && matchesTrait;
   });
 
@@ -97,24 +113,32 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
       <p className="hint spell-selected-summary">
         <strong>Selected:</strong> {knownNames.length > 0 ? knownNames.join(', ') : 'None yet'}
       </p>
-      <div className="spell-search-row">
-        <input
-          type="text"
-          className="spell-search-input"
-          placeholder={`Search ${title.toLowerCase()}...`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        <select
-          className="spell-trait-filter"
-          value={traitFilter}
-          onChange={(e) => setTraitFilter(e.target.value)}
-        >
-          <option value="">All traits</option>
-          {traitOptions.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+      <input
+        type="text"
+        className="spell-search-input"
+        placeholder={`Search ${title.toLowerCase()}...`}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <div className="spell-trait-filter-row">
+        <span className="spell-trait-filter-label">
+          Filter by trait{traitFilters.length > 0 ? ` (${traitFilters.length})` : ''}:
+        </span>
+        {traitOptions.map((t) => (
+          <button
+            key={t}
+            type="button"
+            className={`chip small ${traitFilters.includes(t) ? 'selected' : ''}`}
+            onClick={() => toggleTraitFilter(t)}
+          >
+            {t}
+          </button>
+        ))}
+        {traitFilters.length > 0 && (
+          <button type="button" className="chip small ghost" onClick={() => setTraitFilters([])}>
+            Clear
+          </button>
+        )}
       </div>
       {filtered.length === 0 && <p className="hint">No spells match that search/filter.</p>}
       <div className="spell-grid">
