@@ -18,8 +18,9 @@ function profBonus(rank) {
 // section guards on the choice it needs existing yet, since this panel is
 // visible from step 1 onward when most of `character` is still empty.
 export default function LivePreviewPanel({ character, open, onToggle }) {
-  const { ancestry, background, cls, heritage, backgroundSkillId, weapon, armor, scores, mods, hp, ac, perceptionMod, classDC, saves } =
+  const { ancestry, background, cls, heritage, backgroundSkillId, weapon, armor, weapons, armors, scores, mods, hp, ac, perceptionMod, classDC, saves } =
     useComputedCharacter(character);
+  const extraGearCount = Math.max(0, weapons.length - 1) + Math.max(0, armors.length - 1);
 
   const trainedSkillIds = Array.from(
     new Set(
@@ -109,6 +110,7 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
         {(weapon || (armor && armor.category !== 'none')) && (
           <p className="live-preview-line">
             {weapon ? weapon.name : 'No weapon'} · {armor && armor.category !== 'none' ? armor.name : 'Unarmored'}
+            {extraGearCount > 0 ? ` (+${extraGearCount} more owned)` : ''}
           </p>
         )}
 

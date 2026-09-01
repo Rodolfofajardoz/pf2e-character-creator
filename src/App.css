@@ -406,6 +406,11 @@
   animation: selectPop 0.25s ease;
 }
 
+.option-card:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .option-desc {
   font-size: 0.85rem;
   color: var(--text);

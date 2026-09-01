@@ -5,6 +5,7 @@ import { getClass } from '../../data/classes';
 import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
+import { getGlossaryTerm } from '../../data/glossary';
 
 export default function SkillsStep({ character, update }) {
   const ancestry = getAncestry(character.ancestryId);
@@ -93,17 +94,24 @@ export default function SkillsStep({ character, update }) {
           {cls.skillsBase} + your Intelligence modifier ({intMod >= 0 ? '+' : ''}
           {intMod}){extraFromChoice > 0 ? ` + ${extraFromChoice} from your class` : ''} = {poolSize} skills.
         </p>
-        <div className="chip-row">
-          {selectable.map((s) => (
-            <button
-              key={s.id}
-              className={`chip ${character.trainedSkills.includes(s.id) ? 'selected' : ''}`}
-              onClick={() => toggleSkill(s.id)}
-              disabled={!character.trainedSkills.includes(s.id) && character.trainedSkills.length >= poolSize}
-            >
-              <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>
-            </button>
-          ))}
+        <div className="card-grid">
+          {selectable.map((s) => {
+            const term = getGlossaryTerm(s.id);
+            return (
+              <button
+                key={s.id}
+                className={`option-card small ${character.trainedSkills.includes(s.id) ? 'selected' : ''}`}
+                onClick={() => toggleSkill(s.id)}
+                disabled={!character.trainedSkills.includes(s.id) && character.trainedSkills.length >= poolSize}
+              >
+                {/* Plain text, not a GlossaryTerm — the definition is
+                    already right below, so an Inspect popover here would
+                    just repeat what's already on the card. */}
+                <h4>{s.name}</h4>
+                {term && <p className="option-desc">{term.desc}</p>}
+              </button>
+            );
+          })}
         </div>
       </section>
     </div>

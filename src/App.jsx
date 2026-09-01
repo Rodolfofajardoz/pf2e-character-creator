@@ -51,8 +51,8 @@ const initialCharacter = {
   freeBoosts: [],
   trainedSkills: [],
   lorePicked: null,
-  weaponId: null,
-  armorId: null,
+  weaponIds: [],
+  armorIds: [],
   gearIds: [],
 };
 

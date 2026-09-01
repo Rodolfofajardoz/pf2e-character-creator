@@ -27,8 +27,15 @@ export function useComputedCharacter(character) {
     const backgroundSkillId =
       cls && background ? getBackgroundSkillInfo(character, cls, background).effectiveId : null;
 
-    const weapon = WEAPONS.find((w) => w.id === character.weaponId) || null;
-    const armor = ARMORS.find((a) => a.id === character.armorId) || ARMORS[0];
+    // Buying is unrestricted (a shop sells you as many weapons/armor as
+    // you can afford), but AC/Strike math still needs exactly one of
+    // each. Simplification until a real equip system exists: the first
+    // one purchased is treated as worn/wielded for calculations, while
+    // `weapons`/`armors` (plural) list everything actually owned.
+    const weapons = WEAPONS.filter((w) => character.weaponIds.includes(w.id));
+    const armors = ARMORS.filter((a) => character.armorIds.includes(a.id));
+    const weapon = weapons[0] || null;
+    const armor = armors[0] || ARMORS[0];
     const gearItems = GEAR.filter((g) => character.gearIds.includes(g.id));
 
     const scores = ancestry ? computeFinalScores(character, ancestry) : null;
@@ -68,6 +75,8 @@ export function useComputedCharacter(character) {
       backgroundSkillId,
       weapon,
       armor,
+      weapons,
+      armors,
       gearItems,
       scores,
       mods,

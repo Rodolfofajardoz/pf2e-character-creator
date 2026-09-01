@@ -463,6 +463,38 @@ collapses into a `Preview ▸` toggle instead of a fixed side column.
    other three do, just one flat set of choices each, so there's no
    "next sub-section" to jump to.
 
+### Patch: v0.6.2 — equipment shop model + skill cards
+
+Two more fixes reported after trying v0.6.1:
+
+1. **Equipment only let you buy one weapon and one armor**: picking a
+   second weapon/armor silently replaced the first instead of buying
+   both — wrong model for a shop, where the only real constraint is
+   gold. `character.weaponId`/`armorId` (single) became
+   `weaponIds`/`armorIds` (arrays); `EquipmentStep` now toggles them
+   exactly like `gearIds` already worked (buy/sell freely, budget-gated,
+   `deny-shake` on unaffordable — same mechanic added in v0.6.1). AC and
+   Strike math still need exactly *one* worn/wielded weapon and armor
+   though, so `useComputedCharacter` treats **the first one purchased**
+   as equipped — a deliberate simplification, called out in a code
+   comment, since a real equip/unequip UI is explicitly out of scope for
+   now (the user's own framing: "comprar" and "equipar" are different
+   problems). `weapons`/`armors` (plural, full owned list) are also
+   exposed from the hook; `SummaryStep` lists anything beyond the first
+   of each under "Also purchased," and the live preview panel appends
+   "(+N more owned)".
+2. **Skill picker redesigned as cards**: `SkillsStep`'s "Additional
+   trained skills" chip row became an `option-card` grid — skill name as
+   an `<h4>`, its glossary definition always visible underneath as
+   `<p className="option-desc">`, matching the ancestry/background/class
+   card pattern elsewhere. The name is deliberately **plain text, not a
+   `GlossaryTerm`**, per explicit instruction — the definition is right
+   there on the card, so making the name Inspect-clickable too would
+   just pop up a popover repeating what's already visible. The
+   "Automatic training" list above (class/background-granted skills,
+   no visible definition) was left untouched and still uses
+   `GlossaryTerm` normally.
+
 ## How to run the dev server
 
 ```bash

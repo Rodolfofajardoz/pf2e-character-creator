@@ -23,6 +23,8 @@ export default function SummaryStep({ character, update, onRestart }) {
     backgroundSkillId,
     weapon,
     armor,
+    weapons,
+    armors,
     gearItems,
     scores,
     mods,
@@ -204,8 +206,14 @@ export default function SummaryStep({ character, update, onRestart }) {
 
         <div className="sheet-card">
           <h3>Equipment</h3>
-          <p>Weapon: {weapon ? `${weapon.name} (${weapon.damage})` : 'None'}</p>
-          <p>Armor: {armor.name}</p>
+          <p>Weapon (equipped): {weapon ? `${weapon.name} (${weapon.damage})` : 'None'}</p>
+          <p>Armor (worn): {armor.name}</p>
+          {(weapons.length > 1 || armors.length > 1) && (
+            <p className="hint">
+              Also purchased: {[...weapons.slice(1), ...armors.slice(1)].map((i) => i.name).join(', ')} — AC/Strike
+              math above uses only the first weapon/armor bought; the rest are just owned for now.
+            </p>
+          )}
           <p>Other items: {gearItems.map((g) => g.name).join(', ') || 'None'}</p>
         </div>
       </section>
