@@ -365,6 +365,55 @@
   margin: 0;
 }
 
+.spell-card-heightened {
+  opacity: 0.85;
+}
+
+/* Spell cards carry full rules text, so they need real room — a tighter
+   grid like .card-grid would squeeze paragraphs into a tall, narrow column. */
+.spell-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+  margin: 12px 0;
+  align-items: start;
+}
+
+.spell-selected-summary {
+  margin-top: -4px;
+}
+
+.spell-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 14px;
+}
+
+.spell-search-input {
+  flex: 1 1 220px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.spell-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.spell-trait-filter {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
 .sub-section {
   margin-top: 22px;
   padding-top: 14px;

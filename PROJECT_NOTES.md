@@ -283,6 +283,28 @@ unset), a row of trait tag pills, then a body with the source line, the
 description — using the app's existing gold/navy palette rather than
 copying AoN's own colors.
 
+**`desc` holds the complete, unabridged spell text, not a summary** — this
+was a deliberate correction after showing a first (summarized) pass to the
+user: they want every description usable standalone by a brand-new player,
+so nothing gets trimmed for card size regardless of length. Getting there
+required a *third* AoN pass (full `text` field, this time re-fetched
+since the original fetch that produced the short hand-written descs wasn't
+saved anywhere): split on `---` to separate the header block (discarded —
+it's redundant with the structured fields) from the main body and any
+`Heightened (...)` entries, which became their own `heightened` field so
+`SpellCard` can render them as a separate labeled block below a second
+divider. Also swept `flat-footed` → `off-guard` across the newly-pulled
+text (a few spells are Core Rulebook-only and still had the legacy term).
+
+Given full text made the old tight `.card-grid` (`minmax(220px, ...)`)
+unreadable, spell cards now use their own `.spell-grid`
+(`minmax(340px, 1fr)`) with real room to breathe. `SpellPicker` (wrapping
+`SpellCard`) adds a per-list search box (matches name or description) and
+a trait-based `<select>` filter (options derived from whatever traits
+actually appear in that tradition's pool, so e.g. a Divine list never
+offers to filter by "Fire"), plus a "Selected: ..." name summary above the
+grid so the pick list stays visible while scrolling/filtering.
+
 One data-quality check worth noting for future scraping: ~30 of the 135
 spells' `primary_source_raw` came back as "Core Rulebook" even under a
 `primary_source: 'Player Core'` filter, because that filter uses `match`

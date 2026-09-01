@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { getClass } from '../../data/classes';
 import { CANTRIPS, SPELLS_RANK_1, getSpellsForTradition, TRADITION_LABELS } from '../../data/spells';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
@@ -56,8 +57,78 @@ function SpellCard({ spell, selected, disabled, onClick }) {
         <InfoLine spell={spell} />
         <hr className="spell-card-rule" />
         <p className="option-desc"><InspectText text={spell.desc} /></p>
+        {spell.heightened && (
+          <>
+            <hr className="spell-card-rule" />
+            <p className="option-desc spell-card-heightened">
+              <strong><GlossaryTerm id="heightened">Heightened</GlossaryTerm></strong>{' '}
+              <InspectText text={spell.heightened.replace(/^Heightened\s*/, '')} />
+            </p>
+          </>
+        )}
       </div>
     </button>
+  );
+}
+
+function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
+  const [search, setSearch] = useState('');
+  const [traitFilter, setTraitFilter] = useState('');
+
+  const traitOptions = useMemo(() => {
+    const set = new Set();
+    pool.forEach((s) => s.traits.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [pool]);
+
+  const filtered = pool.filter((s) => {
+    const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.desc.toLowerCase().includes(search.toLowerCase());
+    const matchesTrait = !traitFilter || s.traits.includes(traitFilter);
+    return matchesSearch && matchesTrait;
+  });
+
+  const knownNames = known.map((id) => pool.find((s) => s.id === id)?.name).filter(Boolean);
+
+  return (
+    <section className="sub-section">
+      <h3>
+        {title} ({known.length}/{maxKnown})
+      </h3>
+      <p className="hint spell-selected-summary">
+        <strong>Selected:</strong> {knownNames.length > 0 ? knownNames.join(', ') : 'None yet'}
+      </p>
+      <div className="spell-search-row">
+        <input
+          type="text"
+          className="spell-search-input"
+          placeholder={`Search ${title.toLowerCase()}...`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="spell-trait-filter"
+          value={traitFilter}
+          onChange={(e) => setTraitFilter(e.target.value)}
+        >
+          <option value="">All traits</option>
+          {traitOptions.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      </div>
+      {filtered.length === 0 && <p className="hint">No spells match that search/filter.</p>}
+      <div className="spell-grid">
+        {filtered.map((s) => (
+          <SpellCard
+            key={s.id}
+            spell={s}
+            selected={known.includes(s.id)}
+            disabled={!known.includes(s.id) && known.length >= maxKnown}
+            onClick={() => onToggle(s.id)}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -120,7 +191,8 @@ export default function SpellsStep({ character, update }) {
         {cls.name} ({sc.type}, <GlossaryTerm id="cantrip">cantrips</GlossaryTerm> +{' '}
         1st-rank spells only — this is a level-1 builder). This list only includes spells any {sc.traditionOptions ? 'caster of the chosen tradition' : `${sc.tradition} caster`} can
         freely pick; it excludes spells tied to a class sub-choice this app doesn't model (a Bard's Muse, a
-        Cleric's Doctrine, a Witch's Patron theme, and the like).
+        Cleric's Doctrine, a Witch's Patron theme, and the like). Descriptions are the complete rules text, not a
+        summary, so you shouldn't need to look anything up elsewhere.
       </p>
 
       {sc.traditionOptions && (
@@ -147,39 +219,22 @@ export default function SpellsStep({ character, update }) {
 
       {traditionCode && (
         <>
-          <section className="sub-section">
-            <h3>
-              Cantrips ({character.knownCantrips.length}/{sc.cantripsKnown})
-            </h3>
-            <div className="card-grid">
-              {cantripPool.map((s) => (
-                <SpellCard
-                  key={s.id}
-                  spell={s}
-                  selected={character.knownCantrips.includes(s.id)}
-                  disabled={!character.knownCantrips.includes(s.id) && character.knownCantrips.length >= sc.cantripsKnown}
-                  onClick={() => toggleCantrip(s.id)}
-                />
-              ))}
-            </div>
-          </section>
-
-          <section className="sub-section">
-            <h3>
-              1st-rank spells ({character.knownSpells1.length}/{sc.rank1Known})
-            </h3>
-            <div className="card-grid">
-              {spell1Pool.map((s) => (
-                <SpellCard
-                  key={s.id}
-                  spell={s}
-                  selected={character.knownSpells1.includes(s.id)}
-                  disabled={!character.knownSpells1.includes(s.id) && character.knownSpells1.length >= sc.rank1Known}
-                  onClick={() => toggleSpell1(s.id)}
-                />
-              ))}
-            </div>
-          </section>
+          <SpellPicker
+            title="Cantrips"
+            pool={cantripPool}
+            known={character.knownCantrips}
+            maxKnown={sc.cantripsKnown}
+            onToggle={toggleCantrip}
+            idPrefix="cantrip"
+          />
+          <SpellPicker
+            title="1st-rank spells"
+            pool={spell1Pool}
+            known={character.knownSpells1}
+            maxKnown={sc.rank1Known}
+            onToggle={toggleSpell1}
+            idPrefix="spell1"
+          />
         </>
       )}
     </div>
