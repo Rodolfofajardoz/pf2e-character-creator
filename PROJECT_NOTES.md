@@ -265,16 +265,34 @@ Wizard all get 5 cantrips + 2 first-rank). Champion is excluded entirely:
 it doesn't have a normal spell list at 1st level, just a single devotion
 spell from a feat like Deity's Domain (already handled in the Class step).
 
-Each spell also carries a `traits` array (fetched in a follow-up AoN pass —
-the first pass only pulled `name`/`tradition`/`text`, not `trait`; a small
-Node script, `node --check`-verified, spliced them into the existing file
-by id rather than hand-editing 135 entries) and a `.spell-card` UI in
-`SpellsStep.jsx`, styled after an AoN spell card screenshot: a header bar
-with the name and an action-cost badge (`actionBadge()` turns `cast` —
-"Single Action", "Reaction", "1-3 actions", etc. — into a short label,
-defaulting to "2 Actions" when unset), then a row of trait tag pills, then
-the description. Uses the app's existing gold/navy palette rather than
+Each spell also carries `traits`, `source`, `range`, `area`, `target`,
+`duration`, and `defense` fields — fetched in two follow-up AoN passes
+(the original pass only pulled `name`/`tradition`/`text`/`cast`; small
+Node scripts, `node --check`-verified each time, spliced the new fields
+into the existing 135-entry file by id rather than hand-editing). Fields
+are only set when AoN actually has them (most cantrips have no
+`duration`; area spells have no `target`, etc.) — `InfoLine` in
+`SpellsStep.jsx` renders whichever are present, comma-separated.
+
+The `.spell-card` UI in `SpellsStep.jsx` is styled after an AoN spell card
+screenshot, same structure: a header bar with the name and an action-cost
+badge (`actionBadge()` turns `cast` — "Single Action", "Reaction", "1-3
+actions", etc. — into a short label, defaulting to "2 Actions" when
+unset), a row of trait tag pills, then a body with the source line, the
+`InfoLine` (Range/Area/Target/Duration/Defense), a divider, and the
+description — using the app's existing gold/navy palette rather than
 copying AoN's own colors.
+
+One data-quality check worth noting for future scraping: ~30 of the 135
+spells' `primary_source_raw` came back as "Core Rulebook" even under a
+`primary_source: 'Player Core'` filter, because that filter uses `match`
+(analyzed/fuzzy), and "Core Rulebook" shares the token "core" with "Player
+Core." Re-verified with a strict `match_phrase` query that none of those
+30 actually have a Player Core reprint — the Core Rulebook sourcing was
+correct, not a bug — but the lesson stands: a loose `match` on
+`primary_source` can silently pick the wrong sourcebook when both exist,
+so treat "Core Rulebook"-sourced results as worth a `match_phrase` sanity
+check rather than assuming the filter did its job.
 
 New `SpellsStep.jsx`, inserted as step 4 (right after Class, before Ability
 Scores — it only depends on `classId`). For Sorcerer/Witch, whose tradition

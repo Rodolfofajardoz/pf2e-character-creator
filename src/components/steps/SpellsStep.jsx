@@ -11,6 +11,30 @@ function actionBadge(cast) {
   return cast;
 }
 
+// The Source/Range/Area/Target/Duration/Defense line — only the fields a
+// given spell actually has (e.g. most cantrips have no Duration, an area
+// spell has no Target). Rendered as "Label value" pairs, comma-separated.
+function InfoLine({ spell }) {
+  const fields = [
+    ['Range', spell.range],
+    ['Area', spell.area],
+    ['Target', spell.target],
+    ['Duration', spell.duration],
+    ['Defense', spell.defense],
+  ].filter(([, v]) => v);
+  if (fields.length === 0) return null;
+  return (
+    <p className="spell-card-info">
+      {fields.map(([label, value], i) => (
+        <span key={label}>
+          {i > 0 ? ', ' : ''}
+          <strong>{label}</strong> {value}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function SpellCard({ spell, selected, disabled, onClick }) {
   return (
     <button
@@ -27,7 +51,12 @@ function SpellCard({ spell, selected, disabled, onClick }) {
           <span key={t} className="trait-tag">{t}</span>
         ))}
       </div>
-      <p className="option-desc"><InspectText text={spell.desc} /></p>
+      <div className="spell-card-body">
+        <p className="spell-card-source">{spell.source}</p>
+        <InfoLine spell={spell} />
+        <hr className="spell-card-rule" />
+        <p className="option-desc"><InspectText text={spell.desc} /></p>
+      </div>
     </button>
   );
 }
