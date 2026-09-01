@@ -77,7 +77,7 @@ export const CLASSES = [
     weapons: 'Simple weapons, longsword, rapier, sap, shortbow, and shortsword; unarmed attacks',
     armor: 'Light armor',
     armorProficiency: ['light'],
-    spellcasting: { tradition: 'Occult', type: 'spontaneous (compositions)' },
+    spellcasting: { tradition: 'Occult', type: 'spontaneous (compositions)', traditionCode: 'occult', cantripsKnown: 5, rank1Known: 2 },
     summary: 'Weaves magic through music and words, supporting allies with Compositions.',
     feats1: [
       { name: 'Bardic Lore', desc: 'Requires the Enigma muse: you become trained in Bardic Lore, a special Lore that can Recall Knowledge on any topic.' },
@@ -127,7 +127,7 @@ export const CLASSES = [
     // defaults to the Cloistered Cleric baseline (no armor proficiency beyond
     // unarmored) rather than overstating AC for a doctrine the player may not have.
     armorProficiency: [],
-    spellcasting: { tradition: 'Divine', type: 'prepared or spontaneous (your choice)' },
+    spellcasting: { tradition: 'Divine', type: 'prepared or spontaneous (your choice)', traditionCode: 'divine', cantripsKnown: 5, rank1Known: 2 },
     summary: 'A channel of divine will for their deity, with access to spells and sacred miracles.',
     feats1: [
       { name: 'Deadly Simplicity', desc: "Requires a deity with a simple/unarmed favored weapon, and training in it: increase that weapon's damage die by one step." },
@@ -151,7 +151,7 @@ export const CLASSES = [
     weapons: 'Simple weapons and unarmed attacks',
     armor: 'Light and medium nonmetallic armor',
     armorProficiency: ['light', 'medium'],
-    spellcasting: { tradition: 'Primal', type: 'prepared' },
+    spellcasting: { tradition: 'Primal', type: 'prepared', traditionCode: 'primal', cantripsKnown: 5, rank1Known: 2 },
     summary: 'Guardian of the natural cycles, with an Order that shapes how they wield that power.',
     feats1: [
       { name: 'Animal Companion', desc: 'Requires the Animal Order: you gain an animal companion that fights at your side.' },
@@ -250,7 +250,7 @@ export const CLASSES = [
     weapons: 'Simple weapons',
     armor: 'Light armor',
     armorProficiency: ['light'],
-    spellcasting: { tradition: 'Divine', type: 'spontaneous' },
+    spellcasting: { tradition: 'Divine', type: 'spontaneous', traditionCode: 'divine', cantripsKnown: 5, rank1Known: 3 },
     summary: 'Receives visions and divine power directly, paying the price of a Curse tied to their Mystery.',
     feats1: [
       { name: 'Foretell Harm', desc: 'Free action, once per round, requires your last action was a damaging spell: at the start of your target\'s next turn, it takes bonus damage matching that spell\'s type.' },
@@ -318,7 +318,7 @@ export const CLASSES = [
     weapons: 'Simple weapons, and unarmed attacks',
     armor: 'No armor',
     armorProficiency: [],
-    spellcasting: { tradition: 'Depends on bloodline (Arcane, Divine, Occult, or Primal)', type: 'spontaneous' },
+    spellcasting: { tradition: 'Depends on bloodline (Arcane, Divine, Occult, or Primal)', type: 'spontaneous', traditionOptions: ['arcane', 'divine', 'occult', 'primal'], cantripsKnown: 5, rank1Known: 3 },
     summary: 'Their magic springs from an innate bloodline that determines the tradition and flavor of their spells.',
     feats1: [
       { name: 'Familiar', desc: 'You gain a familiar that assists you with your magical tasks.' },
@@ -369,7 +369,7 @@ export const CLASSES = [
     weapons: 'Simple weapons, and unarmed attacks',
     armor: 'No armor',
     armorProficiency: [],
-    spellcasting: { tradition: 'Depends on patron (Arcane, Divine, Occult, or Primal)', type: 'prepared' },
+    spellcasting: { tradition: 'Depends on patron (Arcane, Divine, Occult, or Primal)', type: 'prepared', traditionOptions: ['arcane', 'divine', 'occult', 'primal'], cantripsKnown: 5, rank1Known: 2 },
     summary: 'Serves a mysterious Patron who grants a familiar and magic in exchange for a pact.',
     // Verified against AoN (Player Core pg. 178): unlike most classes, the Witch's 1st-level
     // class features are patron, familiar, spellcasting, and hexes — it doesn't gain its first
@@ -389,7 +389,7 @@ export const CLASSES = [
     weapons: 'Club, crossbow, dagger, heavy crossbow, and staff; unarmed attacks',
     armor: 'No armor',
     armorProficiency: [],
-    spellcasting: { tradition: 'Arcane', type: 'prepared' },
+    spellcasting: { tradition: 'Arcane', type: 'prepared', traditionCode: 'arcane', cantripsKnown: 5, rank1Known: 2 },
     summary: 'A scholar of arcane magic, bound to an Arcane School and their Spellbook.',
     feats1: [
       { name: 'Eschew Materials', desc: "You can provide a spell's ordinary material components (a free hand, no pouch needed) with gestures instead — costly listed materials are still required." },

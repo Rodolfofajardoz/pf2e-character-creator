@@ -3,6 +3,7 @@ import './App.css';
 import AncestryStep from './components/steps/AncestryStep';
 import BackgroundStep from './components/steps/BackgroundStep';
 import ClassStep from './components/steps/ClassStep';
+import SpellsStep from './components/steps/SpellsStep';
 import AbilityScoresStep from './components/steps/AbilityScoresStep';
 import SkillsStep from './components/steps/SkillsStep';
 import EquipmentStep from './components/steps/EquipmentStep';
@@ -18,10 +19,11 @@ const STEPS = [
   { id: 'ancestry', label: '1. Ancestry' },
   { id: 'background', label: '2. Background' },
   { id: 'class', label: '3. Class' },
-  { id: 'abilities', label: '4. Ability Scores' },
-  { id: 'skills', label: '5. Skills' },
-  { id: 'equipment', label: '6. Equipment' },
-  { id: 'summary', label: '7. Summary' },
+  { id: 'spells', label: '4. Spells' },
+  { id: 'abilities', label: '5. Ability Scores' },
+  { id: 'skills', label: '6. Skills' },
+  { id: 'equipment', label: '7. Equipment' },
+  { id: 'summary', label: '8. Summary' },
 ];
 
 const initialCharacter = {
@@ -41,6 +43,9 @@ const initialCharacter = {
   classFeat: null,
   bonusClassFeat: null,
   classSkillChoice: null,
+  spellTradition: null,
+  knownCantrips: [],
+  knownSpells1: [],
   freeBoosts: [],
   trainedSkills: [],
   lorePicked: null,
@@ -77,6 +82,15 @@ function App() {
         const bonusFeatOk = !needsBonusFeat || Boolean(character.bonusClassFeat);
         const skillChoiceOk = !cls?.fixedSkillChoiceOptions || Boolean(character.classSkillChoice);
         return Boolean(character.classId && character.classKeyAbility && feat1Ok && bonusFeatOk && skillChoiceOk);
+      }
+      case 'spells': {
+        const cls = character.classId ? getClass(character.classId) : null;
+        const sc = cls?.spellcasting;
+        if (!sc || !sc.cantripsKnown) return true;
+        const traditionOk = !sc.traditionOptions || Boolean(character.spellTradition);
+        const cantripsOk = character.knownCantrips.length === sc.cantripsKnown;
+        const spells1Ok = character.knownSpells1.length === sc.rank1Known;
+        return traditionOk && cantripsOk && spells1Ok;
       }
       case 'abilities':
         return character.freeBoosts.length === 4;
@@ -149,6 +163,7 @@ function App() {
           {step.id === 'ancestry' && <AncestryStep character={character} update={update} />}
           {step.id === 'background' && <BackgroundStep character={character} update={update} />}
           {step.id === 'class' && <ClassStep character={character} update={update} />}
+          {step.id === 'spells' && <SpellsStep character={character} update={update} />}
           {step.id === 'abilities' && <AbilityScoresStep character={character} update={update} />}
           {step.id === 'skills' && <SkillsStep character={character} update={update} />}
           {step.id === 'equipment' && <EquipmentStep character={character} update={update} />}

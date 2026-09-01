@@ -20,6 +20,9 @@ export default function ClassStep({ character, update }) {
       bonusClassFeat: null,
       classSkillChoice: null,
       backgroundSkillSubstitute: null,
+      spellTradition: null,
+      knownCantrips: [],
+      knownSpells1: [],
     });
   }
 

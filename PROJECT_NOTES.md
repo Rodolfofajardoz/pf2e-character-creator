@@ -231,17 +231,51 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
 
 ## Known gaps / things NOT implemented yet
 
-1. **Spellcasting selection** — no spell lists, no picking known/prepared
-   spells for casters. The summary shows *that* a class casts spells and
-   from which tradition, but not *which* spells. **(next up — phase 3)**
-2. **No leveling past 1** — this is strictly a level-1 builder. (phase 4)
-3. **AC Expert+ armor not modeled**: no class/feat in this app's level-1
+1. **No leveling past 1** — this is strictly a level-1 builder. (phase 4)
+2. **AC Expert+ armor not modeled**: no class/feat in this app's level-1
    data actually grants Expert+ *armor* proficiency (only the Monk's
    Expert *unarmored* proficiency, which is handled), so this doesn't
    currently under-report anything — **nothing to actually fix today**, just
    a reminder: if a future addition (leveling, an archetype) grants it,
    `armorProficiency` in `classes.js` needs an upgrade path beyond the
    current binary trained/untrained (same fix pattern as `unarmoredProficiency`).
+3. **Class sub-choices aren't modeled** (Bard Muse, Cleric Doctrine, Druid
+   Order, Oracle Mystery, Sorcerer Bloodline, Witch Patron, Wizard Arcane
+   School, Champion Cause). This was already true for feats before phase 3
+   (several feats already say "Requires the X Order/Cause" with no way to
+   actually pick one), and phase 3 hit the same wall harder: whole spells
+   are gated behind these (Bard's Composition cantrips need a Muse, Cleric's
+   Divine Lance-style doctrine cantrips need a Doctrine, Witch hexes need a
+   Patron). The spell catalog (see below) only includes spells with no such
+   gate. **On the roadmap as a real feature** — see "Personalization roadmap"
+   below — but deliberately deferred rather than silently guessed at.
+
+### Phase 3: Spellcasting selection — done
+
+Added `src/data/spells.js`: 42 cantrips + 93 1st-rank spells, verified
+against AoN. Scope: only spells with a `tradition` field in AoN's data (see
+above gap #3 for what that excludes) — a class/tradition filter, not a
+per-subclass one.
+
+Each of the 8 spellcasting classes was checked individually on its own AoN
+class page for its real 1st-level `Cantrips / 1st` spell table row, rather
+than assumed uniform — **Sorcerer and Oracle know 3 first-rank spells at
+1st level, not 2** like the other five (Bard, Cleric, Druid, Witch,
+Wizard all get 5 cantrips + 2 first-rank). Champion is excluded entirely:
+it doesn't have a normal spell list at 1st level, just a single devotion
+spell from a feat like Deity's Domain (already handled in the Class step).
+
+New `SpellsStep.jsx`, inserted as step 4 (right after Class, before Ability
+Scores — it only depends on `classId`). For Sorcerer/Witch, whose tradition
+depends on an unmodeled Bloodline/Patron, there's a required tradition
+picker (`character.spellTradition`) before the spell lists appear. Chosen
+cantrips/spells are stored as `character.knownCantrips` /
+`character.knownSpells1` (arrays of spell ids), validated in `App.jsx`
+against each class's exact known-spell counts. This is a **snapshot, not a
+daily-preparation simulator** — matches how the rest of the app treats
+1st-level chargen (a decision made explicitly rather than assumed, since
+Cleric/Druid/Witch prepared casters technically re-choose from a wider
+pool each day in actual play).
 
 ### Fixed: background/class skill collision (was gap #3)
 
@@ -268,8 +302,15 @@ Cleric + Acolyte (both train Religion).
 2. ~~General & skill feats catalog~~ done (turned out to be general feats
    only — see Known Gaps for the one remaining loose end, "Natural
    Ambition"). **Phase 2 complete.**
-3. Spellcasting (spell lists + selection). **(next up)**
-4. Leveling 2–20.
+3. ~~Spellcasting (spell lists + selection)~~ done — see "Phase 3" above.
+   **Phase 3 complete.**
+4. Leveling 2–20. **(next up)**
+
+After phase 4, see "Personalization roadmap" (to be added once phase 4 and
+a design pass are done) for the larger post-1.0-groundwork feature list:
+custom sheet printing, live side-panel preview, multiclass, save/load a
+character catalog, language selection, archetypes, familiars, and modeling
+the class sub-choices from gap #3 above.
 
 ## How to run the dev server
 

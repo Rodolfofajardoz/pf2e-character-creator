@@ -5,6 +5,7 @@ import { getClass } from '../../data/classes';
 import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, abilityMod, getBackgroundSkillInfo } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
 import { WEAPONS, ARMORS, GEAR } from '../../data/equipment';
+import { CANTRIPS, SPELLS_RANK_1, TRADITION_LABELS } from '../../data/spells';
 import { InspectText, GlossaryTerm } from '../../context/InspectContext';
 import { ABILITY_TERM_ID } from '../../data/glossary';
 
@@ -147,6 +148,29 @@ export default function SummaryStep({ character, update, onRestart }) {
             </p>
           )}
         </div>
+
+        {cls.spellcasting?.cantripsKnown && (
+          <div className="sheet-card">
+            <h3>Spells</h3>
+            <p>
+              Tradition: {TRADITION_LABELS[cls.spellcasting.traditionCode || character.spellTradition]}
+            </p>
+            <p>
+              <strong><GlossaryTerm id="cantrip">Cantrips</GlossaryTerm>:</strong>{' '}
+              {character.knownCantrips
+                .map((id) => CANTRIPS.find((s) => s.id === id)?.name)
+                .filter(Boolean)
+                .join(', ') || 'None chosen'}
+            </p>
+            <p>
+              <strong>1st-rank:</strong>{' '}
+              {character.knownSpells1
+                .map((id) => SPELLS_RANK_1.find((s) => s.id === id)?.name)
+                .filter(Boolean)
+                .join(', ') || 'None chosen'}
+            </p>
+          </div>
+        )}
 
         <div className="sheet-card">
           <h3>Trained Skills</h3>
