@@ -20,22 +20,21 @@ milestone to schedule in the middle of it.
 | 1 | Live side-panel preview | S | Zero new PF2e data — pure refactor + layout. |
 | 2 | Language selection | S | Rule confirmed; small, contained data + a simple choice step. |
 | 3 | Custom backgrounds | S–M | Reuses existing data (abilities, skills, `GENERAL_FEATS`); just a form. |
-| 4 | Save/load character catalog | M | Pure engineering (storage + CRUD screens), no rules research. |
-| 5 | Class sub-choices | M | AoN verification across 8 classes, plus new spell data it unlocks. |
-| 6 | Familiars | M | ⚠ blocked — full scope needs item 9 (Level-up) done first. |
-| 7 | Custom PDF sheet printing | M | ⚠ blocked — needs the user's own sheet file before it can even be scoped. |
+| 4 | Custom PDF sheet printing | S–M | File inspected — real fillable AcroForm PDF, no longer blocked. |
+| 5 | Save/load character catalog | M | Pure engineering (storage + CRUD screens), no rules research. |
+| 6 | Class sub-choices | M | AoN verification across 8 classes, plus new spell data it unlocks. |
+| 7 | Familiars | M | ⚠ blocked — full scope needs item 9 (Level-up) done first. |
 | 8 | Multiclass & Archetypes | L | ⚠ blocked — needs item 9 (Level-up) done first; also the largest data surface after leveling itself. |
 | 9 | Level-up (2–20) | XL | The biggest item by far — see below for why it's basically its own multi-part project. |
 
-**Important caveat on items 6 and 8**: they're ranked by how much work
+**Important caveat on items 7 and 8**: they're ranked by how much work
 *they themselves* involve, not by when they can actually be picked up.
 Both genuinely require Level-up (item 9) to exist first — Familiars needs
 the per-level ability-growth table, Multiclass/Archetypes needs class
 feat slots past 1st level to spend a Dedication feat on. So the real
 buildable order, if going strictly smallest-first while respecting
-dependencies, is 1 → 2 → 3 → 4 → 5 → 9 → 6 → 8, with item 7 (PDF) slotted
-in whenever the file becomes available. Listed here by raw difficulty as
-asked, with the dependency called out rather than hidden.
+dependencies, is 1 → 2 → 3 → 4 → 5 → 6 → 9 → 7 → 8. Listed here by raw
+difficulty as asked, with the dependency called out rather than hidden.
 
 ---
 
@@ -105,7 +104,55 @@ Open question: whether the custom background also needs a free-text name/
 description field for flavor (cheap to add, purely cosmetic — doesn't
 affect any calculation) — worth deciding when this is actually built.
 
-## 4. Save/load character catalog
+## 4. Custom PDF sheet printing
+
+**Size: S–M (downgraded from M — file inspected, turned out to be the
+easy case).** Filling the user's own character sheet PDF with the
+builder's output instead of the current `window.print()` of the on-page
+summary.
+
+The file was inspected with `pdf-lib` (now installed as a project
+dependency): it's a genuine **fillable AcroForm PDF** — 22 pages, Letter
+size, 2213 form fields (2001 text fields, 201 checkboxes, 9 dropdowns, no
+radio groups). No coordinate-guessing needed; `pdf-lib` can set each named
+field directly and export the filled PDF for download.
+
+It's a full lifetime sheet (crafting, downtime, backstory, and enough
+spellbook pages for a 10th-rank caster), far more than this level-1
+builder currently produces — but only **two of the 22 pages** are
+relevant right now:
+- **Page 1** (249 fields): the main stat block — name, ancestry,
+  background, class, level, ability scores/mods, AC, Perception, Class
+  DC, saves, all 17 skills (total + a single "trained" checkbox each —
+  conveniently, no expert/master/legendary bubbles to worry about, since
+  this app doesn't produce those ranks yet either), up to 4 weapon
+  Strikes, armor/weapon proficiency checkboxes, and languages. Field
+  names are clean and self-describing (`ANCESTRY  HERITAGE`,
+  `ARMOR CLASS`, `ACROBATICS_TOTAL`, `ACROBATICS_TEML`, etc.) and map
+  almost 1:1 onto the `character` state and `SummaryStep`'s computed
+  stats.
+- **Page 3** (343 fields): spellcasting — cantrip/1st-rank spell name
+  slots, a tradition checkbox row, and spell DC/attack fields. Also maps
+  cleanly, with one small gap: this app doesn't currently compute a
+  spell DC/attack number anywhere — cheap to add, same `10 + proficiency
+  + ability mod` pattern already used for Class DC.
+
+Everything else (page 2's backstory/flavor fields, page 4's crafting
+formulas, and pages 5 onward — feat grids, inventory tracking, and
+spellbook pages for higher ranks) stays blank in the output until later
+roadmap items (leveling, crafting, more equipment slots) give this app
+data to put there — which is fine; a level-1 sheet with only the first
+two pages filled in is exactly what a level-1 builder should produce.
+
+Work: a field-name mapping table (roughly 80–100 relevant fields, not
+2213) from `character`/computed-stats to PDF field name, a fill function
+using `pdf-lib`, and a "Download filled sheet" button alongside (or
+replacing) the current print button.
+
+Open question: none — this is scoped and ready to start whenever picked
+up next, no longer blocked.
+
+## 5. Save/load character catalog
 
 **Size: M.** A "My Characters" screen: list saved characters, load one
 back into the builder, duplicate, delete, and start a new one. Storage
@@ -128,7 +175,7 @@ Open question: confirm `localStorage` + export/import is enough, versus
 wanting real account-based cloud sync (a materially bigger project —
 needs auth and a backend, not just frontend work).
 
-## 5. Class sub-choices
+## 6. Class sub-choices
 
 **Size: M.** Adds the Bard Muse, Cleric Doctrine, Druid Order, Oracle
 Mystery, Sorcerer Bloodline, Witch Patron, Wizard Arcane School, and
@@ -155,7 +202,7 @@ What it unlocks:
 Open question: none — this is scoped and ready to start whenever picked
 up next.
 
-## 6. Familiars
+## 7. Familiars
 
 **Size: M, ⚠ blocked on item 9.** Wizard's Familiar feat and Witch's
 patron-granted familiar already exist as choices in the app (1st-level
@@ -169,24 +216,6 @@ part; the base 1st-level familiar (name, base abilities) could
 technically start earlier but is more useful shipped alongside leveling.
 
 Open question: none beyond the dependency above.
-
-## 7. Custom PDF sheet printing
-
-**Size: M, ⚠ blocked on an input only the user has.** Filling a
-pre-designed character sheet PDF with the builder's output instead of
-the current `window.print()` of the on-page summary.
-
-Needs from the user: the actual PDF file. Once it's available, the
-approach depends on what kind of PDF it is:
-- **Fillable PDF (AcroForm fields)** — straightforward: a library like
-  `pdf-lib` can fill named form fields programmatically, no coordinate
-  guessing.
-- **Flat/scanned PDF** — harder: requires overlaying text at specific
-  x/y coordinates per field, tuned by hand per page, more fragile to get
-  looking right.
-
-Open question: which kind of file it is — determines the whole approach,
-so this can't be scoped further until the file is shared.
 
 ## 8. Multiclass & Archetypes
 
