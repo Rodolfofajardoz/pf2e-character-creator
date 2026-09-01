@@ -263,14 +263,16 @@ export default function SpellsStep({ character, update }) {
           />
           <section className="sub-section">
             <h3>Spells Selected</h3>
-            <p className="hint spell-selected-summary">
-              <strong>Cantrips:</strong>{' '}
-              {character.knownCantrips.map((id) => cantripPool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
-            </p>
-            <p className="hint spell-selected-summary">
-              <strong>1st-rank:</strong>{' '}
-              {character.knownSpells1.map((id) => spell1Pool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
-            </p>
+            <div className="option-card small selected" style={{ cursor: 'default' }}>
+              <p className="option-desc">
+                <strong>Cantrips:</strong>{' '}
+                {character.knownCantrips.map((id) => cantripPool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
+              </p>
+              <p className="option-desc">
+                <strong>1st-rank:</strong>{' '}
+                {character.knownSpells1.map((id) => spell1Pool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
+              </p>
+            </div>
           </section>
         </>
       )}
