@@ -158,6 +158,40 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
   );
 }
 
+// Big, easy-to-scan recap of everything picked across both pickers — each
+// spell as its own pill instead of a comma-run sentence, so a player can
+// tell their full loadout apart at a glance.
+function SpellsSummaryGroup({ label, names, known, maxKnown }) {
+  return (
+    <div className="spells-summary-group">
+      <span className="spells-summary-label">
+        {label} <span className="spells-summary-count">({known}/{maxKnown})</span>
+      </span>
+      {names.length > 0 ? (
+        <div className="spells-summary-chips">
+          {names.map((name) => (
+            <span key={name} className="spells-summary-chip">{name}</span>
+          ))}
+        </div>
+      ) : (
+        <p className="spells-summary-empty">None chosen yet</p>
+      )}
+    </div>
+  );
+}
+
+function SpellsSummaryCard({ cantripNames, cantripsKnown, spell1Names, rank1Known }) {
+  return (
+    <section className="sub-section">
+      <div className="spells-summary-card">
+        <h3 className="spells-summary-title">Spells Selected</h3>
+        <SpellsSummaryGroup label="Cantrips" names={cantripNames} known={cantripNames.length} maxKnown={cantripsKnown} />
+        <SpellsSummaryGroup label="1st-rank" names={spell1Names} known={spell1Names.length} maxKnown={rank1Known} />
+      </div>
+    </section>
+  );
+}
+
 export default function SpellsStep({ character, update }) {
   const cls = getClass(character.classId);
   const sc = cls.spellcasting;
@@ -261,19 +295,12 @@ export default function SpellsStep({ character, update }) {
             onToggle={toggleSpell1}
             idPrefix="spell1"
           />
-          <section className="sub-section">
-            <h3>Spells Selected</h3>
-            <div className="option-card small selected" style={{ cursor: 'default' }}>
-              <p className="option-desc">
-                <strong>Cantrips:</strong>{' '}
-                {character.knownCantrips.map((id) => cantripPool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
-              </p>
-              <p className="option-desc">
-                <strong>1st-rank:</strong>{' '}
-                {character.knownSpells1.map((id) => spell1Pool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
-              </p>
-            </div>
-          </section>
+          <SpellsSummaryCard
+            cantripNames={character.knownCantrips.map((id) => cantripPool.find((s) => s.id === id)?.name).filter(Boolean)}
+            cantripsKnown={sc.cantripsKnown}
+            spell1Names={character.knownSpells1.map((id) => spell1Pool.find((s) => s.id === id)?.name).filter(Boolean)}
+            rank1Known={sc.rank1Known}
+          />
         </>
       )}
     </div>

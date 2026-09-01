@@ -415,6 +415,72 @@
   margin-top: -4px;
 }
 
+/* The final "everything you picked" recap — deliberately bigger and more
+   ornamented than a regular option-card so it reads as the payoff summary
+   for the whole Spells step, not just another list item. */
+.spells-summary-card {
+  padding: 22px 26px;
+  border-radius: 14px;
+  border: 1px solid var(--accent-border);
+  background: linear-gradient(160deg, var(--panel-bg-raised), var(--panel-bg));
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(193, 141, 33, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.spells-summary-title {
+  margin: 0;
+  font-size: 1.15rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.spells-summary-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.spells-summary-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-h);
+}
+
+.spells-summary-count {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-muted);
+}
+
+.spells-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.spells-summary-chip {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.spells-summary-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .spell-search-input {
   width: 100%;
   padding: 8px 10px;
