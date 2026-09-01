@@ -135,12 +135,22 @@ export function InspectText({ text }) {
   );
 }
 
+// Fixed in a corner of the viewport (see .inspect-toggle-wrap in App.css)
+// rather than inline in the header, so it's reachable without scrolling
+// back to the top — on a long step (e.g. the Ancestry grid) the header
+// scrolls out of view almost immediately. The caption under the button
+// is there for the same reason the button moved: once it's not sitting
+// next to a page title for context, a first-time visitor needs a hint
+// that it does something at all.
 export function InspectToggle() {
   const { active, toggle } = useInspect();
   return (
-    <button type="button" className={`inspect-toggle no-print ${active ? 'active' : ''}`} onClick={toggle}>
-      <kbd>T</kbd> Inspect {active ? 'ON' : 'OFF'}
-    </button>
+    <div className="inspect-toggle-wrap no-print">
+      <button type="button" className={`inspect-toggle ${active ? 'active' : ''}`} onClick={toggle}>
+        <kbd>T</kbd> Inspect {active ? 'ON' : 'OFF'}
+      </button>
+      <span className="inspect-toggle-caption">Tap terms for definitions</span>
+    </div>
   );
 }
 

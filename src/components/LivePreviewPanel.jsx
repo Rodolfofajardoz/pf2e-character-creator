@@ -35,8 +35,12 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
 
   return (
     <aside className={`live-preview no-print ${open ? 'open' : ''}`}>
+      {/* Tap-outside-to-close, mobile only (see .live-preview-backdrop —
+          hidden entirely above the 900px breakpoint). */}
+      <div className="live-preview-backdrop" onClick={onToggle} />
       <button type="button" className="live-preview-toggle" onClick={onToggle}>
-        {character.name || 'Preview'} {open ? '▾' : '▸'}
+        <span>📋 {character.name || 'Preview'}</span>
+        <span aria-hidden="true">{open ? '✕' : '▸'}</span>
       </button>
 
       <div className="live-preview-body">

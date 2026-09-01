@@ -495,6 +495,41 @@ Two more fixes reported after trying v0.6.1:
    no visible definition) was left untouched and still uses
    `GlossaryTerm` normally.
 
+### Patch: v0.6.3 — fixed-position Inspect toggle and mobile preview sheet
+
+Two more fixes reported after trying v0.6.2, both about controls
+scrolling out of reach:
+
+1. **Inspect toggle scrolled away with the header**: on any step longer
+   than one screen (the Ancestry grid, easily), the header — and the
+   Inspect toggle inside it — scrolled out of view almost immediately,
+   so using Inspect meant scrolling all the way back up, toggling, then
+   scrolling back down to where you were. `InspectToggle` now renders as
+   `position: fixed` (`.inspect-toggle-wrap` in `App.css`) pinned to the
+   top-right corner, reachable from anywhere in a step regardless of
+   scroll position — the fix applies to desktop and mobile alike, since
+   the underlying problem (header scrolls away, toggle was inside it)
+   applied to both. Also added a small persistent caption ("Tap terms
+   for definitions") under the button, since moving it out of the header
+   removed the contextual "this is Inspect mode" framing that used to
+   sit next to it — a first-time visitor now gets a hint even without
+   that context. On screens ≤600px the header gets `padding-right` to
+   keep the (large, relative to viewport) `<h1>` from wrapping under the
+   now-floating toggle.
+2. **Mobile preview toggle had the same problem**: `LivePreviewPanel`'s
+   mobile collapse (added in v0.6.0) sat inline at the *top* of the step
+   content, so it also scrolled out of view while browsing a long list —
+   the toggle was only reachable when already scrolled to the top,
+   which defeated the point of a collapsible preview. Redesigned as a
+   fixed-position floating pill ("📋 Preview ▸") anchored bottom-right,
+   reachable from anywhere; tapping it expands into a bottom sheet
+   (`.live-preview.open`, fixed to the bottom edge, internal scroll
+   capped at `60vh`) with a semi-transparent tap-outside-to-close
+   backdrop (`.live-preview-backdrop`, mobile-only — hidden by default,
+   only rendered visually inside the ≤900px media query). Verified in
+   the browser: the FAB stays put through scrolling, opens/closes
+   correctly, and the backdrop closes it on tap.
+
 ## How to run the dev server
 
 ```bash
