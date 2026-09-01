@@ -44,6 +44,13 @@
 
 body {
   margin: 0;
+  /* Belt-and-suspenders alongside the scroll-to-top effect in App.jsx:
+     the wizard's step transition changes page height (a short step
+     replacing a tall one, or vice versa), which is exactly the situation
+     browser scroll-anchoring exists to compensate for — it's designed to
+     preserve where you were looking, which is the opposite of what a
+     deliberate "jump to the top of the new step" scroll wants. */
+  overflow-anchor: none;
 }
 
 #root {

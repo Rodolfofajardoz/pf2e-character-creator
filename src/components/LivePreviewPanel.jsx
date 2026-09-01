@@ -18,9 +18,26 @@ function profBonus(rank) {
 // section guards on the choice it needs existing yet, since this panel is
 // visible from step 1 onward when most of `character` is still empty.
 export default function LivePreviewPanel({ character, open, onToggle }) {
-  const { ancestry, background, cls, heritage, backgroundSkillId, weapon, armor, weapons, armors, scores, mods, hp, ac, perceptionMod, classDC, saves } =
-    useComputedCharacter(character);
-  const extraGearCount = Math.max(0, weapons.length - 1) + Math.max(0, armors.length - 1);
+  const {
+    ancestry,
+    background,
+    cls,
+    heritage,
+    backgroundSkillId,
+    weaponPurchases,
+    ammoPurchases,
+    armorPurchases,
+    shieldPurchases,
+    gearPurchases,
+    scores,
+    mods,
+    hp,
+    ac,
+    perceptionMod,
+    classDC,
+    saves,
+  } = useComputedCharacter(character);
+  const allPurchases = [...weaponPurchases, ...ammoPurchases, ...armorPurchases, ...shieldPurchases, ...gearPurchases];
 
   const trainedSkillIds = Array.from(
     new Set(
@@ -111,27 +128,34 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
           </div>
         )}
 
-        {(weapon || (armor && armor.category !== 'none')) && (
-          <p className="live-preview-line">
-            {weapon ? weapon.name : 'No weapon'} · {armor && armor.category !== 'none' ? armor.name : 'Unarmored'}
-            {extraGearCount > 0 ? ` (+${extraGearCount} more owned)` : ''}
-          </p>
+        {allPurchases.length > 0 && (
+          <div className="live-preview-section">
+            <span className="live-preview-label">Equipment</span>
+            <ul className="live-preview-skill-list">
+              {allPurchases.map(({ item, qty }) => (
+                <li key={item.id}>
+                  <span>{item.name}</span>
+                  <span>{qty > 1 ? `×${qty}` : ''}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {cls?.spellcasting?.cantripsKnown ? (
           <div className="live-preview-section">
             <span className="live-preview-label">Spells</span>
             <p className="live-preview-line">
+              <strong>Cantrips:</strong>{' '}
               {character.knownCantrips
                 .map((id) => CANTRIPS.find((s) => s.id === id)?.name)
                 .filter(Boolean)
-                .join(', ') || 'No cantrips yet'}
+                .join(', ') || 'None yet'}
             </p>
-            {character.knownSpells1.length > 0 && (
-              <p className="live-preview-line">
-                {character.knownSpells1.map((id) => SPELLS_RANK_1.find((s) => s.id === id)?.name).filter(Boolean).join(', ')}
-              </p>
-            )}
+            <p className="live-preview-line">
+              <strong>1st-Rank:</strong>{' '}
+              {character.knownSpells1.map((id) => SPELLS_RANK_1.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
+            </p>
           </div>
         ) : null}
 

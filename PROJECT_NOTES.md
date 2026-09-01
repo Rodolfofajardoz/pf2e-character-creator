@@ -530,6 +530,150 @@ scrolling out of reach:
    the browser: the FAB stays put through scrolling, opens/closes
    correctly, and the backdrop closes it on tap.
 
+### Patch: v0.6.4 — scroll-to-top on step change, full equipment overhaul
+
+Four more fixes:
+
+1. **Scroll to top on Next/Back/step-pill**: the wizard used to keep
+   whatever scroll position you were at (often far down, since v0.6.1's
+   auto-scroll had just brought Next into view) when moving to a new
+   step, landing you mid-page instead of at its start. `goNext`/`goBack`/
+   `goToStep` in `App.jsx` now call `window.scrollTo({top: 0, behavior:
+   'smooth'})`.
+2. **Equipment added to the live preview panel**: it previously showed
+   only the equipped weapon/armor name plus a vague "(+N more owned)."
+   Now lists everything purchased with quantities, same data the
+   Summary page's Equipment card uses (see item 4 below).
+3. **Dropped the "T" keyboard hint on mobile**: no physical keyboard to
+   press it on, so `.inspect-toggle kbd` is hidden below 600px.
+4. **Equipment step rebuilt as a real shop** — the big one:
+   - **Categorized**: Weapons split into Simple/Martial (already had a
+     `category` field, just wasn't grouped in the UI), Armor split into
+     Unarmored/Light/Medium/Heavy (same story), plus two categories that
+     didn't exist in the app at all before — **Shields** (Buckler,
+     Wooden/Steel/Tower Shield, with Hardness/HP/BT/Speed penalty) and
+     **Ammunition** (Arrows/Bolts/Sling Bullets/Blowgun Darts, sold in
+     bundles of 10 per the book).
+   - **Full Adventuring Gear catalog**: `GEAR` grew from ~28 curated
+     items to all 68 level-0 items AoN lists under Player Core's
+     Adventuring Gear category (a full pull of `item_category:
+     "Adventuring Gear"`, `level: 0`, sourced to Player Core, deduped by
+     name+price — this *is* Table 6-9, not a subset). Mount-only gear
+     (Barding) was excluded.
+   - **Quantity, not toggle**: buying is no longer binary select/
+     deselect. `character.weaponIds`/`armorIds`/`gearIds` (and the two
+     new fields, `ammoIds`/`shieldIds`) are flat arrays *with
+     repetition* — buying 2 daggers means `'dagger'` appears twice —
+     so the existing budget math (sum of prices across the array) and
+     the "first purchased is equipped" logic in `useComputedCharacter`
+     both kept working unchanged. New helpers in `equipment.js`
+     (`addOne`/`removeOne`/`countOwned`/`groupPurchases`/`totalSpent`)
+     add/remove one instance, count how many of an item are owned, and
+     collapse the flat array into `{item, qty, lineTotal}` rows for
+     display. `EquipmentStep` replaced the old toggle chips with
+     `ShopRow` — name/meta/price plus a −/qty/+ stepper — kept
+     clickable-when-unaffordable with the v0.6.1 deny-shake (now
+     `.shop-row.deny-shake`) rather than disabled, same reasoning as
+     before: a click should do *something* observable.
+   - **Receipt**: a "Your Purchases" table (Item | Qty | Price | Total)
+     at the bottom of the step, built from the same `groupPurchases`
+     helper, with a grand total and remaining gold.
+   - **Shields don't add to AC**: raising a shield is a per-turn action
+     in PF2e, not a passive bonus, so unlike armor its `acBonus` is
+     shown for reference only and deliberately left out of the AC
+     formula in `useComputedCharacter` — folding it in would silently
+     overstate a character's baseline AC.
+   - **Bug fix along the way**: `formatGold` used to round anything
+     under 1 gp down to the nearest sp (48 copper displayed as "5 sp"
+     instead of "4 sp, 8 cp"), harmless while every purchase was a
+     single item but actively wrong once quantities could produce odd
+     copper remainders — the receipt's grand total surfaced it
+     immediately. Rewritten to decompose fully into gp/sp/cp.
+   - Verified in the browser end to end: bought 2 daggers, 8 torches, a
+     steel shield, and a bundle of arrows; confirmed quantities, the
+     receipt math, an unaffordable item (Spyglass) denies with a shake
+     instead of silently failing, and the same purchases show correctly
+     on both the Summary page and the live preview panel.
+
+Four more, added to the same v0.6.4 batch before it shipped:
+
+5. **Spells in the preview panel didn't say which rank they were**:
+   `LivePreviewPanel`'s cantrip and 1st-rank lines were two unlabeled
+   paragraphs — readable once you already know the app always lists
+   cantrips first, meaningless otherwise. Added `Cantrips:`/`1st-Rank:`
+   labels, matching the wording `SpellsStep` and `SummaryStep` already
+   use.
+6. **Coin conversion reference in the shop**: a `1 gp = 10 sp = 100 cp`
+   line now sits above the gold tracker in `EquipmentStep`, so a price
+   like "5 gp" is easy to translate without doing the arithmetic by
+   hand.
+7. **Two-level shop hierarchy**: Weapons and Armor previously rendered
+   as a flat run of same-weight section headings (Simple Weapons,
+   Martial Weapons, Ammunition, Heavy Armor, Medium Armor, ...) with
+   nothing showing they were related. Added a `ShopGroup` wrapper (a
+   bigger, gold, top-bordered `<h3>`) around each: "Weapons" now
+   visually contains Simple/Martial/Ammunition as nested `<h4>`
+   subsections, "Armor" contains Heavy/Medium/Light/Unarmored —
+   reordered heaviest-first per explicit request, rather than the
+   data's own none→light→medium→heavy order. Shields and Adventuring
+   Gear got the same group-level heading treatment but no subgroups
+   (the book doesn't subdivide them, and nesting a single subsection
+   under a group would've just repeated its own title).
+8. **Inspect toggle read as two separate buttons**: the "what this
+   does" caption sat in its own pill directly under the toggle — two
+   same-sized rounded shapes stacked, only the top one clickable, so a
+   tap on the caption (which looked exactly as tappable as the real
+   button) did nothing. Merged them into one `<button>` with two
+   stacked lines instead of two elements, so there's exactly one
+   tappable shape (`InspectContext.jsx`'s `InspectToggle`, restyled in
+   `App.css`).
+
+One more, found while re-testing item 1 above on a mobile viewport after
+a user report that Next still wasn't scrolling to the top on their phone:
+
+9. **`behavior: 'smooth'` doesn't just fail to animate on some mobile
+   browsers — it fails to scroll at all.** The step-change effect (item
+   1) and `scrollIntoViewCentered` (`scrollFocus.js`, used for the
+   auto-scroll-to-next-section behavior and the scroll-to-Next-button
+   effect, both from the v0.6.1 patch) all used `{ behavior: 'smooth' }`.
+   Tested directly on a mobile viewport: `window.scrollTo({top: 0,
+   behavior: 'smooth'})` and `element.scrollIntoView({behavior: 'smooth',
+   ...})` both left `scrollY` completely unchanged — not a skipped
+   animation, a no-op. Confirmed the fix by reproducing the exact
+   scenario (scroll deep into a step, click Next, check `scrollY`): with
+   `behavior: 'smooth'` it stayed wherever it was; with a plain
+   `scrollTo(0, 0)` / `scrollIntoView({block: 'center'})` (no options
+   object) it moved every time. All three call sites now scroll
+   instantly rather than smoothly — an instant jump that reliably works
+   beats a smooth one that sometimes silently doesn't move at all. Also
+   added `overflow-anchor: none` on `body` defensively, in case a
+   browser's scroll-anchoring was fighting the jump on a step that
+   changes page height (turned out not to be the actual cause here, but
+   it's a real interaction worth guarding against regardless).
+
+## To-do list (small polish items, separate from ROADMAP.md)
+
+Not roadmap items (those are the big 9 toward v1.0, in ROADMAP.md) — just
+two smaller UI requests noted for a future session:
+
+1. **Collapsible sections for Spells (by rank) and Equipment (by
+   group)**: both lists have grown long enough (spells across ranks;
+   the equipment shop across Weapons/Armor/Shields/Adventuring Gear)
+   that being able to collapse/expand each group would help — right now
+   everything renders open at once and you scroll past whatever you're
+   not currently shopping/picking in.
+2. **Inspect support in the Equipment shop**: weapon/armor traits like
+   damage type (currently shown as bare letters — P/S/B for
+   Piercing/Slashing/Bludgeoning) and traits like Thrown or Two-Hand
+   aren't explained anywhere in the shop, unlike the rest of the app
+   where Inspect Mode covers exactly this kind of jargon. Flagged
+   directly after a screenshot of the Weapons list showing plain "P"/"S"
+   with no context — new players won't know what those mean. Likely
+   needs both new glossary entries (damage types, weapon traits) and
+   surfacing weapon/armor trait data that isn't in `equipment.js` yet
+   (only `damage` and category are modeled currently, not the full
+   trait list e.g. "Thrown 10 ft.", "Two-Hand d8", "Deadly d10").
+
 ## How to run the dev server
 
 ```bash

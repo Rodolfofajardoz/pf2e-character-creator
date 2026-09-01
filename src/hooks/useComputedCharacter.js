@@ -4,7 +4,7 @@ import { getBackground } from '../data/backgrounds';
 import { getClass } from '../data/classes';
 import { abilityMod, getBackgroundSkillInfo, PROFICIENCY_RANKS } from '../data/skills';
 import { computeFinalScores } from '../utils/abilityScores';
-import { WEAPONS, ARMORS, GEAR } from '../data/equipment';
+import { WEAPONS, ARMORS, SHIELDS, AMMUNITION, GEAR, groupPurchases, totalSpent, STARTING_GOLD } from '../data/equipment';
 
 const LEVEL = 1;
 
@@ -28,15 +28,27 @@ export function useComputedCharacter(character) {
       cls && background ? getBackgroundSkillInfo(character, cls, background).effectiveId : null;
 
     // Buying is unrestricted (a shop sells you as many weapons/armor as
-    // you can afford), but AC/Strike math still needs exactly one of
-    // each. Simplification until a real equip system exists: the first
-    // one purchased is treated as worn/wielded for calculations, while
-    // `weapons`/`armors` (plural) list everything actually owned.
-    const weapons = WEAPONS.filter((w) => character.weaponIds.includes(w.id));
-    const armors = ARMORS.filter((a) => character.armorIds.includes(a.id));
-    const weapon = weapons[0] || null;
-    const armor = armors[0] || ARMORS[0];
-    const gearItems = GEAR.filter((g) => character.gearIds.includes(g.id));
+    // you can afford, and however many of each — see equipment.js's
+    // addOne/removeOne/groupPurchases), but AC/Strike math still needs
+    // exactly one worn armor and one wielded weapon. Simplification until
+    // a real equip system exists: the first one purchased is treated as
+    // equipped for calculations, while `weaponPurchases`/`armorPurchases`
+    // (grouped, with quantities) list everything actually owned.
+    const weaponPurchases = groupPurchases(character.weaponIds, WEAPONS);
+    const armorPurchases = groupPurchases(character.armorIds, ARMORS);
+    const shieldPurchases = groupPurchases(character.shieldIds, SHIELDS);
+    const ammoPurchases = groupPurchases(character.ammoIds, AMMUNITION);
+    const gearPurchases = groupPurchases(character.gearIds, GEAR);
+    const weapon = weaponPurchases[0]?.item || null;
+    const armor = armorPurchases[0]?.item || ARMORS[0];
+
+    const goldSpent =
+      totalSpent(character.weaponIds, WEAPONS) +
+      totalSpent(character.armorIds, ARMORS) +
+      totalSpent(character.shieldIds, SHIELDS) +
+      totalSpent(character.ammoIds, AMMUNITION) +
+      totalSpent(character.gearIds, GEAR);
+    const goldRemaining = STARTING_GOLD - goldSpent;
 
     const scores = ancestry ? computeFinalScores(character, ancestry) : null;
     const mods = scores ? Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, abilityMod(v)])) : null;
@@ -75,9 +87,13 @@ export function useComputedCharacter(character) {
       backgroundSkillId,
       weapon,
       armor,
-      weapons,
-      armors,
-      gearItems,
+      weaponPurchases,
+      armorPurchases,
+      shieldPurchases,
+      ammoPurchases,
+      gearPurchases,
+      goldSpent,
+      goldRemaining,
       scores,
       mods,
       hp,

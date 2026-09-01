@@ -52,7 +52,9 @@ const initialCharacter = {
   trainedSkills: [],
   lorePicked: null,
   weaponIds: [],
+  ammoIds: [],
   armorIds: [],
+  shieldIds: [],
   gearIds: [],
 };
 
@@ -112,6 +114,27 @@ function App() {
         return true;
     }
   }, [step, character]);
+
+  // Scroll to the top of the page whenever the step changes. Lives in an
+  // effect — which fires after React commits the new step's DOM — rather
+  // than inside goNext/goBack/goToStep alongside the setStepIndex call,
+  // which fires *before* that commit.
+  //
+  // Deliberately instant, not `{ behavior: 'smooth' }`: tested on a
+  // mobile viewport and confirmed the smooth option doesn't just skip
+  // the animation there, it does nothing at all — scrollY never moves.
+  // Same root cause as scrollIntoViewCentered (see scrollFocus.js) —
+  // real mobile browsers can't be assumed to support the Scroll Behavior
+  // API, so nothing in this app should depend on it for actually
+  // reaching a position, only (at most) for how it gets there.
+  const isFirstRenderRef = useRef(true);
+  useEffect(() => {
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      return;
+    }
+    window.scrollTo(0, 0);
+  }, [stepIndex]);
 
   // Once a step's last requirement is satisfied, scroll down to the Next
   // button automatically instead of leaving the player to notice it's now

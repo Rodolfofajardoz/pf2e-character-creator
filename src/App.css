@@ -90,9 +90,9 @@
 }
 
 /* The Inspect toggle floats fixed over the top-right corner (see
-   .inspect-toggle-wrap) — reserve room for it here so the title doesn't
-   run underneath it on narrow screens, where the title's font-size is
-   still large relative to viewport width. */
+   .inspect-toggle) — reserve room for it here so the title doesn't run
+   underneath it on narrow screens, where the title's font-size is still
+   large relative to viewport width. */
 @media (max-width: 600px) {
   .app-header {
     padding-right: 96px;
@@ -830,6 +830,177 @@
   opacity: 1;
 }
 
+/* Coin conversion cheat-sheet, sitting right above the gold tracker so a
+   price like "5 gp" is easy to translate at a glance without doing the
+   arithmetic (1 gp = 10 sp, so 5 gp = 50 sp) by hand. */
+.coin-reference {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+/* Two-level shop hierarchy: .shop-group is the big category (Weapons,
+   Armor, Shields, Adventuring Gear), each holding one or more
+   .shop-subsection (Simple Weapons, Martial Weapons, Ammunition — see
+   ShopGroup/ShopSection in EquipmentStep.jsx). The group title is
+   visually heavier (bigger, gold, top border) than a normal .sub-section
+   h3 so the two heading levels stay easy to tell apart at a glance. */
+.shop-group {
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 2px solid var(--accent-border);
+}
+
+.shop-group-title {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.shop-subsection {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.shop-subsection h4 {
+  margin: 0 0 2px;
+  color: var(--text-h);
+  font-size: 0.95rem;
+}
+
+/* Equipment shop: one row per item (name/meta/price on the left, a
+   quantity stepper on the right) instead of the toggle chips used
+   elsewhere — buying is quantity-aware here (2 daggers, 8 torches, a
+   bundle of arrows...), which doesn't fit a binary selected/not chip. */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+  margin: 10px 0 0;
+}
+
+.shop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+}
+
+.shop-row.deny-shake {
+  animation: denyShake 0.42s ease;
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.shop-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.shop-row-name {
+  font-size: 0.88rem;
+  color: var(--text-h);
+}
+
+.shop-row-meta {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.shop-row-price {
+  font-size: 0.76rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.shop-row-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.stepper-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg-raised);
+  color: var(--text-h);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.stepper-btn:not(:disabled):hover {
+  border-color: var(--accent);
+}
+
+.stepper-btn:not(:disabled):active {
+  transform: scale(0.92);
+}
+
+.stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.stepper-btn.unaffordable {
+  opacity: 0.45;
+}
+
+.stepper-qty {
+  min-width: 1.4em;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+/* Receipt: item | qty | unit price | line total, as a 4-column grid so
+   every row lines up without a real <table>. */
+.receipt-table {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 4px 14px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.receipt-row {
+  display: contents;
+}
+
+.receipt-row > span {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.receipt-row > span:not(:first-child) {
+  text-align: right;
+}
+
+.receipt-header > span {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--accent-border);
+}
+
+.receipt-total > span {
+  font-weight: 700;
+  color: var(--text-h);
+  border-bottom: none;
+}
+
 /* Compact variant for trait-filter chips — same interaction/animations as
    .chip, scaled down so a long trait list doesn't dominate the picker. */
 .chip.small {
@@ -1002,8 +1173,14 @@
    it's reachable from anywhere in a step, on desktop and mobile alike
    (a long card grid scrolls the header out of view almost immediately
    otherwise). Sits above the step content but below the Inspect
-   popovers themselves and the mobile preview sheet. */
-.inspect-toggle-wrap {
+   popovers themselves and the mobile preview sheet.
+
+   The "what this does" caption used to be its own pill stacked under the
+   toggle — two separate rounded shapes read as two separate buttons, and
+   only the top one actually did anything, so a tap on the caption looked
+   reasonable but was a dead click. Both lines now live inside one
+   <button>, stacked vertically, so there's exactly one tappable shape. */
+.inspect-toggle {
   position: fixed;
   top: 14px;
   right: 14px;
@@ -1011,20 +1188,13 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
-}
-
-.inspect-toggle {
+  gap: 3px;
   padding: 7px 14px;
-  border-radius: 999px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--panel-bg-raised);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.82rem;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
   transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
 }
@@ -1033,23 +1203,30 @@
   transform: translateY(-1px);
 }
 
+.inspect-toggle-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
 .inspect-toggle-caption {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   color: var(--text-muted);
-  background: var(--panel-bg-raised);
-  padding: 2px 8px;
-  border-radius: 999px;
   white-space: nowrap;
-  opacity: 0.85;
-  max-width: 40vw;
-  text-align: right;
+}
+
+.inspect-toggle.active .inspect-toggle-caption {
+  color: var(--bg);
+  opacity: 0.75;
 }
 
 @media (max-width: 480px) {
   .inspect-toggle-caption {
     white-space: normal;
-    max-width: 30vw;
+    max-width: 32vw;
     line-height: 1.2;
+    text-align: right;
   }
 }
 
@@ -1060,6 +1237,15 @@
   border-radius: 4px;
   border: 1px solid var(--border);
   background: var(--panel-bg-raised);
+}
+
+/* The "T" keyboard shortcut hint is meaningless on a touchscreen — no
+   physical keyboard to press it on — so it's dropped below the
+   breakpoint where touch is the primary input. */
+@media (max-width: 600px) {
+  .inspect-toggle kbd {
+    display: none;
+  }
 }
 
 .inspect-toggle.active {

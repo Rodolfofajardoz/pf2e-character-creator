@@ -1,118 +1,285 @@
 import { useState } from 'react';
-import { WEAPONS, ARMORS, GEAR, STARTING_GOLD, formatGold } from '../../data/equipment';
+import {
+  WEAPONS,
+  WEAPON_CATEGORY_LABELS,
+  AMMUNITION,
+  ARMORS,
+  ARMOR_CATEGORY_LABELS,
+  SHIELDS,
+  GEAR,
+  STARTING_GOLD,
+  formatGold,
+  countOwned,
+  addOne,
+  removeOne,
+  totalSpent,
+  groupPurchases,
+} from '../../data/equipment';
 
-// How long the "can't afford this" shake/flash lasts before the chip
-// settles back to its normal (muted, still-clickable) look.
+// How long the "can't afford this" shake/flash lasts before the row
+// settles back to normal.
 const DENY_SHAKE_MS = 420;
+
+// Splits a catalog (WEAPONS or ARMORS) into one array per `category`
+// value, used to render "Simple Weapons" / "Martial Weapons" etc. as
+// separate shop sections instead of one long undifferentiated list.
+// `order` picks the display order; defaults to categoryLabels' own key
+// order when the data's natural order already reads fine (weapons).
+function groupByCategory(items, categoryLabels, order = Object.keys(categoryLabels)) {
+  return order.map((cat) => ({
+    key: cat,
+    label: categoryLabels[cat],
+    items: items.filter((i) => i.category === cat),
+  }));
+}
+
+function ShopRow({ item, qty, remaining, deniedId, onAdd, onRemove }) {
+  const unaffordable = item.price > remaining;
+  return (
+    <div className={`shop-row ${deniedId === item.id ? 'deny-shake' : ''}`}>
+      <div className="shop-row-info">
+        <span className="shop-row-name">{item.name}</span>
+        {item.damage && <span className="shop-row-meta">{item.damage}</span>}
+        {item.acBonus !== undefined && item.category !== undefined && (
+          <span className="shop-row-meta">AC +{item.acBonus}</span>
+        )}
+        {item.hardness !== undefined && (
+          <span className="shop-row-meta">
+            Hardness {item.hardness}, HP {item.hp} (BT {item.bt}){item.speedPenalty ? `, ${item.speedPenalty} Speed` : ''}
+          </span>
+        )}
+        <span className="shop-row-price">{formatGold(item.price)}</span>
+      </div>
+      <div className="shop-row-stepper">
+        <button type="button" className="stepper-btn" onClick={() => onRemove(item.id)} disabled={qty === 0} aria-label={`Remove one ${item.name}`}>
+          −
+        </button>
+        <span className="stepper-qty">{qty}</span>
+        <button
+          type="button"
+          className={`stepper-btn ${unaffordable ? 'unaffordable' : ''}`}
+          onClick={() => onAdd(item)}
+          aria-label={`Add one ${item.name}`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// h4 (not h3) since these nest one level under a .shop-group's h3 — see
+// the Weapons/Armor groups below. Sections rendered directly under the
+// step (Shields, Adventuring Gear) don't have that parent, but keeping
+// the heading level consistent everywhere is simpler than branching it.
+function ShopSection({ title, items, ownedIds, remaining, deniedId, onAdd, onRemove }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="sub-section shop-subsection">
+      <h4>{title}</h4>
+      <div className="shop-grid">
+        {items.map((item) => (
+          <ShopRow
+            key={item.id}
+            item={item}
+            qty={countOwned(ownedIds, item.id)}
+            remaining={remaining}
+            deniedId={deniedId}
+            onAdd={onAdd}
+            onRemove={onRemove}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Groups multiple ShopSections under one bigger heading — "Weapons"
+// containing Simple/Martial/Ammunition, "Armor" containing Heavy/Medium/
+// Light/Unarmored — so the two big catalogs read as organized categories
+// instead of one long undifferentiated scroll of section headings.
+function ShopGroup({ title, children }) {
+  return (
+    <div className="shop-group">
+      <h3 className="shop-group-title">{title}</h3>
+      {children}
+    </div>
+  );
+}
 
 export default function EquipmentStep({ character, update }) {
   const [deniedId, setDeniedId] = useState(null);
 
-  // It's a shop: buying is unrestricted (as many weapons, armor, or gear
-  // as the budget allows), same toggle-on/toggle-off model for all three
-  // categories. Which one you're actually wearing/wielding is a separate
-  // "equip" concern this step doesn't handle — see useComputedCharacter,
-  // which treats the first purchased weapon/armor as worn for AC/Strike
-  // math until a real equip system exists.
-  const weaponItems = WEAPONS.filter((w) => character.weaponIds.includes(w.id));
-  const armorItems = ARMORS.filter((a) => character.armorIds.includes(a.id));
-  const gearItems = GEAR.filter((g) => character.gearIds.includes(g.id));
-
   const spent =
-    weaponItems.reduce((sum, w) => sum + w.price, 0) +
-    armorItems.reduce((sum, a) => sum + a.price, 0) +
-    gearItems.reduce((sum, g) => sum + g.price, 0);
+    totalSpent(character.weaponIds, WEAPONS) +
+    totalSpent(character.ammoIds, AMMUNITION) +
+    totalSpent(character.armorIds, ARMORS) +
+    totalSpent(character.shieldIds, SHIELDS) +
+    totalSpent(character.gearIds, GEAR);
   const remaining = STARTING_GOLD - spent;
 
-  // Rather than disabling an unaffordable chip outright (which silently
-  // swallows the click and gives no feedback about *why* nothing
-  // happened), it stays clickable but denies the purchase with a brief
-  // shake + red flash, so picking something you can't afford is obviously
-  // rejected instead of looking identical to picking nothing at all.
   function denyShake(id) {
     setDeniedId(id);
     setTimeout(() => setDeniedId((cur) => (cur === id ? null : cur)), DENY_SHAKE_MS);
   }
 
-  function toggle(listKey, id, item) {
-    const current = character[listKey];
-    if (current.includes(id)) {
-      update({ [listKey]: current.filter((x) => x !== id) });
-    } else if (remaining >= item.price) {
-      update({ [listKey]: [...current, id] });
-    } else {
-      denyShake(id);
-    }
+  // One add/remove pair per list, all sharing the same shape: buying
+  // pushes one more instance of the id (denying with a shake if it's not
+  // affordable), selling pops one instance (always allowed — you already
+  // own it). `listKey` is the character field name (weaponIds, gearIds...).
+  function makeHandlers(listKey) {
+    return {
+      onAdd: (item) => {
+        if (item.price > remaining) {
+          denyShake(item.id);
+          return;
+        }
+        update({ [listKey]: addOne(character[listKey], item.id) });
+      },
+      onRemove: (id) => update({ [listKey]: removeOne(character[listKey], id) }),
+    };
   }
+
+  const weaponHandlers = makeHandlers('weaponIds');
+  const ammoHandlers = makeHandlers('ammoIds');
+  const armorHandlers = makeHandlers('armorIds');
+  const shieldHandlers = makeHandlers('shieldIds');
+  const gearHandlers = makeHandlers('gearIds');
+
+  const weaponGroups = groupByCategory(WEAPONS, WEAPON_CATEGORY_LABELS);
+  // Heaviest-to-lightest — most players think "what tier of armor" before
+  // "what's cheap," so leading with Heavy reads better than the ascending
+  // none→light→medium→heavy order the data itself happens to be in.
+  const armorGroups = groupByCategory(ARMORS, ARMOR_CATEGORY_LABELS, ['heavy', 'medium', 'light', 'none']);
+
+  const receipt = [
+    ...groupPurchases(character.weaponIds, WEAPONS),
+    ...groupPurchases(character.ammoIds, AMMUNITION),
+    ...groupPurchases(character.armorIds, ARMORS),
+    ...groupPurchases(character.shieldIds, SHIELDS),
+    ...groupPurchases(character.gearIds, GEAR),
+  ];
 
   return (
     <div className="step">
       <h2>Starting Equipment</h2>
       <p className="hint">
-        You start with {STARTING_GOLD} gp to spend. Buy anything you can afford — a shop doesn't care how many
-        weapons or suits of armor you walk out with, only what you actually wear or wield is a separate matter.
-        Prices are approximate — double-check exact values against the Equipment chapter of the rulebook before
-        using them at the table.
+        You start with {STARTING_GOLD} gp to spend. Buy anything you can afford, in whatever quantity you want — a
+        shop doesn't care how many weapons, arrows, or torches you walk out with, only what you actually wear or
+        wield is a separate matter. Prices are approximate — double-check exact values against the Equipment
+        chapter of the rulebook before using them at the table.
       </p>
+      <p className="coin-reference">1 gp = 10 sp = 100 cp</p>
       <p className="gold-tracker">
         Spent: {formatGold(spent)} · Remaining: <strong>{formatGold(remaining)}</strong>
       </p>
 
-      <section className="sub-section">
-        <h3>Weapon</h3>
-        <div className="chip-row">
-          {WEAPONS.map((w) => {
-            const owned = character.weaponIds.includes(w.id);
-            const unaffordable = !owned && w.price > remaining;
-            return (
-              <button
-                key={w.id}
-                className={`chip ${owned ? 'selected' : ''} ${unaffordable ? 'unaffordable' : ''} ${deniedId === w.id ? 'deny-shake' : ''}`}
-                onClick={() => toggle('weaponIds', w.id, w)}
-              >
-                {w.name} ({w.damage}) — {formatGold(w.price)}
-              </button>
-            );
-          })}
+      <ShopGroup title="Weapons">
+        {weaponGroups.map((g) => (
+          <ShopSection
+            key={g.key}
+            title={g.label}
+            items={g.items}
+            ownedIds={character.weaponIds}
+            remaining={remaining}
+            deniedId={deniedId}
+            {...weaponHandlers}
+          />
+        ))}
+        <ShopSection
+          title="Ammunition"
+          items={AMMUNITION}
+          ownedIds={character.ammoIds}
+          remaining={remaining}
+          deniedId={deniedId}
+          {...ammoHandlers}
+        />
+      </ShopGroup>
+
+      <ShopGroup title="Armor">
+        {armorGroups.map((g) => (
+          <ShopSection
+            key={g.key}
+            title={g.label}
+            items={g.items}
+            ownedIds={character.armorIds}
+            remaining={remaining}
+            deniedId={deniedId}
+            {...armorHandlers}
+          />
+        ))}
+      </ShopGroup>
+
+      {/* Shields and Adventuring Gear don't have book subcategories the
+          way Weapons/Armor do, so they're a single flat shop-grid under
+          one heading rather than a ShopGroup wrapping a ShopSection —
+          that combo would just repeat the same title twice. */}
+      <section className="sub-section shop-group">
+        <h3 className="shop-group-title">Shields</h3>
+        <div className="shop-grid">
+          {SHIELDS.map((item) => (
+            <ShopRow
+              key={item.id}
+              item={item}
+              qty={countOwned(character.shieldIds, item.id)}
+              remaining={remaining}
+              deniedId={deniedId}
+              {...shieldHandlers}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="sub-section shop-group">
+        <h3 className="shop-group-title">Adventuring Gear</h3>
+        <div className="shop-grid">
+          {GEAR.map((item) => (
+            <ShopRow
+              key={item.id}
+              item={item}
+              qty={countOwned(character.gearIds, item.id)}
+              remaining={remaining}
+              deniedId={deniedId}
+              {...gearHandlers}
+            />
+          ))}
         </div>
       </section>
 
       <section className="sub-section">
-        <h3>Armor</h3>
-        <div className="chip-row">
-          {ARMORS.map((a) => {
-            const owned = character.armorIds.includes(a.id);
-            const unaffordable = !owned && a.price > remaining;
-            return (
-              <button
-                key={a.id}
-                className={`chip ${owned ? 'selected' : ''} ${unaffordable ? 'unaffordable' : ''} ${deniedId === a.id ? 'deny-shake' : ''}`}
-                onClick={() => toggle('armorIds', a.id, a)}
-              >
-                {a.name} (AC +{a.acBonus}) — {formatGold(a.price)}
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="sub-section">
-        <h3>Adventuring Gear</h3>
-        <div className="chip-row">
-          {GEAR.map((g) => {
-            const owned = character.gearIds.includes(g.id);
-            const unaffordable = !owned && g.price > remaining;
-            return (
-              <button
-                key={g.id}
-                className={`chip ${owned ? 'selected' : ''} ${unaffordable ? 'unaffordable' : ''} ${deniedId === g.id ? 'deny-shake' : ''}`}
-                onClick={() => toggle('gearIds', g.id, g)}
-              >
-                {g.name} — {formatGold(g.price)}
-              </button>
-            );
-          })}
-        </div>
+        <h3>Your Purchases</h3>
+        {receipt.length === 0 ? (
+          <p className="hint">Nothing bought yet.</p>
+        ) : (
+          <div className="receipt-table">
+            <div className="receipt-row receipt-header">
+              <span>Item</span>
+              <span>Qty</span>
+              <span>Price</span>
+              <span>Total</span>
+            </div>
+            {receipt.map(({ item, qty, lineTotal }) => (
+              <div className="receipt-row" key={item.id}>
+                <span>{item.name}</span>
+                <span>{qty}</span>
+                <span>{formatGold(item.price)}</span>
+                <span>{formatGold(lineTotal)}</span>
+              </div>
+            ))}
+            <div className="receipt-row receipt-total">
+              <span>Grand total</span>
+              <span></span>
+              <span></span>
+              <span>{formatGold(spent)}</span>
+            </div>
+            <div className="receipt-row receipt-total">
+              <span>Remaining</span>
+              <span></span>
+              <span></span>
+              <span>{formatGold(remaining)}</span>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );

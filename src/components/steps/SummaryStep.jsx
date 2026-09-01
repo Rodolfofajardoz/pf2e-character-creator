@@ -23,9 +23,11 @@ export default function SummaryStep({ character, update, onRestart }) {
     backgroundSkillId,
     weapon,
     armor,
-    weapons,
-    armors,
-    gearItems,
+    weaponPurchases,
+    armorPurchases,
+    shieldPurchases,
+    ammoPurchases,
+    gearPurchases,
     scores,
     mods,
     hp,
@@ -208,13 +210,24 @@ export default function SummaryStep({ character, update, onRestart }) {
           <h3>Equipment</h3>
           <p>Weapon (equipped): {weapon ? `${weapon.name} (${weapon.damage})` : 'None'}</p>
           <p>Armor (worn): {armor.name}</p>
-          {(weapons.length > 1 || armors.length > 1) && (
+          {(weaponPurchases.length > 1 || armorPurchases.length > 1) && (
             <p className="hint">
-              Also purchased: {[...weapons.slice(1), ...armors.slice(1)].map((i) => i.name).join(', ')} — AC/Strike
-              math above uses only the first weapon/armor bought; the rest are just owned for now.
+              AC/Strike math above uses only the first weapon/armor bought — the rest are just owned for now.
             </p>
           )}
-          <p>Other items: {gearItems.map((g) => g.name).join(', ') || 'None'}</p>
+          <ul className="plain-list">
+            {[...weaponPurchases, ...ammoPurchases, ...armorPurchases, ...shieldPurchases, ...gearPurchases].map(
+              ({ item, qty }) => (
+                <li key={item.id}>
+                  {item.name}
+                  {qty > 1 ? ` ×${qty}` : ''}
+                </li>
+              )
+            )}
+            {weaponPurchases.length + ammoPurchases.length + armorPurchases.length + shieldPurchases.length + gearPurchases.length === 0 && (
+              <li>Nothing purchased</li>
+            )}
+          </ul>
         </div>
       </section>
 
