@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import { CLASSES, getClass } from '../../data/classes';
 import { SKILLS } from '../../data/skills';
 import { InspectText, GlossaryTerm, AbilityTerm } from '../../context/InspectContext';
+import { scrollIntoViewCentered } from '../../utils/scrollFocus';
 
 const RANK_LABELS = {
   trained: 'Trained',
@@ -10,6 +12,30 @@ const RANK_LABELS = {
 
 export default function ClassStep({ character, update }) {
   const cls = character.classId ? getClass(character.classId) : null;
+
+  const keyAbilityRef = useRef(null);
+  const skillChoiceRef = useRef(null);
+  const classFeatRef = useRef(null);
+  const bonusFeatRef = useRef(null);
+
+  const needsBonusFeat = Boolean(cls && cls.feats1.length > 0 && character.ancestryFeat?.grantsClassFeat);
+
+  const focusKey = !cls
+    ? null
+    : cls.keyAbility.length > 1 && !character.classKeyAbility
+    ? 'keyAbility'
+    : cls.fixedSkillChoiceOptions && !character.classSkillChoice
+    ? 'skillChoice'
+    : cls.feats1.length > 0 && !character.classFeat
+    ? 'classFeat'
+    : needsBonusFeat && !character.bonusClassFeat
+    ? 'bonusFeat'
+    : null;
+
+  useEffect(() => {
+    const refs = { keyAbility: keyAbilityRef, skillChoice: skillChoiceRef, classFeat: classFeatRef, bonusFeat: bonusFeatRef };
+    if (focusKey) scrollIntoViewCentered(refs[focusKey]);
+  }, [focusKey]);
 
   function selectClass(id) {
     const c = getClass(id);
@@ -57,7 +83,7 @@ export default function ClassStep({ character, update }) {
       {cls && (
         <div key={cls.id} className="reveal-group">
           {cls.keyAbility.length > 1 && (
-            <section className="sub-section">
+            <section className="sub-section" ref={keyAbilityRef}>
               <h3>Key ability</h3>
               <p className="hint">Choose which of the following will be your class's key ability score.</p>
               <div className="chip-row">
@@ -121,7 +147,7 @@ export default function ClassStep({ character, update }) {
           </section>
 
           {cls.fixedSkillChoiceOptions && (
-            <section className="sub-section">
+            <section className="sub-section" ref={skillChoiceRef}>
               <h3>Choose your class-granted skill</h3>
               <p className="hint">{cls.fixedSkillChoice}</p>
               <div className="chip-row">
@@ -138,7 +164,7 @@ export default function ClassStep({ character, update }) {
             </section>
           )}
 
-          <section className="sub-section">
+          <section className="sub-section" ref={classFeatRef}>
             <h3>Class Feat (1st level)</h3>
             {cls.feats1.length === 0 ? (
               <p className="option-desc">
@@ -162,7 +188,7 @@ export default function ClassStep({ character, update }) {
           </section>
 
           {character.ancestryFeat?.grantsClassFeat && (
-            <section className="sub-section">
+            <section className="sub-section" ref={bonusFeatRef}>
               <h3>Bonus Class Feat (from Natural Ambition)</h3>
               {cls.feats1.length === 0 ? (
                 <p className="option-desc">

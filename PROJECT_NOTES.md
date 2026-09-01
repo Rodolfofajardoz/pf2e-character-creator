@@ -430,6 +430,39 @@ consumes that hook and renders next to the current step (`App.jsx`'s new
 `.layout-row`) on every step except Summary. Below a 900px viewport it
 collapses into a `Preview ▸` toggle instead of a fixed side column.
 
+### Patch: v0.6.1 — three UX fixes reported after trying v0.6.0
+
+1. **Live preview trained skills weren't Inspect-able**: `LivePreviewPanel`
+   rendered skill names as plain text instead of wrapping them in
+   `GlossaryTerm` like every other skill mention in the app. Fixed.
+2. **Unaffordable equipment gave no feedback**: `EquipmentStep` used to
+   `disable` a weapon/armor/gear chip you couldn't afford, which silently
+   swallows the click — no error, nothing, easy to mistake for "my
+   previous pick got cleared" when it's actually just doing nothing.
+   Chips are no longer `disabled`; they stay clickable, and clicking an
+   unaffordable one triggers a brief shake + red flash (`.deny-shake`,
+   `denyShake()` in `EquipmentStep.jsx`) via a `deniedId` state cleared
+   after 420ms, then settles back to its normal muted (`.unaffordable`)
+   look. The already-selected item is untouched either way — confirmed
+   in-browser that selecting a cheap weapon then clicking an unaffordable
+   armor leaves the weapon selected and only shakes the armor chip.
+3. **No auto-scroll through a step's sub-sections**: `AncestryStep`,
+   `BackgroundStep`, and `ClassStep` (the three step files with a
+   `reveal-group` of progressively-relevant sub-sections) now compute a
+   `focusKey` — the next sub-section still missing a choice, in reading
+   order — and smoothly center it (`scrollIntoViewCentered`,
+   `src/utils/scrollFocus.js`) whenever that key changes, so finishing one
+   choice scrolls you straight to the next instead of leaving you to hunt
+   for what just unlocked. Separately, `App.jsx` scrolls down to the Next
+   button itself the moment a step's last requirement is satisfied
+   (tracked via a prev-value ref so it only fires on the false→true
+   transition, not on every render or when arriving at an
+   already-complete step). `AbilityScoresStep`, `SkillsStep`, and
+   `EquipmentStep` weren't given this treatment — they don't have a
+   `reveal-group` chain of sub-sections gating each other the way the
+   other three do, just one flat set of choices each, so there's no
+   "next sub-section" to jump to.
+
 ## How to run the dev server
 
 ```bash

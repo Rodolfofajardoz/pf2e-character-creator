@@ -1,11 +1,32 @@
+import { useEffect, useRef } from 'react';
 import { BACKGROUNDS, getBackground } from '../../data/backgrounds';
 import { ABILITIES, SKILLS } from '../../data/skills';
 import { InspectText, GlossaryTerm, AbilityTerm } from '../../context/InspectContext';
+import { scrollIntoViewCentered } from '../../utils/scrollFocus';
 
 export default function BackgroundStep({ character, update }) {
   const background = character.backgroundId ? getBackground(character.backgroundId) : null;
   const fixedSkillId = background?.skillChoice ? character.backgroundSkillChoice : background?.skill;
   const skillName = fixedSkillId ? SKILLS.find((s) => s.id === fixedSkillId)?.name : null;
+
+  const chosenBoostRef = useRef(null);
+  const freeBoostRef = useRef(null);
+  const skillChoiceRef = useRef(null);
+
+  const focusKey = !background
+    ? null
+    : !character.backgroundChosenBoost
+    ? 'chosenBoost'
+    : !character.backgroundFreeBoost
+    ? 'freeBoost'
+    : background.skillChoice && !character.backgroundSkillChoice
+    ? 'skillChoice'
+    : null;
+
+  useEffect(() => {
+    const refs = { chosenBoost: chosenBoostRef, freeBoost: freeBoostRef, skillChoice: skillChoiceRef };
+    if (focusKey) scrollIntoViewCentered(refs[focusKey]);
+  }, [focusKey]);
 
   function selectBackground(id) {
     update({
@@ -59,7 +80,7 @@ export default function BackgroundStep({ character, update }) {
 
       {background && (
         <div key={background.id} className="reveal-group">
-          <section className="sub-section">
+          <section className="sub-section" ref={chosenBoostRef}>
             <h3>Chosen boost</h3>
             <p className="hint">Choose one of your background's two options.</p>
             <div className="chip-row">
@@ -76,7 +97,7 @@ export default function BackgroundStep({ character, update }) {
           </section>
 
           {character.backgroundChosenBoost && (
-            <section className="sub-section">
+            <section className="sub-section" ref={freeBoostRef}>
               <h3>Free boost</h3>
               <p className="hint">Choose any other ability score (different from the one above).</p>
               <div className="chip-row">
@@ -94,7 +115,7 @@ export default function BackgroundStep({ character, update }) {
           )}
 
           {background.skillChoice && (
-            <section className="sub-section">
+            <section className="sub-section" ref={skillChoiceRef}>
               <h3>Choice of skill</h3>
               <p className="hint">This background lets you choose which of these skills to train.</p>
               <div className="chip-row">

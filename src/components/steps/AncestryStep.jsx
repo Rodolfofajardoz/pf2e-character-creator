@@ -1,12 +1,41 @@
+import { useEffect, useRef } from 'react';
 import { ANCESTRIES, getAncestry } from '../../data/ancestries';
 import { ABILITIES } from '../../data/skills';
 import { GENERAL_FEATS } from '../../data/generalFeats';
 import { InspectText, GlossaryTerm, AbilityTerm, AbilityTermList } from '../../context/InspectContext';
+import { scrollIntoViewCentered } from '../../utils/scrollFocus';
 
 export default function AncestryStep({ character, update }) {
   const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
   const heritage = ancestry?.heritages.find((h) => h.id === character.heritageId);
   const needsGeneralFeat = Boolean(heritage?.grantsGeneralFeat || character.ancestryFeat?.grantsGeneralFeat);
+
+  const boostsRef = useRef(null);
+  const heritageRef = useRef(null);
+  const featRef = useRef(null);
+  const generalFeatRef = useRef(null);
+
+  // The next sub-section still missing a choice, in reading order — the
+  // player is guided to it automatically instead of having to scroll and
+  // hunt for what just unlocked. Only advances when a requirement flips
+  // from unmet to met, so it doesn't re-scroll on every click within the
+  // same section.
+  const focusKey = !ancestry
+    ? null
+    : ancestry.boosts.free > 0 && character.ancestryFreeBoosts.length < ancestry.boosts.free
+    ? 'boosts'
+    : !character.heritageId
+    ? 'heritage'
+    : !character.ancestryFeat
+    ? 'feat'
+    : needsGeneralFeat && !character.generalFeatChoice
+    ? 'generalFeat'
+    : null;
+
+  useEffect(() => {
+    const refs = { boosts: boostsRef, heritage: heritageRef, feat: featRef, generalFeat: generalFeatRef };
+    if (focusKey) scrollIntoViewCentered(refs[focusKey]);
+  }, [focusKey]);
 
   function selectAncestry(id) {
     update({
@@ -64,7 +93,7 @@ export default function AncestryStep({ character, update }) {
       {ancestry && (
         <div key={ancestry.id} className="reveal-group">
           {ancestry.boosts.free > 0 && (
-            <section className="sub-section">
+            <section className="sub-section" ref={boostsRef}>
               <h3>Free Ancestry Boost(s)</h3>
               <p className="hint">
                 Choose {ancestry.boosts.free} ability score(s) other than the fixed ones (
@@ -85,7 +114,7 @@ export default function AncestryStep({ character, update }) {
             </section>
           )}
 
-          <section className="sub-section">
+          <section className="sub-section" ref={heritageRef}>
             <h3>Heritage</h3>
             <div className="card-grid">
               {ancestry.heritages.map((h) => (
@@ -101,7 +130,7 @@ export default function AncestryStep({ character, update }) {
             </div>
           </section>
 
-          <section className="sub-section">
+          <section className="sub-section" ref={featRef}>
             <h3>Ancestry Feat (1st level)</h3>
             <div className="card-grid">
               {ancestry.feats1.map((f) => (
@@ -118,7 +147,7 @@ export default function AncestryStep({ character, update }) {
           </section>
 
           {needsGeneralFeat && (
-            <section className="sub-section">
+            <section className="sub-section" ref={generalFeatRef}>
               <h3>Choose a General Feat</h3>
               <p className="hint">
                 {heritage?.grantsGeneralFeat ? heritage.name : character.ancestryFeat.name} lets you pick any

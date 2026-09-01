@@ -732,6 +732,39 @@
   cursor: not-allowed;
 }
 
+/* Equipment chips that cost more than the remaining budget stay clickable
+   (see .deny-shake below) rather than being disabled outright, so a click
+   can actually respond instead of silently doing nothing. */
+.chip.unaffordable {
+  opacity: 0.45;
+}
+
+@keyframes denyShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+.chip.deny-shake {
+  animation: denyShake 0.42s ease;
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger);
+  opacity: 1;
+}
+
 /* Compact variant for trait-filter chips — same interaction/animations as
    .chip, scaled down so a long trait list doesn't dominate the picker. */
 .chip.small {

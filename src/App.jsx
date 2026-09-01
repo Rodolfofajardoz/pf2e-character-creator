@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 import AncestryStep from './components/steps/AncestryStep';
 import BackgroundStep from './components/steps/BackgroundStep';
@@ -15,6 +15,7 @@ import { getAncestry } from './data/ancestries';
 import { abilityMod, getSkillPoolSize, getBackgroundSkillInfo } from './data/skills';
 import { computeFinalScores } from './utils/abilityScores';
 import { InspectProvider, InspectToggle, InspectPopovers } from './context/InspectContext';
+import { scrollIntoViewCentered } from './utils/scrollFocus';
 
 const STEPS = [
   { id: 'ancestry', label: '1. Ancestry' },
@@ -112,6 +113,22 @@ function App() {
     }
   }, [step, character]);
 
+  // Once a step's last requirement is satisfied, scroll down to the Next
+  // button automatically instead of leaving the player to notice it's now
+  // enabled and scroll there themselves. Only fires on the false->true
+  // transition (tracked via prevCanGoNextRef) so it doesn't yank the page
+  // on steps that start out already satisfied — e.g. navigating back to a
+  // step you'd already finished, or steps with nothing required at all.
+  const nextBtnRef = useRef(null);
+  const prevCanGoNextRef = useRef(canGoNext);
+  useEffect(() => {
+    const wasReady = prevCanGoNextRef.current;
+    prevCanGoNextRef.current = canGoNext;
+    if (!wasReady && canGoNext && step.id !== 'summary') {
+      scrollIntoViewCentered(nextBtnRef);
+    }
+  }, [canGoNext, step.id]);
+
   function update(patch) {
     setCharacter((c) => ({ ...c, ...patch }));
   }
@@ -183,7 +200,7 @@ function App() {
             Back
           </button>
           {step.id !== 'summary' && (
-            <button onClick={goNext} disabled={!canGoNext} className="btn primary">
+            <button ref={nextBtnRef} onClick={goNext} disabled={!canGoNext} className="btn primary">
               Next
             </button>
           )}

@@ -98,7 +98,7 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
                 if (!skill) return null;
                 return (
                   <li key={id}>
-                    {skill.name} {mod(mods[skill.ability] + profBonus('trained'))}
+                    <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm> {mod(mods[skill.ability] + profBonus('trained'))}
                   </li>
                 );
               })}
