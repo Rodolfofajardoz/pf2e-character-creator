@@ -5,8 +5,11 @@ export default function EquipmentStep({ character, update }) {
   const armor = ARMORS.find((a) => a.id === character.armorId) || ARMORS[0];
   const gearItems = GEAR.filter((g) => character.gearIds.includes(g.id));
 
-  const spent = (weapon?.price || 0) + (armor?.price || 0) + gearItems.reduce((sum, g) => sum + g.price, 0);
+  const gearSpent = gearItems.reduce((sum, g) => sum + g.price, 0);
+  const spent = (weapon?.price || 0) + (armor?.price || 0) + gearSpent;
   const remaining = STARTING_GOLD - spent;
+  const budgetExcludingWeapon = STARTING_GOLD - (armor?.price || 0) - gearSpent;
+  const budgetExcludingArmor = STARTING_GOLD - (weapon?.price || 0) - gearSpent;
 
   function toggleGear(id) {
     const item = GEAR.find((g) => g.id === id);
@@ -36,6 +39,7 @@ export default function EquipmentStep({ character, update }) {
               key={w.id}
               className={`chip ${character.weaponId === w.id ? 'selected' : ''}`}
               onClick={() => update({ weaponId: w.id })}
+              disabled={character.weaponId !== w.id && w.price > budgetExcludingWeapon}
             >
               {w.name} ({w.damage}) — {formatGold(w.price)}
             </button>
@@ -51,6 +55,7 @@ export default function EquipmentStep({ character, update }) {
               key={a.id}
               className={`chip ${character.armorId === a.id ? 'selected' : ''}`}
               onClick={() => update({ armorId: a.id })}
+              disabled={character.armorId !== a.id && a.price > budgetExcludingArmor}
             >
               {a.name} (AC +{a.acBonus}) — {formatGold(a.price)}
             </button>

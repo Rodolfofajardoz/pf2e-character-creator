@@ -2,9 +2,11 @@ import { useMemo } from 'react';
 import { getAncestry } from '../../data/ancestries';
 import { getBackground } from '../../data/backgrounds';
 import { getClass } from '../../data/classes';
-import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, abilityMod } from '../../data/skills';
+import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, abilityMod, getBackgroundSkillInfo } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
 import { WEAPONS, ARMORS, GEAR } from '../../data/equipment';
+import { InspectText, GlossaryTerm } from '../../context/InspectContext';
+import { ABILITY_TERM_ID } from '../../data/glossary';
 
 const LEVEL = 1;
 
@@ -21,7 +23,7 @@ export default function SummaryStep({ character, update, onRestart }) {
   const background = getBackground(character.backgroundId);
   const cls = getClass(character.classId);
   const heritage = ancestry.heritages.find((h) => h.id === character.heritageId);
-  const backgroundSkillId = background.skillChoice ? character.backgroundSkillChoice : background.skill;
+  const { effectiveId: backgroundSkillId } = getBackgroundSkillInfo(character, cls, background);
   const weapon = WEAPONS.find((w) => w.id === character.weaponId);
   const armor = ARMORS.find((a) => a.id === character.armorId) || ARMORS[0];
   const gearItems = GEAR.filter((g) => character.gearIds.includes(g.id));
@@ -31,7 +33,8 @@ export default function SummaryStep({ character, update, onRestart }) {
 
   const hp = ancestry.hp + cls.hp + mods.con;
   const dexCap = armor.dexCap === null ? Infinity : armor.dexCap;
-  const armorProfRank = armor.category === 'none' ? cls.unarmoredProficiency || 'trained' : 'trained';
+  const isProficientInArmor = armor.category === 'none' || (cls.armorProficiency || []).includes(armor.category);
+  const armorProfRank = armor.category === 'none' ? cls.unarmoredProficiency || 'trained' : isProficientInArmor ? 'trained' : 'untrained';
   const ac = 10 + Math.min(mods.dex, dexCap) + armor.acBonus + profBonus(armorProfRank);
   const perceptionMod = mods.wis + profBonus(cls.perception);
   const classDCAbility = character.classKeyAbility;
@@ -60,8 +63,21 @@ export default function SummaryStep({ character, update, onRestart }) {
             {ancestry.name} ({heritage?.name}) — {cls.name}
           </p>
           <p>Background: {background.name}</p>
-          <p>Level {LEVEL} · HP {hp} · Size {ancestry.size} · Speed {ancestry.speed} feet</p>
+          <p>
+            Level {LEVEL} · <GlossaryTerm id="hit-points">HP</GlossaryTerm> {hp} · Size {ancestry.size} ·{' '}
+            <GlossaryTerm id="speed">Speed</GlossaryTerm> {ancestry.speed} feet
+          </p>
           <p>Languages: {ancestry.languages.join(', ')}</p>
+          {ancestry.abilities?.length > 0 && (
+            <p>
+              {ancestry.abilities.map((ab, i) => (
+                <span key={ab.name}>
+                  {i > 0 ? ' ' : ''}
+                  <strong>{ab.name}:</strong> <InspectText text={ab.desc} />
+                </span>
+              ))}
+            </p>
+          )}
         </div>
 
         <div className="sheet-card">
@@ -70,7 +86,9 @@ export default function SummaryStep({ character, update, onRestart }) {
             {ABILITY_LABELS &&
               Object.keys(ABILITY_LABELS).map((a) => (
                 <div key={a} className="ability-box final" title={ABILITY_LABELS[a]}>
-                  <span className="ability-label">{a.toUpperCase()}</span>
+                  <span className="ability-label">
+                    <GlossaryTerm id={ABILITY_TERM_ID[a]}>{a.toUpperCase()}</GlossaryTerm>
+                  </span>
                   <span className="ability-score">{scores[a]}</span>
                   <span className="ability-mod">{mod(mods[a])}</span>
                 </div>
@@ -80,28 +98,54 @@ export default function SummaryStep({ character, update, onRestart }) {
 
         <div className="sheet-card">
           <h3>Defenses</h3>
-          <p>Armor Class (approx.): {ac}</p>
-          <p>Perception: {mod(perceptionMod)} ({PROFICIENCY_RANKS[cls.perception].label})</p>
           <p>
-            Saving Throws: Fortitude {mod(mods.con + profBonus(cls.saves.fort))}, Reflex{' '}
-            {mod(mods.dex + profBonus(cls.saves.ref))}, Will {mod(mods.wis + profBonus(cls.saves.will))}
+            <GlossaryTerm id="armor-class">Armor Class</GlossaryTerm> (approx.): {ac}
+            {!isProficientInArmor && ' (untrained in this armor — your class doesn\'t train that category)'}
           </p>
           <p>
-            Class DC: {classDC} ({ABILITY_LABELS[classDCAbility]})
+            <GlossaryTerm id="perception">Perception</GlossaryTerm>: {mod(perceptionMod)} (
+            <GlossaryTerm id={cls.perception}>{PROFICIENCY_RANKS[cls.perception].label}</GlossaryTerm>)
+          </p>
+          <p>
+            <GlossaryTerm id="saving-throw">Saving Throws</GlossaryTerm>:{' '}
+            <GlossaryTerm id="fortitude">Fortitude</GlossaryTerm> {mod(mods.con + profBonus(cls.saves.fort))},{' '}
+            <GlossaryTerm id="reflex">Reflex</GlossaryTerm> {mod(mods.dex + profBonus(cls.saves.ref))},{' '}
+            <GlossaryTerm id="will">Will</GlossaryTerm> {mod(mods.wis + profBonus(cls.saves.will))}
+          </p>
+          <p>
+            <GlossaryTerm id="class-dc">Class DC</GlossaryTerm>: {classDC} (
+            <GlossaryTerm id={ABILITY_TERM_ID[classDCAbility]}>{ABILITY_LABELS[classDCAbility]}</GlossaryTerm>)
           </p>
         </div>
 
         <div className="sheet-card">
           <h3>Feats</h3>
           <p>
-            <strong>Ancestry:</strong> {character.ancestryFeat?.name} — {character.ancestryFeat?.desc}
+            <strong>Ancestry:</strong> {character.ancestryFeat?.name} — <InspectText text={character.ancestryFeat?.desc} />
+          </p>
+          {character.generalFeatChoice && (
+            <p>
+              <strong>General:</strong> {character.generalFeatChoice.name} — <InspectText text={character.generalFeatChoice.desc} />
+            </p>
+          )}
+          <p>
+            <strong>Background:</strong> {background.feat.name} — <InspectText text={background.feat.desc} />
           </p>
           <p>
-            <strong>Background:</strong> {background.feat.name} — {background.feat.desc}
+            <strong>Class:</strong>{' '}
+            {character.classFeat ? (
+              <>
+                {character.classFeat.name} — <InspectText text={character.classFeat.desc} />
+              </>
+            ) : (
+              'None at 1st level (gained at 2nd level instead)'
+            )}
           </p>
-          <p>
-            <strong>Class:</strong> {character.classFeat?.name} — {character.classFeat?.desc}
-          </p>
+          {character.bonusClassFeat && (
+            <p>
+              <strong>Bonus (Natural Ambition):</strong> {character.bonusClassFeat.name} — <InspectText text={character.bonusClassFeat.desc} />
+            </p>
+          )}
         </div>
 
         <div className="sheet-card">
@@ -111,24 +155,32 @@ export default function SummaryStep({ character, update, onRestart }) {
               const skill = SKILLS.find((sk) => sk.id === s);
               return (
                 <li key={s}>
-                  {skill.name}: {mod(mods[skill.ability] + profBonus('trained'))}
+                  <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm>: {mod(mods[skill.ability] + profBonus('trained'))}
                 </li>
               );
             })}
+            {character.classSkillChoice && (
+              <li>
+                <GlossaryTerm id={character.classSkillChoice}>
+                  {SKILLS.find((sk) => sk.id === character.classSkillChoice)?.name}
+                </GlossaryTerm>:{' '}
+                {mod(mods[SKILLS.find((sk) => sk.id === character.classSkillChoice)?.ability] + profBonus('trained'))}
+              </li>
+            )}
             <li>
-              {SKILLS.find((sk) => sk.id === backgroundSkillId)?.name}:{' '}
+              <GlossaryTerm id={backgroundSkillId}>{SKILLS.find((sk) => sk.id === backgroundSkillId)?.name}</GlossaryTerm>:{' '}
               {mod(mods[SKILLS.find((sk) => sk.id === backgroundSkillId)?.ability] + profBonus('trained'))}
             </li>
             {character.trainedSkills.map((id) => {
               const skill = SKILLS.find((sk) => sk.id === id);
               return (
                 <li key={id}>
-                  {skill.name}: {mod(mods[skill.ability] + profBonus('trained'))}
+                  <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm>: {mod(mods[skill.ability] + profBonus('trained'))}
                 </li>
               );
             })}
             <li>
-              {background.lore}: {mod(mods.int + profBonus('trained'))} (Lore uses Intelligence)
+              {background.lore}: {mod(mods.int + profBonus('trained'))} (<GlossaryTerm id="lore">Lore</GlossaryTerm> uses Intelligence)
             </li>
           </ul>
         </div>

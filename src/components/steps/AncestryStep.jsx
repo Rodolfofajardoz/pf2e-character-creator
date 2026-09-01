@@ -1,8 +1,12 @@
 import { ANCESTRIES, getAncestry } from '../../data/ancestries';
-import { ABILITY_LABELS, ABILITIES } from '../../data/skills';
+import { ABILITIES } from '../../data/skills';
+import { GENERAL_FEATS } from '../../data/generalFeats';
+import { InspectText, GlossaryTerm, AbilityTerm, AbilityTermList } from '../../context/InspectContext';
 
 export default function AncestryStep({ character, update }) {
   const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
+  const heritage = ancestry?.heritages.find((h) => h.id === character.heritageId);
+  const needsGeneralFeat = Boolean(heritage?.grantsGeneralFeat || character.ancestryFeat?.grantsGeneralFeat);
 
   function selectAncestry(id) {
     update({
@@ -10,6 +14,7 @@ export default function AncestryStep({ character, update }) {
       heritageId: null,
       ancestryFeat: null,
       ancestryFreeBoosts: [],
+      generalFeatChoice: null,
     });
   }
 
@@ -36,26 +41,34 @@ export default function AncestryStep({ character, update }) {
             onClick={() => selectAncestry(a.id)}
           >
             <h3>{a.name}</h3>
-            <p className="option-desc">{a.description}</p>
+            <p className="option-desc"><InspectText text={a.description} /></p>
             <p className="option-meta">
-              HP {a.hp} · {a.size} · Speed {a.speed} feet
+              <GlossaryTerm id="hit-points">HP</GlossaryTerm> {a.hp} · {a.size} · <GlossaryTerm id="speed">Speed</GlossaryTerm> {a.speed} feet
             </p>
             <p className="option-meta">
-              Boosts: {a.boosts.fixed.map((b) => ABILITY_LABELS[b]).join(', ') || '—'}
+              Boosts: <AbilityTermList codes={a.boosts.fixed} />
               {a.boosts.free > 0 ? ` + ${a.boosts.free} free` : ''}
-              {a.flaw ? ` · Flaw: ${ABILITY_LABELS[a.flaw]}` : ' · No flaw'}
+              {a.flaw ? (
+                <>
+                  {' '}
+                  · Flaw: <AbilityTerm code={a.flaw} />
+                </>
+              ) : (
+                ' · No flaw'
+              )}
             </p>
           </button>
         ))}
       </div>
 
       {ancestry && (
-        <>
+        <div key={ancestry.id} className="reveal-group">
           {ancestry.boosts.free > 0 && (
             <section className="sub-section">
               <h3>Free Ancestry Boost(s)</h3>
               <p className="hint">
-                Choose {ancestry.boosts.free} ability score(s) other than the fixed ones ({ancestry.boosts.fixed.map((b) => ABILITY_LABELS[b]).join(', ') || 'none'}).
+                Choose {ancestry.boosts.free} ability score(s) other than the fixed ones (
+                <AbilityTermList codes={ancestry.boosts.fixed} empty="none" />).
               </p>
               <div className="chip-row">
                 {ABILITIES.filter((ab) => !ancestry.boosts.fixed.includes(ab)).map((ab) => (
@@ -65,7 +78,7 @@ export default function AncestryStep({ character, update }) {
                     onClick={() => toggleFreeBoost(ab)}
                     disabled={!character.ancestryFreeBoosts.includes(ab) && character.ancestryFreeBoosts.length >= ancestry.boosts.free}
                   >
-                    {ABILITY_LABELS[ab]}
+                    <AbilityTerm code={ab} />
                   </button>
                 ))}
               </div>
@@ -79,10 +92,10 @@ export default function AncestryStep({ character, update }) {
                 <button
                   key={h.id}
                   className={`option-card small ${character.heritageId === h.id ? 'selected' : ''}`}
-                  onClick={() => update({ heritageId: h.id })}
+                  onClick={() => update({ heritageId: h.id, generalFeatChoice: null })}
                 >
                   <h4>{h.name}</h4>
-                  <p className="option-desc">{h.desc}</p>
+                  <p className="option-desc"><InspectText text={h.desc} /></p>
                 </button>
               ))}
             </div>
@@ -95,21 +108,55 @@ export default function AncestryStep({ character, update }) {
                 <button
                   key={f.name}
                   className={`option-card small ${character.ancestryFeat?.name === f.name ? 'selected' : ''}`}
-                  onClick={() => update({ ancestryFeat: f })}
+                  onClick={() => update({ ancestryFeat: f, generalFeatChoice: null })}
                 >
                   <h4>{f.name}</h4>
-                  <p className="option-desc">{f.desc}</p>
+                  <p className="option-desc"><InspectText text={f.desc} /></p>
                 </button>
               ))}
             </div>
           </section>
+
+          {needsGeneralFeat && (
+            <section className="sub-section">
+              <h3>Choose a General Feat</h3>
+              <p className="hint">
+                {heritage?.grantsGeneralFeat ? heritage.name : character.ancestryFeat.name} lets you pick any
+                general feat you qualify for. Prerequisites are shown for reference but not enforced here.
+              </p>
+              <div className="card-grid">
+                {GENERAL_FEATS.map((f) => (
+                  <button
+                    key={f.id}
+                    className={`option-card small ${character.generalFeatChoice?.id === f.id ? 'selected' : ''}`}
+                    onClick={() => update({ generalFeatChoice: f })}
+                  >
+                    <h4>{f.name}</h4>
+                    {f.prereq && <p className="option-meta">Prerequisite: {f.prereq}</p>}
+                    <p className="option-desc"><InspectText text={f.desc} /></p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="sub-section">
             <h3>Languages and senses</h3>
             <p>Languages: {ancestry.languages.join(', ')}</p>
             <p>Senses: {ancestry.senses.join(', ') || 'None special'}</p>
           </section>
-        </>
+
+          {ancestry.abilities?.length > 0 && (
+            <section className="sub-section">
+              <h3>Innate Abilities</h3>
+              {ancestry.abilities.map((ab) => (
+                <p key={ab.name}>
+                  <strong>{ab.name}:</strong> <InspectText text={ab.desc} />
+                </p>
+              ))}
+            </section>
+          )}
+        </div>
       )}
     </div>
   );

@@ -18,7 +18,7 @@ export const BACKGROUNDS = [
     boostChoice: ['str', 'dex'],
     skill: 'acrobatics',
     lore: 'Circus Lore',
-    feat: { name: 'Steady Balance', desc: 'You\'re never flat-footed while Balancing, and your successes at Balance become critical successes.' },
+    feat: { name: 'Steady Balance', desc: 'You\'re never off-guard while Balancing, and your successes at Balance become critical successes.' },
   },
   {
     id: 'animal-whisperer',

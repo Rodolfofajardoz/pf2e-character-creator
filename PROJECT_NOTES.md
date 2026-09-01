@@ -13,19 +13,125 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
 ## Current status (as of this note)
 
 - **16 classes** (all of Player Core 1 + 2) with verified 1st-level
-  proficiencies (Perception, saves, Class DC, weapons, armor, skills) and a
-  handful of real 1st-level class feats each.
-- **8 ancestries**: Dwarf, Elf, Gnome, Goblin, Halfling, Human, Leshy, Orc —
-  with verified ability boosts/flaw, heritages, and 1st-level feats.
+  proficiencies (Perception, saves, Class DC, weapons, armor, skills), and
+  every single `feats1` entry individually re-verified against Archives of
+  Nethys (real mechanical text, not just a plausible-sounding paraphrase).
+  An earlier pass had a real data-quality problem: a noticeable fraction of
+  feat descriptions across many classes were outright fabricated —
+  mechanics that sounded right but didn't match the actual feat at all
+  (e.g. Monk's Tiger Stance/Wolf Stance/Mountain Stance, Cleric's Harming
+  Hands/Healing Hands/Holy Castigation, Champion's Unimpeded Step/Vicious
+  Vengeance, Oracle's Foretell Harm/Nudge the Scales, Rogue's and
+  Swashbuckler's You're Next, Investigator's Flexible Studies/Takedown
+  Expert, and the shared Reach Spell/Widen Spell text reused by 6 classes).
+  All of these were caught and rewritten by systematically querying AoN's
+  search index (see "AoN scraping notes" below) and comparing every feat
+  name against its real text — not just spot-checking. If you add more
+  feats1 entries later (e.g. for leveling past 1, phase 4), verify each one
+  the same way rather than writing a plausible summary from memory.
+- **16 ancestries**: the 8 Core Rulebook ones (Dwarf, Elf, Gnome, Goblin,
+  Halfling, Human, Leshy, Orc) plus all 8 Player Core 2 "uncommon" ones
+  (Catfolk, Hobgoblin, Kholo, Kobold, Lizardfolk, Ratfolk, Tengu, Tripkee) —
+  all with verified ability boosts/flaw, heritages, and 1st-level feats.
+  The uncommon 8 also have an `abilities` array in `src/data/ancestries.js`
+  for innate ancestry features (bonus unarmed attacks, bonus feats, etc.)
+  that aren't a heritage or feat choice — shown in a new "Innate Abilities"
+  section in `AncestryStep.jsx` and folded into the Identity card in
+  `SummaryStep.jsx`. The original 8 didn't need this field.
 - **35 general backgrounds** — verified one-by-one against Archives of
   Nethys (name, boost choice, skill, Lore, and the real skill feat).
-- **Equipment**: a curated ~30-item list (12 weapons, 12 armors, 12 gear
-  items) with prices verified against the Core Rulebook's equipment tables.
+- **Equipment**: 47 weapons (17 simple + 30 martial), 13 armors, and 29
+  adventuring gear items, all with prices/categories re-verified against AoN
+  (`src/data/equipment.js`). This pass caught two pre-existing data bugs:
+  **Shortbow was miscategorized as Simple** (it's Martial) and the toolkits
+  were named "Tools" instead of the correct "Toolkit" (prices were already
+  right on both). `formatGold()` was also fixed to render gp+sp combos
+  (e.g. 1.5 → "1 gp, 5 sp") instead of a raw decimal.
+- **84 general feats** (`src/data/generalFeats.js`, level 1 only, verified
+  against AoN) with a picker wired into `AncestryStep.jsx` for the two
+  1st-level spots that grant a free choice of general feat: Human's
+  "Versatile Heritage" heritage and "General Training" ancestry feat (both
+  flagged `grantsGeneralFeat: true` in the data). Turned out no skill-feat
+  catalog was needed — every "skill feat" grant already in the data names a
+  specific feat, there's no open player choice among them at level 1.
 - A working ability-boost calculator (ancestry → background → class → 4 free
   boosts, remaster rules) and a final character sheet with computed HP, AC,
   Perception, saves, Class DC, and skill modifiers.
 - A **Print / Save as PDF** button on the summary screen (uses the browser's
   native print dialog — pick "Save as PDF" as the destination).
+- **Human's "Natural Ambition" ancestry feat is wired up** (was the loose
+  end from the general-feats pass). Since Ancestry comes before Class in the
+  wizard, this "bonus 1st-level class feat" pick is deferred to `ClassStep`
+  — a `grantsClassFeat: true` flag on the feat data triggers a second class
+  feat picker there once a class (and its `feats1`) is known, stored as
+  `character.bonusClassFeat`.
+- **Full correctness audit pass** (bonus math + full-flow retesting) found
+  and fixed 4 real bugs, none of which were in the "known gaps" list:
+  1. **AC used Trained proficiency for *any* worn armor**, even armor
+     outside the class's actual proficiency (e.g. a Wizard in Full Plate
+     showed AC as if trained). Added `armorProficiency: [...]` per class in
+     `classes.js` (Cleric defaults to the Cloistered baseline — doctrine
+     isn't modeled) and `SummaryStep.jsx` now uses Untrained (bonus 0) for
+     out-of-category armor, with an inline "(untrained in this armor...)"
+     note so it's not silently wrong.
+  2. **Fighter's guaranteed "Acrobatics or Athletics" skill was never
+     enforced** — it was folded into the free skill-pool *count* with no
+     requirement that the player actually pick one of those two, so it
+     could be skipped entirely. Gave Fighter a dedicated
+     `fixedSkillChoiceOptions: ['acrobatics','athletics']` array and a
+     required picker in `ClassStep` (mirrors how background skill choices
+     already work), validated before advancing. Sorcerer/Witch keep the old
+     "abstract bonus, no specific skills" behavior since their choice
+     depends on bloodline/patron, which isn't modeled.
+  3. **The Skills step had no validation at all** — `App.jsx`'s
+     `canGoNext` fell through to `default: true` for it, so you could reach
+     Summary with unfilled trained-skill slots. Added a real check
+     (`trainedSkills.length === poolSize`, via a new shared
+     `getSkillPoolSize()` helper in `data/skills.js` used by both
+     `SkillsStep` and `App.jsx`).
+  4. **Weapon/armor selection ignored the 15 gp budget entirely** — only
+     the generic "Adventuring Gear" list checked `remaining >= price`;
+     picking an expensive weapon *and* expensive armor could blow well past
+     15 gp with no warning (and `formatGold` would render the negative
+     remainder as nonsense like "-200 cp"). `EquipmentStep.jsx` now disables
+     any weapon/armor option that would exceed the budget once the other
+     two categories' costs are accounted for.
+  All other computed values (HP, ability-boost order/18+ rule, Perception,
+  saving throws, Class DC, skill modifiers, proficiency-bonus formula) were
+  checked against the remaster rules and are correct as originally written.
+- **"Inspect" mode** (press **T**, or click the toggle in the header —
+  modeled on Baldur's Gate 3's Inspect): while active, rules jargon in
+  feat/heritage/ancestry/skill text becomes clickable and opens a popover
+  with a plain-English definition. Definitions can reference further terms,
+  which stack additional popovers (closed individually, with Escape, or by
+  toggling Inspect off). New files: `src/data/glossary.js` (~55 terms:
+  proficiency ranks, bonus types, defenses, conditions, feat categories, and
+  all 16 skills), `src/utils/glossaryTokenizer.js` (splits text into
+  term/non-term chunks via a longest-match-first regex), and
+  `src/context/InspectContext.jsx` (the mode toggle, popover stack state,
+  and the `<InspectText>` / `<GlossaryTerm>` / `<InspectToggle>` /
+  `<InspectPopovers>` components). Matching is **case-sensitive on
+  purpose** — glossary `term` strings must be capitalized exactly as they
+  should appear in source text, which avoids false positives like the
+  common word "will" matching the Will save, or "hidden" in "hidden traps"
+  matching the Hidden condition. `GlossaryTerm` renders as a `<span
+  role="button">`, not a real `<button>`, specifically because these get
+  embedded inside description text that's often already inside a clickable
+  `option-card` `<button>` — nesting real buttons is invalid HTML and
+  browsers mangle it.
+- **Committed dark theme**, modeled on a D&D Beyond character sheet
+  screenshot the user shared: near-black page background (`--bg`), cards
+  filled with a lighter solid panel color (`--panel-bg` /
+  `--panel-bg-raised` for selected/raised state) instead of just a border on
+  transparent, and near-white body/heading text. Previously the app followed
+  `prefers-color-scheme` and had no light-mode-only fallback worth keeping,
+  so `index.css` now sets the dark palette directly on `:root` rather than
+  behind a media query. Glossary terms (Inspect Mode) got their own
+  `--inspect` yellow (`#ffd60a`), deliberately distinct from the app's
+  purple `--accent`, so "this is clickable" reads clearly against the new
+  panel backgrounds. The print stylesheet (`@media print`) still forces
+  white/black regardless of theme — verify sheet-card/ability-box/prof-grid
+  print rules stay in sync if you add new panel-styled components.
 
 ## Data sources (so you know what's authoritative vs. approximate)
 
@@ -42,67 +148,133 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
   terminology shifted from "ability" to "attribute"), Leshy/Orc
   heritages+ancestry boosts, the Witch class's proficiencies, and all 35
   backgrounds' exact skill/Lore/feat text.
-- **The Witch class has no source at all** — it's only in Player Core 1,
-  which the user doesn't have. Its proficiencies *are* verified (via AoN),
-  but its four 1st-level feat names are made up placeholders, clearly marked
-  `unverifiedFeats: true` in `src/data/classes.js` (shows a ⚠ warning in the
-  UI).
+- **The Witch class has no owned source** — it's only in Player Core, which
+  the user doesn't have a copy of. Fully verified via AoN instead: its
+  proficiencies were already correct, and its `feats1` turned out to need no
+  placeholder data at all — per AoN (Player Core pg. 178), the Witch is one
+  of the few classes that grants **no class feat at 1st level** (its first
+  witch feat comes at 2nd level, alongside patron/familiar/hexes already
+  covering 1st level). `feats1` is now `[]`, and `App.jsx`/`ClassStep.jsx`/
+  `SummaryStep.jsx` were updated to treat an empty `feats1` as valid instead
+  of blocking progression or showing `undefined — undefined`.
 
 ### AoN scraping notes (useful if you continue verifying data)
 
-- AoN's **search/listing pages** (`Feats.aspx?Traits=X`, `Backgrounds.aspx`
-  with no ID, `Weapons.aspx`, etc.) render an empty results shell when
-  fetched programmatically — the actual list is populated by JS that doesn't
-  run for a plain fetch/WebFetch call. **Don't waste time on these.**
+- **Best method by far: query AoN's own Elasticsearch index directly**, from
+  a `javascript_tool`/browser-console `fetch()` call while any `2e.aonprd.com`
+  page is open (same-origin, no CORS issues). This is what actually worked
+  for pulling all 8 uncommon ancestries' full mechanics + heritages + 1st-
+  level feats in a handful of calls — **don't bother with the listing-page
+  scraping tricks below first**, try this.
+  ```js
+  const res = await fetch('https://elasticsearch.aonprd.com/aon/_search?stats=searchbar', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      query: { bool: { must: [
+        { term: { category: 'feat' } },        // or 'ancestry', 'heritage', 'class', 'weapon', 'armor', 'equipment', etc.
+        { match_phrase: { trait: 'Catfolk' } }, // trait/name/text support match_phrase; exact fields use term
+        { term: { level: 1 } },
+        { match_phrase: { primary_source: 'Player Core 2' } }, // filters out legacy/pre-remaster duplicates
+      ] } },
+      _source: ['name', 'text', 'level', 'source'], // trim the payload; omit for everything
+      size: 30,
+    }),
+  });
+  const data = await res.json();
+  data.hits.hits.map(h => h._source);
+  ```
+  Useful fields seen on docs: `category`, `name`, `text` (plain-text rules
+  text, ready to trim into a `desc`), `level`, `primary_source` (use this to
+  pick the remaster version over `source: "Advanced Player's Guide"` /
+  `"Ancestry Guide"` legacy duplicates — legacy docs have a `remaster_id`
+  pointing at the current one), `trait` (array, used for ancestry-restricted
+  feats), `hp`/`attribute`/`attribute_flaw`/`speed_raw` (on `ancestry` docs).
+  Heritage docs have **no field linking them to their ancestry** — filter by
+  `wildcard: {'name.keyword': '* <Noun>'}` instead (e.g. `'* Catfolk'`, but
+  Ratfolk heritages are named `'* Rat'`, not `'* Ratfolk'` — check the actual
+  names first with a broader query if a count looks low).
+- AoN's own **search/listing pages** (`Feats.aspx?Traits=X`, `Backgrounds.aspx`
+  with no ID, `Weapons.aspx`, etc.) get stuck forever on "Loading Deck" in
+  the browser console (an Elm app) and render an empty results shell —
+  true even with a real JS-executing browser tool, not just plain
+  fetch/WebFetch. **Don't waste time on these**; query Elasticsearch instead.
 - **Individual item detail pages** (`Ancestries.aspx?ID=N`,
-  `Backgrounds.aspx?ID=N`, `Classes.aspx?ID=N`, `Heritages.aspx?Ancestry=N`)
-  render fully server-side and work great with a real browser tool.
-- Fastest extraction pattern found: navigate to the page, then run this in
-  the page via a JS-eval tool to strip the nav boilerplate:
+  `Backgrounds.aspx?ID=N`, `Classes.aspx?ID=N`, `Heritages.aspx?Ancestry=N`,
+  `Feats.aspx?ID=N`) render fully server-side and work great with a real
+  browser tool — useful for spot-checking a single item, or when you don't
+  yet know the right Elasticsearch field to filter on.
+- Fastest extraction pattern for a detail page: navigate to it, then run
+  this via a JS-eval tool to strip the nav boilerplate:
   ```js
   document.body.innerText.slice(
     document.body.innerText.indexOf('Legacy version here.'),
     document.body.innerText.indexOf('Site Owner:')
   ).trim()
   ```
+- **Don't filter out feats with an `archetype` field to find "real" class
+  feats** — that field means "also selectable via this archetype," not
+  "archetype-only." A genuine class feat (e.g. Monk's Crane Stance,
+  Alchemist's Blowgun Poisoner) can still carry `archetype: [...]` because
+  some archetype (Martial Artist, Poisoner, etc.) happens to grant the same
+  feat. Filtering it out just silently drops real results. If you need to
+  tell "class feat" apart from "archetype-only feat," there isn't a clean
+  field for it — cross-check against the class's own feat list page instead
+  (`Classes.aspx?ID=N` → the "___ Feats" link's `Traits=` id), or just
+  trust that a feat sharing the class's own trait (e.g. `"Monk"` in
+  `trait`) at the right level is legitimate.
 - Background IDs run sequentially from 1 (Acolyte) through the 35 general
   backgrounds, then continue into rare ones (gaps exist, e.g. ID 31 was
-  "not found"). Ancestry IDs: Dwarf=59, Elf=60, Gnome=61, Goblin=62,
-  Halfling=63, Human=64, Leshy=65, Orc=66 (see the full list captured
-  earlier in this project's chat history if you need uncommon ancestries).
+  "not found"). Ancestry IDs (remaster): Dwarf=59, Elf=60, Gnome=61,
+  Goblin=62, Halfling=63, Human=64, Leshy=65, Orc=66, Catfolk=77,
+  Hobgoblin=78, Kholo=79, Kobold=80, Lizardfolk=81, Ratfolk=82, Tengu=83,
+  Tripkee=84.
 
 ## Known gaps / things NOT implemented yet
 
-1. **General & skill feats catalog** — doesn't exist. This means ancestry
-   heritages/feats that grant a general feat (e.g. Human's "Versatile
-   Heritage") don't actually let you pick one; the app just shows the text.
-2. **Spellcasting selection** — no spell lists, no picking known/prepared
+1. **Spellcasting selection** — no spell lists, no picking known/prepared
    spells for casters. The summary shows *that* a class casts spells and
-   from which tradition, but not *which* spells.
-3. **No leveling past 1** — this is strictly a level-1 builder.
-4. **8 ancestries missing** from Player Core 2's "uncommon" list: Catfolk,
-   Hobgoblin, Kholo, Kobold, Lizardfolk, Ratfolk, Tengu, Tripkee. (Data is in
-   the user's Player Core 2 PDF, just not extracted yet.)
-5. **Minor display quirk**: if your class and background both train the same
-   skill, the summary lists that skill twice instead of applying the real
-   rule (train a *different* skill of your choice instead). Not fixed yet.
-6. **AC approximation**: `SummaryStep.jsx` assumes Trained armor proficiency
-   for everyone except the Monk (hardcoded `unarmoredProficiency: 'expert'`
-   flag). If a future class/feat grants Expert+ armor at level 1, this will
-   under-report AC — same fix pattern as the Monk one.
+   from which tradition, but not *which* spells. **(next up — phase 3)**
+2. **No leveling past 1** — this is strictly a level-1 builder. (phase 4)
+3. **AC Expert+ armor not modeled**: no class/feat in this app's level-1
+   data actually grants Expert+ *armor* proficiency (only the Monk's
+   Expert *unarmored* proficiency, which is handled), so this doesn't
+   currently under-report anything — **nothing to actually fix today**, just
+   a reminder: if a future addition (leveling, an archetype) grants it,
+   `armorProficiency` in `classes.js` needs an upgrade path beyond the
+   current binary trained/untrained (same fix pattern as `unarmoredProficiency`).
+
+### Fixed: background/class skill collision (was gap #3)
+
+If your class and background trained the *same* skill (e.g. Cleric +
+Acolyte both train Religion), the summary used to list it twice instead of
+applying the real rule: **"if you'd become trained in a skill you're
+already trained in, you instead train a different skill of your choice."**
+
+Fixed via `getBackgroundSkillInfo()` in `src/data/skills.js` — since
+Background comes before Class in the wizard, the collision can only be
+detected once both are known, so it's resolved in `SkillsStep.jsx`: when a
+collision exists, a new "Background skill substitute" picker appears
+(any skill not already trained), stored as
+`character.backgroundSkillSubstitute`. `App.jsx`'s `canGoNext` for the
+`skills` step now requires that substitute when applicable, and
+`SummaryStep.jsx` uses the same helper so the sheet reflects the
+substituted skill instead of the phantom duplicate. Verified live with
+Cleric + Acolyte (both train Religion).
 
 ## Agreed phase order for continuing (per user's earlier decision)
 
-1. Remaining 8 ancestries (Player Core 2) + full equipment catalog + verify
-   Witch feats via AoN.
-2. General & skill feats catalog.
-3. Spellcasting (spell lists + selection).
+1. ~~Remaining 8 ancestries (Player Core 2)~~ done, ~~verify Witch feats via
+   AoN~~ done, ~~full equipment catalog~~ done. **Phase 1 complete.**
+2. ~~General & skill feats catalog~~ done (turned out to be general feats
+   only — see Known Gaps for the one remaining loose end, "Natural
+   Ambition"). **Phase 2 complete.**
+3. Spellcasting (spell lists + selection). **(next up)**
 4. Leveling 2–20.
 
 ## How to run the dev server
 
 ```powershell
-cd "C:\Users\Rodol\Documents\dnd\Campaña – El Juicio del Tejido\pf2e-character-creator"
+cd "C:\Users\Rodol\OneDrive\Documents\dnd\Apps\pf2e-character-creator"
 npm.cmd run dev
 ```
 

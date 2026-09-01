@@ -1,10 +1,87 @@
 .app {
-  max-width: 1100px;
+  /* Fluid width: grows with the viewport (so the card grids below can use
+     more columns on wide monitors) but caps out at 1800px and never
+     touches the very edge of the screen. `width: 100%` is needed alongside
+     `margin: 0 auto` because #root is itself a column flex container —
+     auto margins on the cross axis of a flex item disable stretch, which
+     without an explicit width shrinks .app to fit its content instead of
+     filling the available (then max-width-capped) space. */
+  width: 100%;
+  max-width: min(1800px, 94vw);
   margin: 0 auto;
   padding: 24px 20px 80px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  box-sizing: border-box;
+}
+
+/* Shared animations — selection "pop" for cards/chips/pills/toggles,
+   fade-up for step transitions, and a quick pop-in for Inspect popovers. */
+@keyframes selectPop {
+  0% {
+    transform: scale(0.94);
+  }
+  60% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes slideInForward {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInBack {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
 
 .app-header h1 {
@@ -14,7 +91,7 @@
 
 .subtitle {
   margin: 0;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -27,21 +104,30 @@
 .step-pill {
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid #7773;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.step-pill:not(:disabled):hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
 }
 
 .step-pill.active {
-  background: #6c5ce7;
-  color: white;
-  border-color: #6c5ce7;
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 600;
+  animation: selectPop 0.25s ease;
 }
 
 .step-pill.done {
-  border-color: #6c5ce7;
-  color: #6c5ce7;
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .step-pill:disabled {
@@ -49,12 +135,55 @@
   opacity: 0.5;
 }
 
+.step {
+  animation: fadeInUp 0.3s ease;
+}
+
+/* Directional step transitions: Next slides the new step in from the
+   right, Back slides it in from the left — set by App.jsx on
+   .step-content based on which button was pressed (or which pill was
+   clicked, relative to the current step). */
+.step-content.dir-forward .step {
+  animation: slideInForward 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.step-content.dir-back .step {
+  animation: slideInBack 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Staggered reveal: sections that appear below a card grid once you make a
+   selection (heritage, feats, etc.) fade/slide in one after another
+   instead of all popping in at once. */
+.reveal-group > .sub-section {
+  animation: fadeInUp 0.35s ease both;
+}
+
+.reveal-group > .sub-section:nth-of-type(1) {
+  animation-delay: 0.02s;
+}
+.reveal-group > .sub-section:nth-of-type(2) {
+  animation-delay: 0.08s;
+}
+.reveal-group > .sub-section:nth-of-type(3) {
+  animation-delay: 0.14s;
+}
+.reveal-group > .sub-section:nth-of-type(4) {
+  animation-delay: 0.2s;
+}
+.reveal-group > .sub-section:nth-of-type(5) {
+  animation-delay: 0.26s;
+}
+.reveal-group > .sub-section:nth-of-type(6) {
+  animation-delay: 0.32s;
+}
+
 .step h2 {
   margin-top: 0;
+  color: var(--text-h);
 }
 
 .hint {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-size: 0.9rem;
   margin-top: -6px;
 }
@@ -70,12 +199,24 @@
   text-align: left;
   padding: 14px;
   border-radius: 10px;
-  border: 1px solid #7773;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}
+
+.option-card:hover {
+  border-color: var(--accent-border);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+.option-card:active {
+  transform: translateY(0);
 }
 
 .option-card.small {
@@ -85,22 +226,26 @@
 .option-card h3,
 .option-card h4 {
   margin: 0;
+  color: var(--text-h);
 }
 
 .option-card.selected {
-  border-color: #6c5ce7;
-  background: #6c5ce71a;
+  border-color: var(--accent);
+  background: var(--panel-bg-raised);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+  animation: selectPop 0.25s ease;
 }
 
 .option-desc {
   font-size: 0.85rem;
-  opacity: 0.85;
+  color: var(--text);
+  opacity: 0.9;
   margin: 0;
 }
 
 .option-meta {
   font-size: 0.8rem;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -113,11 +258,12 @@
 .sub-section {
   margin-top: 22px;
   padding-top: 14px;
-  border-top: 1px solid #7773;
+  border-top: 1px solid var(--border);
 }
 
 .sub-section h3 {
   margin-top: 0;
+  color: var(--text-h);
 }
 
 .chip-row {
@@ -129,16 +275,29 @@
 .chip {
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid #7773;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.chip:not(:disabled):hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.chip:not(:disabled):active {
+  transform: translateY(0) scale(0.96);
 }
 
 .chip.selected {
-  background: #6c5ce7;
-  color: white;
-  border-color: #6c5ce7;
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+  font-weight: 600;
+  animation: selectPop 0.25s ease;
 }
 
 .chip:disabled {
@@ -153,6 +312,13 @@
   font-size: 0.9rem;
 }
 
+.prof-grid > div {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
 .ability-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -165,32 +331,36 @@
 
 .ability-box {
   min-width: 0;
-  border: 1px solid #7773;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
   border-radius: 8px;
   padding: 8px 4px;
   text-align: center;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .ability-box.final {
-  border-color: #6c5ce7;
+  border-color: var(--accent);
+  animation: selectPop 0.3s ease;
 }
 
 .ability-label {
   font-size: 0.7rem;
-  opacity: 0.7;
+  color: var(--text-muted);
 }
 
 .ability-score {
   font-size: 1.2rem;
   font-weight: bold;
+  color: var(--text-h);
 }
 
 .ability-mod {
   font-size: 0.8rem;
-  color: #6c5ce7;
+  color: var(--accent);
 }
 
 .gold-tracker {
@@ -214,11 +384,22 @@
   border: none;
   cursor: pointer;
   font-size: 0.95rem;
+  transition: background-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+}
+
+.btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn:not(:disabled):active {
+  transform: translateY(0) scale(0.97);
 }
 
 .btn.primary {
-  background: #6c5ce7;
-  color: white;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 600;
 }
 
 .btn.primary:disabled {
@@ -227,8 +408,9 @@
 }
 
 .btn.secondary {
-  background: transparent;
-  border: 1px solid #7773;
+  background: var(--panel-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .sheet-grid {
@@ -238,13 +420,15 @@
 }
 
 .sheet-card {
-  border: 1px solid #7773;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
   border-radius: 10px;
   padding: 14px;
 }
 
 .sheet-card h3 {
   margin-top: 0;
+  color: var(--text-h);
 }
 
 .name-field {
@@ -253,13 +437,15 @@
   gap: 6px;
   max-width: 320px;
   font-size: 0.9rem;
+  color: var(--text-muted);
 }
 
 .name-field input {
   padding: 8px 10px;
   border-radius: 6px;
-  border: 1px solid #7773;
-  background: transparent;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text-h);
   font-size: 1rem;
 }
 
@@ -267,6 +453,135 @@
   display: flex;
   gap: 10px;
   margin-top: 1.5rem;
+}
+
+.inspect-toggle {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+
+.inspect-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.inspect-toggle kbd {
+  font: inherit;
+  font-size: 0.72rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg-raised);
+}
+
+.inspect-toggle.active {
+  background: var(--inspect);
+  color: var(--bg);
+  border-color: var(--inspect);
+  font-weight: 600;
+  animation: selectPop 0.25s ease;
+}
+
+.inspect-toggle.active kbd {
+  border-color: #00000033;
+  background: #ffffff44;
+}
+
+/* Inspect Mode: clickable glossary terms are bright yellow, on purpose
+   distinct from the app's gold accent — a dedicated "this is inspectable"
+   color that stays legible against the dark navy panel backgrounds. */
+.glossary-term {
+  display: inline;
+  padding: 1px 3px;
+  margin: 0 -3px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: var(--inspect);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--inspect);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.glossary-term:hover,
+.glossary-term:focus-visible {
+  background: var(--inspect-bg);
+  text-decoration-style: solid;
+  outline: none;
+}
+
+.glossary-term:active {
+  transform: scale(0.97);
+  display: inline-block;
+}
+
+.inspect-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: transparent;
+}
+
+.inspect-popover {
+  position: fixed;
+  z-index: 91;
+  width: 300px;
+  max-width: calc(100vw - 16px);
+  border: 1px solid var(--inspect);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--panel-bg-raised);
+  color: var(--text);
+  box-shadow: 0 8px 24px #0008;
+  animation: popIn 0.15s ease;
+  transform-origin: top left;
+}
+
+.inspect-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.95rem;
+  color: var(--inspect);
+}
+
+.inspect-popover-close {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  opacity: 0.7;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0 2px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.inspect-popover-close:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.inspect-popover-body {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--text);
+  opacity: 0.95;
 }
 
 @media (max-width: 600px) {
@@ -292,9 +607,19 @@
   }
 
   .sheet-card,
-  .ability-box {
+  .ability-box,
+  .prof-grid > div {
+    background: #fff;
+    color: #000;
     border-color: #999;
     break-inside: avoid;
+  }
+
+  .sheet-card h3,
+  .option-card h3,
+  .option-card h4,
+  .ability-score {
+    color: #000;
   }
 
   .ability-box.final {

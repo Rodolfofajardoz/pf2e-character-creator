@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { getAncestry } from '../../data/ancestries';
 import { getBackground } from '../../data/backgrounds';
 import { getClass } from '../../data/classes';
-import { SKILLS, abilityMod } from '../../data/skills';
+import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
+import { GlossaryTerm, InspectText } from '../../context/InspectContext';
 
 export default function SkillsStep({ character, update }) {
   const ancestry = getAncestry(character.ancestryId);
@@ -13,12 +14,13 @@ export default function SkillsStep({ character, update }) {
   const finalScores = useMemo(() => computeFinalScores(character, ancestry), [character, ancestry]);
   const intMod = abilityMod(finalScores.int);
 
-  const extraFromChoice = cls.fixedSkillChoice ? (cls.id === 'sorcerer' ? 2 : 1) : 0;
-  const poolSize = Math.max(0, cls.skillsBase + intMod) + extraFromChoice;
+  const extraFromChoice = getExtraSkillsFromChoice(cls);
+  const poolSize = getSkillPoolSize(cls, intMod);
 
-  const backgroundSkillId = background.skillChoice ? character.backgroundSkillChoice : background.skill;
-  const fixedIds = new Set([...(cls.fixedSkills || []), backgroundSkillId]);
+  const { rawId: rawBackgroundSkillId, hasCollision, effectiveId: backgroundSkillId, classFixedIds } = getBackgroundSkillInfo(character, cls, background);
+  const fixedIds = new Set([...classFixedIds, ...(backgroundSkillId ? [backgroundSkillId] : [])]);
   const selectable = SKILLS.filter((s) => !fixedIds.has(s.id));
+  const substituteOptions = SKILLS.filter((s) => !classFixedIds.has(s.id) && s.id !== rawBackgroundSkillId);
 
   function toggleSkill(id) {
     const current = character.trainedSkills;
@@ -37,13 +39,51 @@ export default function SkillsStep({ character, update }) {
         <h3>Automatic training</h3>
         <ul className="plain-list">
           {cls.fixedSkills.map((s) => (
-            <li key={s}>{SKILLS.find((sk) => sk.id === s)?.name} (from your class)</li>
+            <li key={s}>
+              <GlossaryTerm id={s}>{SKILLS.find((sk) => sk.id === s)?.name}</GlossaryTerm> (from your class)
+            </li>
           ))}
-          <li>{SKILLS.find((sk) => sk.id === backgroundSkillId)?.name} (from your background)</li>
-          <li>{background.lore} (from your background)</li>
+          {character.classSkillChoice && (
+            <li>
+              <GlossaryTerm id={character.classSkillChoice}>
+                {SKILLS.find((sk) => sk.id === character.classSkillChoice)?.name}
+              </GlossaryTerm>{' '}
+              (from your class)
+            </li>
+          )}
+          {backgroundSkillId && (
+            <li>
+              <GlossaryTerm id={backgroundSkillId}>{SKILLS.find((sk) => sk.id === backgroundSkillId)?.name}</GlossaryTerm>{' '}
+              (from your background{hasCollision ? ', substituted — see below' : ''})
+            </li>
+          )}
+          <li><InspectText text={background.lore} /> (from your background)</li>
         </ul>
-        {cls.fixedSkillChoice && <p className="hint">Your class also grants: {cls.fixedSkillChoice} (choose from the skills below).</p>}
+        {cls.fixedSkillChoice && !cls.fixedSkillChoiceOptions && (
+          <p className="hint">Your class also grants: {cls.fixedSkillChoice} (choose from the skills below).</p>
+        )}
       </section>
+
+      {hasCollision && (
+        <section className="sub-section">
+          <h3>Background skill substitute</h3>
+          <p className="hint">
+            Your background would train <GlossaryTerm id={rawBackgroundSkillId}>{SKILLS.find((sk) => sk.id === rawBackgroundSkillId)?.name}</GlossaryTerm>,
+            but your class already trains it automatically. Per the rules, choose a different skill to train instead.
+          </p>
+          <div className="chip-row">
+            {substituteOptions.map((s) => (
+              <button
+                key={s.id}
+                className={`chip ${character.backgroundSkillSubstitute === s.id ? 'selected' : ''}`}
+                onClick={() => update({ backgroundSkillSubstitute: s.id })}
+              >
+                <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="sub-section">
         <h3>
@@ -61,7 +101,7 @@ export default function SkillsStep({ character, update }) {
               onClick={() => toggleSkill(s.id)}
               disabled={!character.trainedSkills.includes(s.id) && character.trainedSkills.length >= poolSize}
             >
-              {s.name}
+              <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>
             </button>
           ))}
         </div>

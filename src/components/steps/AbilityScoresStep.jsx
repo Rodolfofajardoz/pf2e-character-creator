@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { getAncestry } from '../../data/ancestries';
-import { ABILITIES, ABILITY_LABELS, abilityMod } from '../../data/skills';
+import { ABILITIES, abilityMod } from '../../data/skills';
 import { boostScore, computeScoresBeforeFreeBoosts } from '../../utils/abilityScores';
+import { AbilityTerm } from '../../context/InspectContext';
 
 export default function AbilityScoresStep({ character, update }) {
   const ancestry = getAncestry(character.ancestryId);
@@ -41,7 +42,7 @@ export default function AbilityScoresStep({ character, update }) {
         <div className="ability-grid">
           {ABILITIES.map((a) => (
             <div key={a} className="ability-box">
-              <span className="ability-label">{ABILITY_LABELS[a]}</span>
+              <span className="ability-label"><AbilityTerm code={a} /></span>
               <span className="ability-score">{preFreeScores[a]}</span>
             </div>
           ))}
@@ -59,7 +60,7 @@ export default function AbilityScoresStep({ character, update }) {
               onClick={() => toggleFreeBoost(a)}
               disabled={!character.freeBoosts.includes(a) && character.freeBoosts.length >= 4}
             >
-              {ABILITY_LABELS[a]}
+              <AbilityTerm code={a} />
             </button>
           ))}
         </div>
@@ -70,7 +71,7 @@ export default function AbilityScoresStep({ character, update }) {
         <div className="ability-grid">
           {ABILITIES.map((a) => (
             <div key={a} className="ability-box final">
-              <span className="ability-label">{ABILITY_LABELS[a]}</span>
+              <span className="ability-label"><AbilityTerm code={a} /></span>
               <span className="ability-score">{finalScores[a]}</span>
               <span className="ability-mod">
                 {abilityMod(finalScores[a]) >= 0 ? '+' : ''}

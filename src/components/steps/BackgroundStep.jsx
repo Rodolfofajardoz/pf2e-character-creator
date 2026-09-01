@@ -1,5 +1,6 @@
 import { BACKGROUNDS, getBackground } from '../../data/backgrounds';
-import { ABILITY_LABELS, ABILITIES, SKILLS } from '../../data/skills';
+import { ABILITIES, SKILLS } from '../../data/skills';
+import { InspectText, GlossaryTerm, AbilityTerm } from '../../context/InspectContext';
 
 export default function BackgroundStep({ character, update }) {
   const background = character.backgroundId ? getBackground(character.backgroundId) : null;
@@ -12,6 +13,7 @@ export default function BackgroundStep({ character, update }) {
       backgroundChosenBoost: null,
       backgroundFreeBoost: null,
       backgroundSkillChoice: null,
+      backgroundSkillSubstitute: null,
     });
   }
 
@@ -32,17 +34,31 @@ export default function BackgroundStep({ character, update }) {
           >
             <h3>{b.name}</h3>
             <p className="option-meta">
-              Boost: {b.boostChoice.map((a) => ABILITY_LABELS[a]).join(' or ')} + free
+              Boost:{' '}
+              {b.boostChoice.map((a, i) => (
+                <span key={a}>
+                  {i > 0 ? ' or ' : ''}
+                  <AbilityTerm code={a} />
+                </span>
+              ))}{' '}
+              + free
             </p>
             <p className="option-meta">
-              Skill: {b.skillChoice ? b.skillChoice.map((s) => SKILLS.find((sk) => sk.id === s)?.name).join(' or ') : SKILLS.find((s) => s.id === b.skill)?.name} · {b.lore}
+              Skill:{' '}
+              {(b.skillChoice || [b.skill]).map((s, i) => (
+                <span key={s}>
+                  {i > 0 ? ' or ' : ''}
+                  <GlossaryTerm id={s}>{SKILLS.find((sk) => sk.id === s)?.name}</GlossaryTerm>
+                </span>
+              ))}{' '}
+              · <InspectText text={b.lore} />
             </p>
           </button>
         ))}
       </div>
 
       {background && (
-        <>
+        <div key={background.id} className="reveal-group">
           <section className="sub-section">
             <h3>Chosen boost</h3>
             <p className="hint">Choose one of your background's two options.</p>
@@ -53,7 +69,7 @@ export default function BackgroundStep({ character, update }) {
                   className={`chip ${character.backgroundChosenBoost === ab ? 'selected' : ''}`}
                   onClick={() => update({ backgroundChosenBoost: ab, backgroundFreeBoost: null })}
                 >
-                  {ABILITY_LABELS[ab]}
+                  <AbilityTerm code={ab} />
                 </button>
               ))}
             </div>
@@ -70,7 +86,7 @@ export default function BackgroundStep({ character, update }) {
                     className={`chip ${character.backgroundFreeBoost === ab ? 'selected' : ''}`}
                     onClick={() => update({ backgroundFreeBoost: ab })}
                   >
-                    {ABILITY_LABELS[ab]}
+                    <AbilityTerm code={ab} />
                   </button>
                 ))}
               </div>
@@ -88,7 +104,7 @@ export default function BackgroundStep({ character, update }) {
                     className={`chip ${character.backgroundSkillChoice === s ? 'selected' : ''}`}
                     onClick={() => update({ backgroundSkillChoice: s })}
                   >
-                    {SKILLS.find((sk) => sk.id === s)?.name}
+                    <GlossaryTerm id={s}>{SKILLS.find((sk) => sk.id === s)?.name}</GlossaryTerm>
                   </button>
                 ))}
               </div>
@@ -100,17 +116,21 @@ export default function BackgroundStep({ character, update }) {
             <p className="option-card small selected" style={{ cursor: 'default' }}>
               <strong>{background.feat.name}</strong>
               <br />
-              {background.feat.desc}
+              <InspectText text={background.feat.desc} />
             </p>
           </section>
 
           <section className="sub-section">
             <h3>Training</h3>
             <p>
-              Trained in <strong>{skillName || '(choose above)'}</strong> and in <strong>{background.lore}</strong>.
+              Trained in{' '}
+              <strong>
+                {fixedSkillId ? <GlossaryTerm id={fixedSkillId}>{skillName}</GlossaryTerm> : '(choose above)'}
+              </strong>{' '}
+              and in <strong><InspectText text={background.lore} /></strong>.
             </p>
           </section>
-        </>
+        </div>
       )}
     </div>
   );
