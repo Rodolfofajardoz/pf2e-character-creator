@@ -25,13 +25,27 @@ Pushing to `master` triggers the GitHub Pages deploy
 
 ## Versioning
 
-Informal semver. Currently `0.6.4`.
+Informal semver, extended with a fourth segment. Currently `0.6.4.1`.
 
 | Change | Bump | Example |
 |---|---|---|
 | A `ROADMAP.md` item lands | **minor** | item 1 → `v0.6.0` |
 | UX fix or polish after a release | **patch** | `v0.6.1`–`v0.6.4` |
+| Docs/conventions only, no app change | **fourth segment** | `v0.6.4.1` |
 | Every roadmap item done | `v1.0` | — |
+
+The fourth segment (`X.Y.Z.A`) marks a release that ships **no change to
+the app itself** — repo documentation, working agreements, roadmap
+restructuring. It keeps those releases in the history as restore points
+without implying the built app changed, and it resets to nothing on the
+next real patch: `0.6.4.1` → `0.6.5`, not `0.6.5.0`.
+
+Note this is deliberately **not** valid semver, which has exactly three
+segments. That is fine here — the package is `private: true` and never
+published to npm, and `npm ci` was verified to accept a four-part version
+against the committed lockfile. Don't use the `npm version` command to do
+the bump, though; it validates strictly and will reject it. Edit
+`package.json` by hand.
 
 Each release needs all four of these:
 

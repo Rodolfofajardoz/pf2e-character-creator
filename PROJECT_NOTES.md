@@ -651,6 +651,62 @@ a user report that Next still wasn't scrolling to the top on their phone:
    changes page height (turned out not to be the actual cause here, but
    it's a real interaction worth guarding against regardless).
 
+### Docs release: v0.6.4.1 — CLAUDE.md working agreements
+
+First release using the new **fourth version segment** (`X.Y.Z.A`), which
+marks a release that changes no application code at all — see the
+Versioning table in `CLAUDE.md`. Nothing in `src/` was touched, so the
+built app is byte-for-byte what `v0.6.4` shipped; this exists purely so the
+conventions themselves get a restore point in the release history.
+
+**What landed:** a `CLAUDE.md` at the repo root (PR #1), recording the
+working agreements that until now existed only implicitly, inferable from
+the shape of the commit/tag/release history. A session picking this project
+up had to reconstruct them by reading `git log`, the tag list and the
+GitHub Releases page — which is exactly what happened at the start of the
+session that produced this file, and the reason it was written.
+
+It documents:
+
+- **Workflow** — confirm before every push, including docs-only ones; work
+  on a branch and open a PR rather than committing straight to `master`;
+  and the full release chain `branch → PR → merge → tag → GitHub Release`,
+  with the tag and Release called out explicitly as a *second step after
+  the merge* rather than something that can be prepared inside the PR.
+  Also that merging to `master` is a production deploy, since that is what
+  triggers `.github/workflows/deploy.yml`.
+- **Versioning** — the bump table (minor for a roadmap item, patch for
+  polish, the new fourth segment for docs-only, `v1.0` when the roadmap is
+  complete) and the four-part release checklist: `package.json` bumped in
+  the same commit, `vX.Y.Z: lowercase summary` commit prefix, git tag, and
+  a Release named `vX.Y.Z — Title Case Name`. Plus the requirement to add
+  a section to *this* file in the same PR.
+- **Pre-push checks** — `npm run lint` (0 errors; the 4 existing warnings
+  are the baseline, not something to "fix" incidentally) and `npm run
+  build`.
+- **Architecture** — the three facts that are load-bearing for anyone
+  changing code here: the single flat `initialCharacter` state object in
+  `App.jsx`, `canGoNext` as the *only* gate on advancing a step (a new
+  required choice not validated there can be skipped entirely), and
+  `useComputedCharacter` as the single source of truth for every derived
+  stat, never recomputed in a component.
+- **The Archives of Nethys rule** — never write feat/spell/ancestry text
+  from memory. Written with the reason attached rather than as a bare
+  instruction, because the reason is what makes it stick: an earlier pass
+  fabricated a noticeable fraction of feat descriptions that read
+  plausibly but did not match the real feats, and every one had to be
+  hunted down and rewritten.
+- **UI conventions** — the committed dark theme with no light mode, keeping
+  the `@media print` rules in sync when adding panel-styled components,
+  the deliberately case-sensitive glossary matching, and `{ behavior:
+  'smooth' }` being a confirmed no-op on mobile.
+
+**Process note:** this was also the repo's first pull request. Every commit
+before it went directly to `master` — which, given that a push to `master`
+deploys to GitHub Pages, meant every commit was an immediate production
+deploy with no review step. The branch-and-PR rule in `CLAUDE.md` exists to
+put a reviewable gate in front of that.
+
 ## To-do list (small polish items, separate from ROADMAP.md)
 
 Not roadmap items (those are the big 9 toward v1.0, in ROADMAP.md) — just
