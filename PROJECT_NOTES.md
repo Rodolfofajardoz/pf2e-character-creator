@@ -408,14 +408,27 @@ Cleric + Acolyte (both train Religion).
 
 Phase 4 onward is the full personalization roadmap, now designed and
 written up in **[ROADMAP.md](./ROADMAP.md)**, ordered by difficulty
-(quickest first): live side-panel preview, language selection, custom
-backgrounds, a save/load character catalog, class sub-choices, familiars,
-custom sheet printing, multiclass/archetypes, and leveling 2–20 last as
-the single largest item. Two items (familiars, multiclass/archetypes)
-rank ahead of leveling by size but actually need it done first — flagged
-explicitly in the doc rather than reordered around it. App versioning +
-the first GitHub Release (v1.0) comes once every item on that list is
-done, not before.
+(quickest first): ~~live side-panel preview~~ done (v0.6.0), language
+selection, custom backgrounds, custom sheet printing, a save/load
+character catalog, class sub-choices, familiars, multiclass/archetypes,
+and leveling 2–20 last as the single largest item. Two items (familiars,
+multiclass/archetypes) rank ahead of leveling by size but actually need
+it done first — flagged explicitly in the doc rather than reordered
+around it. App versioning is being tracked as each item lands (see the
+GitHub Releases page); v1.0 lands once every roadmap item is done.
+
+### Roadmap item 1: Live side-panel preview — done (v0.6.0)
+
+`SummaryStep.jsx`'s derived-stat math (ability scores/mods, HP, AC,
+Perception, Class DC, saves) was factored out into a shared
+`useComputedCharacter(character)` hook (`src/hooks/`), defensively
+guarded so every field comes back `null` instead of throwing when the
+ancestry/background/class it depends on hasn't been picked yet — needed
+since, unlike `SummaryStep`, the new panel is visible from step 1
+onward, when most of `character` is still empty. `LivePreviewPanel.jsx`
+consumes that hook and renders next to the current step (`App.jsx`'s new
+`.layout-row`) on every step except Summary. Below a 900px viewport it
+collapses into a `Preview ▸` toggle instead of a fixed side column.
 
 ## How to run the dev server
 

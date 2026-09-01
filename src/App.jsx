@@ -8,6 +8,7 @@ import AbilityScoresStep from './components/steps/AbilityScoresStep';
 import SkillsStep from './components/steps/SkillsStep';
 import EquipmentStep from './components/steps/EquipmentStep';
 import SummaryStep from './components/steps/SummaryStep';
+import LivePreviewPanel from './components/LivePreviewPanel';
 import { getBackground } from './data/backgrounds';
 import { getClass } from './data/classes';
 import { getAncestry } from './data/ancestries';
@@ -58,6 +59,7 @@ function App() {
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState('forward');
   const [character, setCharacter] = useState(initialCharacter);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const step = STEPS[stepIndex];
 
@@ -159,16 +161,22 @@ function App() {
           ))}
         </nav>
 
-        <main className={`step-content dir-${direction}`}>
-          {step.id === 'ancestry' && <AncestryStep character={character} update={update} />}
-          {step.id === 'background' && <BackgroundStep character={character} update={update} />}
-          {step.id === 'class' && <ClassStep character={character} update={update} />}
-          {step.id === 'spells' && <SpellsStep character={character} update={update} />}
-          {step.id === 'abilities' && <AbilityScoresStep character={character} update={update} />}
-          {step.id === 'skills' && <SkillsStep character={character} update={update} />}
-          {step.id === 'equipment' && <EquipmentStep character={character} update={update} />}
-          {step.id === 'summary' && <SummaryStep character={character} update={update} onRestart={restart} />}
-        </main>
+        <div className="layout-row">
+          <main className={`step-content dir-${direction}`}>
+            {step.id === 'ancestry' && <AncestryStep character={character} update={update} />}
+            {step.id === 'background' && <BackgroundStep character={character} update={update} />}
+            {step.id === 'class' && <ClassStep character={character} update={update} />}
+            {step.id === 'spells' && <SpellsStep character={character} update={update} />}
+            {step.id === 'abilities' && <AbilityScoresStep character={character} update={update} />}
+            {step.id === 'skills' && <SkillsStep character={character} update={update} />}
+            {step.id === 'equipment' && <EquipmentStep character={character} update={update} />}
+            {step.id === 'summary' && <SummaryStep character={character} update={update} onRestart={restart} />}
+          </main>
+
+          {step.id !== 'summary' && (
+            <LivePreviewPanel character={character} open={previewOpen} onToggle={() => setPreviewOpen((o) => !o)} />
+          )}
+        </div>
 
         <footer className="wizard-nav no-print">
           <button onClick={goBack} disabled={stepIndex === 0} className="btn secondary">

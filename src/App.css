@@ -135,6 +135,176 @@
   opacity: 0.5;
 }
 
+/* Two-column layout: the wizard step on the left, the live preview panel
+   on the right. On narrow viewports the panel collapses below the fold
+   into a collapsible drawer (see .live-preview media query below) instead
+   of squeezing the step content into a second column. */
+.layout-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.live-preview {
+  flex: 0 0 300px;
+  width: 300px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg-raised);
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.live-preview-toggle {
+  display: none;
+}
+
+.live-preview-title {
+  margin: 0 0 8px;
+  color: var(--text-h);
+  font-size: 1.05rem;
+}
+
+.live-preview-line {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.live-preview-abilities {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.live-preview-ability {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+}
+
+.live-preview-ability-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.live-preview-ability strong {
+  font-size: 0.95rem;
+  color: var(--text-h);
+}
+
+.live-preview-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.live-preview-stats > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.live-preview-stats strong {
+  color: var(--accent);
+}
+
+.live-preview-section {
+  margin: 10px 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.live-preview-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.live-preview-skill-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.8rem;
+}
+
+.live-preview-skill-list li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.live-preview-empty {
+  margin: 10px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .layout-row {
+    flex-direction: column;
+  }
+
+  .live-preview {
+    width: 100%;
+    flex: none;
+    position: static;
+    max-height: none;
+    padding: 0;
+    overflow: visible;
+    order: -1;
+  }
+
+  .live-preview-toggle {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg-raised);
+    color: var(--text-h);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .live-preview-body {
+    display: none;
+    padding: 14px 4px 4px;
+  }
+
+  .live-preview.open .live-preview-body {
+    display: block;
+    animation: fadeInUp 0.25s ease;
+  }
+}
+
 .step {
   animation: fadeInUp 0.3s ease;
 }

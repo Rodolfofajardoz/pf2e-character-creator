@@ -1,13 +1,8 @@
-import { useMemo } from 'react';
-import { getAncestry } from '../../data/ancestries';
-import { getBackground } from '../../data/backgrounds';
-import { getClass } from '../../data/classes';
-import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, abilityMod, getBackgroundSkillInfo } from '../../data/skills';
-import { computeFinalScores } from '../../utils/abilityScores';
-import { WEAPONS, ARMORS, GEAR } from '../../data/equipment';
+import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS } from '../../data/skills';
 import { CANTRIPS, SPELLS_RANK_1, TRADITION_LABELS } from '../../data/spells';
 import { InspectText, GlossaryTerm } from '../../context/InspectContext';
 import { ABILITY_TERM_ID } from '../../data/glossary';
+import { useComputedCharacter } from '../../hooks/useComputedCharacter';
 
 const LEVEL = 1;
 
@@ -20,26 +15,24 @@ function profBonus(rank) {
 }
 
 export default function SummaryStep({ character, update, onRestart }) {
-  const ancestry = getAncestry(character.ancestryId);
-  const background = getBackground(character.backgroundId);
-  const cls = getClass(character.classId);
-  const heritage = ancestry.heritages.find((h) => h.id === character.heritageId);
-  const { effectiveId: backgroundSkillId } = getBackgroundSkillInfo(character, cls, background);
-  const weapon = WEAPONS.find((w) => w.id === character.weaponId);
-  const armor = ARMORS.find((a) => a.id === character.armorId) || ARMORS[0];
-  const gearItems = GEAR.filter((g) => character.gearIds.includes(g.id));
-
-  const scores = useMemo(() => computeFinalScores(character, ancestry), [character, ancestry]);
-  const mods = Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, abilityMod(v)]));
-
-  const hp = ancestry.hp + cls.hp + mods.con;
-  const dexCap = armor.dexCap === null ? Infinity : armor.dexCap;
-  const isProficientInArmor = armor.category === 'none' || (cls.armorProficiency || []).includes(armor.category);
-  const armorProfRank = armor.category === 'none' ? cls.unarmoredProficiency || 'trained' : isProficientInArmor ? 'trained' : 'untrained';
-  const ac = 10 + Math.min(mods.dex, dexCap) + armor.acBonus + profBonus(armorProfRank);
-  const perceptionMod = mods.wis + profBonus(cls.perception);
-  const classDCAbility = character.classKeyAbility;
-  const classDC = 10 + profBonus(cls.classDC) + mods[classDCAbility];
+  const {
+    ancestry,
+    background,
+    cls,
+    heritage,
+    backgroundSkillId,
+    weapon,
+    armor,
+    gearItems,
+    scores,
+    mods,
+    hp,
+    ac,
+    isProficientInArmor,
+    perceptionMod,
+    classDCAbility,
+    classDC,
+  } = useComputedCharacter(character);
 
   return (
     <div className="step summary">

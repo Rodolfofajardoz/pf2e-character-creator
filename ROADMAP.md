@@ -17,7 +17,7 @@ milestone to schedule in the middle of it.
 
 | # | Item | Size | Notes |
 |---|------|------|-------|
-| 1 | Live side-panel preview | S | Zero new PF2e data — pure refactor + layout. |
+| 1 | ~~Live side-panel preview~~ | S | ✅ Done (v0.6.0). |
 | 2 | Language selection | S | Rule confirmed; small, contained data + a simple choice step. |
 | 3 | Custom backgrounds | S–M | Reuses existing data (abilities, skills, `GENERAL_FEATS`); just a form. |
 | 4 | Custom PDF sheet printing | S–M | File inspected — real fillable AcroForm PDF, no longer blocked. |
@@ -38,25 +38,21 @@ difficulty as asked, with the dependency called out rather than hidden.
 
 ---
 
-## 1. Live side-panel preview
+## 1. Live side-panel preview — ✅ Done (v0.6.0)
 
-**Size: S.** A persistent panel (desktop: fixed side column; mobile:
-collapsible drawer) showing the character sheet as it's being built,
-updating live as `character` state changes — essentially `SummaryStep`'s
-output rendered continuously instead of only on the last step.
-
-Work: factor `SummaryStep.jsx`'s derived-stat math (HP, AC, saves,
-Perception, Class DC — currently computed inline in that component) into
-a shared hook (e.g. `useComputedCharacter(character)`), so both
-`SummaryStep` and the new preview panel read from one source of truth
-instead of duplicating the formulas. Then build the panel as a layout
-change in `App.jsx`. No new game data, no AoN verification — the easiest
-item on this list.
-
-Open question: confirm whether the preview should be visible on every
-step or only from some step onward (e.g. it's fairly empty during
-Ancestry/Background) — a UX call, easy to adjust once it's up and being
-tried out live.
+Shipped as `useComputedCharacter` (`src/hooks/useComputedCharacter.js`) —
+`SummaryStep`'s derived-stat math (scores/mods, HP, AC, Perception,
+Class DC, saves) factored out of that component into a shared hook, so
+`SummaryStep` and the new `LivePreviewPanel` read from one source of
+truth. The panel renders alongside the wizard step (`App.jsx`'s new
+`.layout-row`) on every step except Summary (redundant there — Summary
+already *is* the full sheet), with graceful placeholders for choices not
+made yet instead of hiding until the character is complete. On narrow
+viewports it collapses into a `Preview ▸` toggle above the step content
+instead of a fixed side column. Verified end-to-end in the browser:
+values update live while stepping through Ancestry → Background → Class,
+match `SummaryStep`'s numbers exactly, and the mobile collapse/expand
+works.
 
 ## 2. Language selection
 
