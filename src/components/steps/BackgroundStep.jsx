@@ -113,11 +113,10 @@ export default function BackgroundStep({ character, update }) {
 
           <section className="sub-section">
             <h3>Background Feat</h3>
-            <p className="option-card small selected" style={{ cursor: 'default' }}>
-              <strong>{background.feat.name}</strong>
-              <br />
-              <InspectText text={background.feat.desc} />
-            </p>
+            <div className="option-card small selected" style={{ cursor: 'default' }}>
+              <h4>{background.feat.name}</h4>
+              <p className="option-desc"><InspectText text={background.feat.desc} /></p>
+            </div>
           </section>
 
           <section className="sub-section">
