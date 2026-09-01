@@ -25,14 +25,13 @@ function InfoLine({ spell }) {
   ].filter(([, v]) => v);
   if (fields.length === 0) return null;
   return (
-    <p className="spell-card-info">
-      {fields.map(([label, value], i) => (
-        <span key={label}>
-          {i > 0 ? ', ' : ''}
+    <div className="spell-card-info">
+      {fields.map(([label, value]) => (
+        <p key={label}>
           <strong>{label}</strong> {value}
-        </span>
+        </p>
       ))}
-    </p>
+    </div>
   );
 }
 
@@ -90,6 +89,9 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
   const traitOptions = useMemo(() => {
     const set = new Set();
     pool.forEach((s) => s.traits.forEach((t) => set.add(t)));
+    // "Cantrip" is true of every entry in the cantrip pool (and absent from
+    // the 1st-rank pool), so it never actually narrows anything — drop it.
+    set.delete('Cantrip');
     return Array.from(set).sort();
   }, [pool]);
 
@@ -259,6 +261,17 @@ export default function SpellsStep({ character, update }) {
             onToggle={toggleSpell1}
             idPrefix="spell1"
           />
+          <section className="sub-section">
+            <h3>Spells Selected</h3>
+            <p className="hint spell-selected-summary">
+              <strong>Cantrips:</strong>{' '}
+              {character.knownCantrips.map((id) => cantripPool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
+            </p>
+            <p className="hint spell-selected-summary">
+              <strong>1st-rank:</strong>{' '}
+              {character.knownSpells1.map((id) => spell1Pool.find((s) => s.id === id)?.name).filter(Boolean).join(', ') || 'None yet'}
+            </p>
+          </section>
         </>
       )}
     </div>

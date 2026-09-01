@@ -354,6 +354,12 @@
 }
 
 .spell-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spell-card-info p {
   margin: 0;
   font-size: 0.76rem;
   color: var(--text);

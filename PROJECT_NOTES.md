@@ -356,6 +356,26 @@ dense, unbroken paragraph.
   tick plus small padding per tier — so each `(3rd)/(5th)/(7th)/...` entry
   reads as a distinct line instead of running together.
 
+### Spell card polish round 3: redundant trait filter, stacked info line, combined selection summary
+
+Three small follow-ups from another screenshot review:
+
+- The trait filter for the Cantrips list always offered a "Cantrip" chip,
+  even though every entry in that list already has the Cantrip trait (and
+  the 1st-rank list never has it at all) — it could never actually narrow
+  anything. `SpellPicker`'s `traitOptions` now deletes `'Cantrip'` from the
+  computed set before rendering the chips.
+- `InfoLine`'s Range/Area/Target/Duration/Defense fields were comma-joined
+  onto one line (`Range touch, Target 1 creature, Defense Fortitude`),
+  which read as cluttered once more than one or two fields were present.
+  Changed `.spell-card-info` to a `<div>` of one `<p>` per field (flex
+  column layout) so each label/value pair gets its own line.
+- Added a combined "Spells Selected" section at the bottom of
+  `SpellsStep.jsx`, below both pickers, listing chosen cantrips and
+  chosen 1st-rank spells together in one place — each `SpellPicker`
+  already showed its own per-list "Selected: ..." line, but there was no
+  single summary of the full spell selection across both ranks.
+
 ### Fixed: background/class skill collision (was gap #3)
 
 If your class and background trained the *same* skill (e.g. Cleric +
