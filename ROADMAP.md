@@ -3,9 +3,9 @@
 Everything below was requested as a wishlist after Phase 3 (spellcasting)
 shipped: printing to a custom sheet, level-up, a live preview panel,
 multiclass, a save/load catalog, language selection, archetypes, familiars,
-and modeling the class sub-choices the app currently skips. This document
-turns that wishlist into scoped, ordered work, with the reasoning for the
-order and the open questions each item still has.
+custom backgrounds, and modeling the class sub-choices the app currently
+skips. This document turns that wishlist into scoped, ordered work, with
+the reasoning for the order and the open questions each item still has.
 
 Once every phase below is done, the plan is to add app versioning and cut
 the first GitHub Release, arriving at **v1.0**. Versioning isn't its own
@@ -14,7 +14,7 @@ milestone to schedule in the middle of it.
 
 ## Why this order
 
-Three items are near-independent quick wins with real user-facing value
+Four items are near-independent quick wins with real user-facing value
 and low risk — good to knock out first. Three are foundational systems
 that later items depend on. Three are big content systems that only make
 sense once the foundations exist. PDF printing depends on an asset only
@@ -24,19 +24,21 @@ has mostly settled.
 1. **Class sub-choices** (Muse, Doctrine, Order, Mystery, Bloodline,
    Patron, Arcane School, Cause) — quick win, and it retires the
    subclass-gating limitation Phase 3 explicitly deferred here.
-2. **Language selection** — quick win, rule is now confirmed (see below).
-3. **Live side-panel preview** — quick win, pure UI, no new data.
-4. **Save/load character catalog** — foundational: everything after this
+2. **Custom backgrounds** — quick win, self-contained, reuses data that
+   already exists (ability list, skills, the general/skill feat catalog).
+3. **Language selection** — quick win, rule is now confirmed (see below).
+4. **Live side-panel preview** — quick win, pure UI, no new data.
+5. **Save/load character catalog** — foundational: everything after this
    benefits from characters persisting across sessions.
-5. **Level-up (2–20)** — foundational and the single largest item; also
+6. **Level-up (2–20)** — foundational and the single largest item; also
    fixes the known AC Expert+ armor gap, which is really just missing
    proficiency-progression data.
-6. **Multiclass & Archetypes** — same underlying system in the remaster
+7. **Multiclass & Archetypes** — same underlying system in the remaster
    (see below), and archetype dedication feats are gained through class
    feat slots that only exist once level-up is in.
-7. **Familiars** — depends on level-up for the abilities a familiar gains
+8. **Familiars** — depends on level-up for the abilities a familiar gains
    as its master levels, and ties into the Wizard/Witch/archetype paths.
-8. **Custom PDF sheet printing** — needs the user's own sheet file, and
+9. **Custom PDF sheet printing** — needs the user's own sheet file, and
    benefits from the fuller character data level-up produces.
 
 ---
@@ -65,7 +67,35 @@ What it unlocks:
 Open question: none — this is scoped and ready to start whenever picked
 up next.
 
-## 2. Language selection
+## 2. Custom backgrounds
+
+**Size: S–M.** Lets a player build their own background from scratch
+instead of picking one of the 35 fixed ones — for a concept none of the
+existing backgrounds fit. Confirmed against AoN's "Step 4: Pick a
+Background" (Core Rulebook pg. 24): every background reduces to the same
+shape — an ability boost pair (one of two named abilities, player's
+choice) plus one free boost, training in one specific skill, training in
+one Lore skill, and one specific skill feat. A custom background is just
+a UI for filling in that same shape by hand instead of picking a preset
+that already fills it in.
+
+Work: a "Custom" option alongside the 35-card grid in `BackgroundStep.jsx`
+that lets the player (1) pick any two abilities for the boost-choice pair,
+(2) pick any trained skill, (3) type a free-text Lore subcategory (same
+free-text pattern already used for the fixed backgrounds' Lore field),
+and (4) pick a skill feat. That last part doesn't need new data — the
+`GENERAL_FEATS` catalog from Phase 2 already includes the Skill-trait
+feats (the ones with a `prereq` like "Trained in X"), so the picker can
+just offer that list, ideally filtered to feats whose prereq matches the
+skill chosen in step 2 (with an "show all" escape hatch, same
+trust-the-player spirit as how prereqs are already handled elsewhere in
+this app — shown, not hard-enforced).
+
+Open question: whether the custom background also needs a free-text name/
+description field for flavor (cheap to add, purely cosmetic — doesn't
+affect any calculation) — worth deciding when this is actually built.
+
+## 3. Language selection
 
 **Size: S.** Rule confirmed via AoN (Rules pg. 65, `2e.aonprd.com`
 rules-131): *"Having a positive Intelligence modifier grants a number of
@@ -83,7 +113,7 @@ languages. Ties in cleanly at 1st level; no dependency on level-up.
 
 Open question: none.
 
-## 3. Live side-panel preview
+## 4. Live side-panel preview
 
 **Size: S–M.** A persistent panel (desktop: fixed side column; mobile:
 collapsible drawer) showing the character sheet as it's being built,
@@ -102,7 +132,7 @@ step or only from some step onward (e.g. it's fairly empty during
 Ancestry/Background) — a UX call, easy to adjust once it's up and being
 tried out live.
 
-## 4. Save/load character catalog
+## 5. Save/load character catalog
 
 **Size: M.** A "My Characters" screen: list saved characters, load one
 back into the builder, duplicate, delete, and start a new one. Storage
@@ -123,7 +153,7 @@ Open question: confirm `localStorage` + export/import is enough, versus
 wanting real account-based cloud sync (a materially bigger project —
 needs auth and a backend, not just frontend work).
 
-## 5. Level-up (2–20)
+## 6. Level-up (2–20)
 
 **Size: XL — the biggest single item, likely worth its own sub-phases
 rather than one shot.** This is the leveling engine everything else in
@@ -158,7 +188,7 @@ Open question: whether to cap at a lower level first (e.g. ship 2–10,
 then 11–20 as a follow-up) to get real usage sooner — worth deciding once
 this phase is actually being scoped in detail.
 
-## 6. Multiclass & Archetypes
+## 7. Multiclass & Archetypes
 
 **Size: L.** In the remaster, these are **the same system**: there's no
 separate "multiclass" mechanic — you multiclass by taking a class's
@@ -168,7 +198,7 @@ levels. Building generic archetype support (a dedication feat + its feat
 chain, prerequisite-gated, consuming class feat slots) delivers
 multiclassing and archetypes as one feature, not two.
 
-Depends on Level-up (item 5) being in place, since dedication feats are
+Depends on Level-up (item 6) being in place, since dedication feats are
 picked from class feat slots that don't exist until then.
 
 Open question: scope which archetypes ship first — there are dozens
@@ -178,7 +208,7 @@ etc. — one per existing class) before broader non-class archetypes
 (Alchemist-adjacent, Marshal, etc.), mirroring how Phase 3 scoped spells
 to "universal" ones first and flagged the rest for later.
 
-## 7. Familiars
+## 8. Familiars
 
 **Size: M.** Wizard's Familiar feat and Witch's patron-granted familiar
 already exist as choices in the app (1st-level feat selection); this
@@ -187,13 +217,13 @@ list a player picks from (with some abilities gated to a specific
 master class, e.g. Wizard-only ones), and how that list grows as the
 master levels up.
 
-Depends on Level-up (item 5) for the "gains more abilities per level"
+Depends on Level-up (item 6) for the "gains more abilities per level"
 part; the base 1st-level familiar (name, base abilities) could
 technically start earlier but is more useful shipped alongside leveling.
 
 Open question: none beyond the dependency above.
 
-## 8. Custom PDF sheet printing
+## 9. Custom PDF sheet printing
 
 **Size: M, but blocked on an input only the user has.** Filling a
 pre-designed character sheet PDF with the builder's output instead of
@@ -218,4 +248,4 @@ so this can't be scoped further until the file is shared.
 The previously-noted **AC Expert+ armor** gap (a class's armor
 proficiency advancing past Trained isn't reflected in the AC formula) is
 not a standalone fix — it's simply missing proficiency-progression data,
-which is exactly what Level-up (item 5) builds. No separate work needed.
+which is exactly what Level-up (item 6) builds. No separate work needed.

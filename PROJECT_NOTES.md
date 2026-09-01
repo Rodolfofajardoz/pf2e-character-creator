@@ -407,12 +407,12 @@ Cleric + Acolyte (both train Religion).
    **Phase 3 complete.**
 
 Phase 4 onward is the full personalization roadmap, now designed and
-written up in **[ROADMAP.md](./ROADMAP.md)**: class sub-choices, language
-selection, a live side-panel preview, a save/load character catalog,
-leveling 2–20, multiclass/archetypes, familiars, and custom sheet
-printing — in that order, with the reasoning for the order and each
-item's open questions. App versioning + the first GitHub Release (v1.0)
-comes once every item on that list is done, not before.
+written up in **[ROADMAP.md](./ROADMAP.md)**: class sub-choices, custom
+backgrounds, language selection, a live side-panel preview, a save/load
+character catalog, leveling 2–20, multiclass/archetypes, familiars, and
+custom sheet printing — in that order, with the reasoning for the order
+and each item's open questions. App versioning + the first GitHub Release
+(v1.0) comes once every item on that list is done, not before.
 
 ## How to run the dev server
 
