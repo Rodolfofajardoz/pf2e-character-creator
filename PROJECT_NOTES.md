@@ -231,7 +231,8 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
 
 ## Known gaps / things NOT implemented yet
 
-1. **No leveling past 1** — this is strictly a level-1 builder. (phase 4)
+1. **No leveling past 1** — this is strictly a level-1 builder. See
+   [ROADMAP.md](./ROADMAP.md) item 5.
 2. **AC Expert+ armor not modeled**: no class/feat in this app's level-1
    data actually grants Expert+ *armor* proficiency (only the Monk's
    Expert *unarmored* proficiency, which is handled), so this doesn't
@@ -239,6 +240,7 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
    a reminder: if a future addition (leveling, an archetype) grants it,
    `armorProficiency` in `classes.js` needs an upgrade path beyond the
    current binary trained/untrained (same fix pattern as `unarmoredProficiency`).
+   Folded into leveling, not a separate fix — see ROADMAP.md's closing note.
 3. **Class sub-choices aren't modeled** (Bard Muse, Cleric Doctrine, Druid
    Order, Oracle Mystery, Sorcerer Bloodline, Witch Patron, Wizard Arcane
    School, Champion Cause). This was already true for feats before phase 3
@@ -247,8 +249,8 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
    are gated behind these (Bard's Composition cantrips need a Muse, Cleric's
    Divine Lance-style doctrine cantrips need a Doctrine, Witch hexes need a
    Patron). The spell catalog (see below) only includes spells with no such
-   gate. **On the roadmap as a real feature** — see "Personalization roadmap"
-   below — but deliberately deferred rather than silently guessed at.
+   gate. **First item on [ROADMAP.md](./ROADMAP.md)** — deliberately
+   deferred rather than silently guessed at.
 
 ### Phase 3: Spellcasting selection — done
 
@@ -403,13 +405,14 @@ Cleric + Acolyte (both train Religion).
    Ambition"). **Phase 2 complete.**
 3. ~~Spellcasting (spell lists + selection)~~ done — see "Phase 3" above.
    **Phase 3 complete.**
-4. Leveling 2–20. **(next up)**
 
-After phase 4, see "Personalization roadmap" (to be added once phase 4 and
-a design pass are done) for the larger post-1.0-groundwork feature list:
-custom sheet printing, live side-panel preview, multiclass, save/load a
-character catalog, language selection, archetypes, familiars, and modeling
-the class sub-choices from gap #3 above.
+Phase 4 onward is the full personalization roadmap, now designed and
+written up in **[ROADMAP.md](./ROADMAP.md)**: class sub-choices, language
+selection, a live side-panel preview, a save/load character catalog,
+leveling 2–20, multiclass/archetypes, familiars, and custom sheet
+printing — in that order, with the reasoning for the order and each
+item's open questions. App versioning + the first GitHub Release (v1.0)
+comes once every item on that list is done, not before.
 
 ## How to run the dev server
 
