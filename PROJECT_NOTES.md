@@ -265,6 +265,17 @@ Wizard all get 5 cantrips + 2 first-rank). Champion is excluded entirely:
 it doesn't have a normal spell list at 1st level, just a single devotion
 spell from a feat like Deity's Domain (already handled in the Class step).
 
+Each spell also carries a `traits` array (fetched in a follow-up AoN pass —
+the first pass only pulled `name`/`tradition`/`text`, not `trait`; a small
+Node script, `node --check`-verified, spliced them into the existing file
+by id rather than hand-editing 135 entries) and a `.spell-card` UI in
+`SpellsStep.jsx`, styled after an AoN spell card screenshot: a header bar
+with the name and an action-cost badge (`actionBadge()` turns `cast` —
+"Single Action", "Reaction", "1-3 actions", etc. — into a short label,
+defaulting to "2 Actions" when unset), then a row of trait tag pills, then
+the description. Uses the app's existing gold/navy palette rather than
+copying AoN's own colors.
+
 New `SpellsStep.jsx`, inserted as step 4 (right after Class, before Ability
 Scores — it only depends on `classId`). For Sorcerer/Witch, whose tradition
 depends on an unmodeled Bloodline/Patron, there's a required tradition

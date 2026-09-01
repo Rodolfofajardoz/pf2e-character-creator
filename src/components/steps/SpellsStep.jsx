@@ -2,6 +2,36 @@ import { getClass } from '../../data/classes';
 import { CANTRIPS, SPELLS_RANK_1, getSpellsForTradition, TRADITION_LABELS } from '../../data/spells';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
 
+// AoN writes casting time as a number of action icons (or a named badge for
+// Reaction/Free Action/longer activities). `cast` is only set on entries
+// that aren't the default two actions — see spells.js.
+function actionBadge(cast) {
+  if (!cast) return '2 Actions';
+  if (cast === 'Single Action') return '1 Action';
+  return cast;
+}
+
+function SpellCard({ spell, selected, disabled, onClick }) {
+  return (
+    <button
+      className={`spell-card ${selected ? 'selected' : ''}`}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <div className="spell-card-header">
+        <h4>{spell.name}</h4>
+        <span className="spell-card-badge">{actionBadge(spell.cast)}</span>
+      </div>
+      <div className="spell-card-traits">
+        {spell.traits.map((t) => (
+          <span key={t} className="trait-tag">{t}</span>
+        ))}
+      </div>
+      <p className="option-desc"><InspectText text={spell.desc} /></p>
+    </button>
+  );
+}
+
 export default function SpellsStep({ character, update }) {
   const cls = getClass(character.classId);
   const sc = cls.spellcasting;
@@ -94,16 +124,13 @@ export default function SpellsStep({ character, update }) {
             </h3>
             <div className="card-grid">
               {cantripPool.map((s) => (
-                <button
+                <SpellCard
                   key={s.id}
-                  className={`option-card small ${character.knownCantrips.includes(s.id) ? 'selected' : ''}`}
-                  onClick={() => toggleCantrip(s.id)}
+                  spell={s}
+                  selected={character.knownCantrips.includes(s.id)}
                   disabled={!character.knownCantrips.includes(s.id) && character.knownCantrips.length >= sc.cantripsKnown}
-                >
-                  <h4>{s.name}</h4>
-                  {s.cast && <p className="option-meta">{s.cast}</p>}
-                  <p className="option-desc"><InspectText text={s.desc} /></p>
-                </button>
+                  onClick={() => toggleCantrip(s.id)}
+                />
               ))}
             </div>
           </section>
@@ -114,16 +141,13 @@ export default function SpellsStep({ character, update }) {
             </h3>
             <div className="card-grid">
               {spell1Pool.map((s) => (
-                <button
+                <SpellCard
                   key={s.id}
-                  className={`option-card small ${character.knownSpells1.includes(s.id) ? 'selected' : ''}`}
-                  onClick={() => toggleSpell1(s.id)}
+                  spell={s}
+                  selected={character.knownSpells1.includes(s.id)}
                   disabled={!character.knownSpells1.includes(s.id) && character.knownSpells1.length >= sc.rank1Known}
-                >
-                  <h4>{s.name}</h4>
-                  {s.cast && <p className="option-meta">{s.cast}</p>}
-                  <p className="option-desc"><InspectText text={s.desc} /></p>
-                </button>
+                  onClick={() => toggleSpell1(s.id)}
+                />
               ))}
             </div>
           </section>
