@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { getAncestry } from '../../data/ancestries';
-import { getBackground } from '../../data/backgrounds';
+import { getEffectiveBackground } from '../../data/backgrounds';
 import { getClass } from '../../data/classes';
 import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
@@ -9,7 +9,7 @@ import { getGlossaryTerm } from '../../data/glossary';
 
 export default function SkillsStep({ character, update }) {
   const ancestry = getAncestry(character.ancestryId);
-  const background = getBackground(character.backgroundId);
+  const background = getEffectiveBackground(character);
   const cls = getClass(character.classId);
 
   const finalScores = useMemo(() => computeFinalScores(character, ancestry), [character, ancestry]);

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { getAncestry } from '../data/ancestries';
-import { getBackground } from '../data/backgrounds';
+import { getEffectiveBackground } from '../data/backgrounds';
 import { getClass } from '../data/classes';
 import { abilityMod, getBackgroundSkillInfo, PROFICIENCY_RANKS } from '../data/skills';
 import { computeFinalScores } from '../utils/abilityScores';
@@ -20,7 +20,7 @@ function profBonus(rank) {
 export function useComputedCharacter(character) {
   return useMemo(() => {
     const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
-    const background = character.backgroundId ? getBackground(character.backgroundId) : null;
+    const background = character.backgroundId ? getEffectiveBackground(character) : null;
     const cls = character.classId ? getClass(character.classId) : null;
     const heritage = ancestry?.heritages.find((h) => h.id === character.heritageId) || null;
 

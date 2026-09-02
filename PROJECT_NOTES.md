@@ -409,9 +409,10 @@ Cleric + Acolyte (both train Religion).
 Phase 4 onward is the full personalization roadmap, now designed and
 written up in **[ROADMAP.md](./ROADMAP.md)**, ordered by difficulty
 (quickest first): ~~live side-panel preview~~ done (v0.6.0), ~~language
-selection~~ done (v0.6.7), custom backgrounds, custom sheet printing, a
-save/load character catalog, class sub-choices, familiars, multiclass/
-archetypes, and leveling 2–20 last as the single largest item. Two items
+selection~~ done (v0.6.7), ~~custom backgrounds~~ done (v0.6.8), custom
+sheet printing, a save/load character catalog, class sub-choices,
+familiars, multiclass/archetypes, and leveling 2–20 last as the single
+largest item. Two items
 (familiars, multiclass/archetypes) rank ahead of leveling by size but
 actually need it done first — flagged explicitly in the doc rather than
 reordered around it. App versioning is being tracked as each item lands

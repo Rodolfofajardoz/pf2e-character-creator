@@ -1,3 +1,5 @@
+import { SKILLS, ABILITIES } from './skills';
+
 // 39 of Player Core's 40 general backgrounds, verified one by one against
 // Archives of Nethys (2e.aonprd.com/Backgrounds.aspx). Each grants a boost
 // chosen between two abilities, a free boost, training in one skill + one
@@ -335,4 +337,35 @@ export const BACKGROUNDS = [
 
 export function getBackground(id) {
   return BACKGROUNDS.find((b) => b.id === id);
+}
+
+// A player-built background (ROADMAP.md item 3), for a concept none of the
+// 39 fixed ones fit. Every background reduces to the same shape per AoN's
+// "Step 4: Pick a Background" (Core Rulebook pg. 24) -- a boost pair +
+// free boost, one trained skill, one Lore skill, one skill feat -- so a
+// custom one is built to that exact shape from character fields instead of
+// a preset, letting it flow through every existing consumer (BackgroundStep,
+// SkillsStep, SummaryStep, useComputedCharacter) unmodified.
+//
+// boostChoice is every ability rather than a curated pair: a preset
+// background's author picks 2 abilities and the player picks 1 of them, but
+// for a custom background the player IS the author, so there's no
+// meaningful difference between "define the pair" and "pick from it" --
+// collapsing them into one open choice (then the existing Free Boost section
+// handles the second one, same as any preset). skillChoice is every skill
+// for the same reason.
+export function buildCustomBackground(character) {
+  return {
+    id: 'custom',
+    name: character.customBackgroundName?.trim() || 'Custom Background',
+    boostChoice: ABILITIES,
+    skillChoice: SKILLS.map((s) => s.id),
+    lore: character.lorePicked?.trim() ? `${character.lorePicked.trim()} Lore` : 'a Lore skill of your choice',
+    feat: character.customBackgroundFeat || { name: '(choose a skill feat below)', desc: '' },
+  };
+}
+
+export function getEffectiveBackground(character) {
+  if (character.backgroundId === 'custom') return buildCustomBackground(character);
+  return getBackground(character.backgroundId);
 }

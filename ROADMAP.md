@@ -19,7 +19,7 @@ milestone to schedule in the middle of it.
 |---|------|------|-------|
 | 1 | ~~Live side-panel preview~~ | S | ✅ Done (v0.6.0). |
 | 2 | ~~Language selection~~ | S | ✅ Done (v0.6.7). |
-| 3 | Custom backgrounds | S–M | Reuses existing data (abilities, skills, `GENERAL_FEATS`); just a form. |
+| 3 | ~~Custom backgrounds~~ | S–M | ✅ Done (v0.6.8). |
 | 4 | Custom PDF sheet printing | S–M | File inspected — real fillable AcroForm PDF, no longer blocked. |
 | 5 | Save/load character catalog | M | Pure engineering (storage + CRUD screens), no rules research. |
 | 6 | Class sub-choices | M | AoN verification across 8 classes, plus new spell data it unlocks. |
@@ -97,33 +97,44 @@ that filter produced a wrong answer for Kobold (Draconic from the legacy
 entry, instead of Sakvroth from Player Core 2) that got caught before
 shipping.
 
-## 3. Custom backgrounds
+## 3. Custom backgrounds — ✅ Done (v0.6.8)
 
-**Size: S–M.** Lets a player build their own background from scratch
-instead of picking one of the 35 fixed ones — for a concept none of the
-existing backgrounds fit. Confirmed against AoN's "Step 4: Pick a
-Background" (Core Rulebook pg. 24): every background reduces to the same
-shape — an ability boost pair (one of two named abilities, player's
-choice) plus one free boost, training in one specific skill, training in
-one Lore skill, and one specific skill feat. A custom background is just
-a UI for filling in that same shape by hand instead of picking a preset
-that already fills it in.
+Confirmed against AoN's "Step 4: Pick a Background" (Core Rulebook pg.
+24): every background reduces to the same shape — an ability boost pair
+plus one free boost, training in one skill, training in one Lore skill,
+and one specific skill feat. Shipped as a "+ Create your own" card
+alongside the 39-card grid in `BackgroundStep.jsx`.
 
-Work: a "Custom" option alongside the 35-card grid in `BackgroundStep.jsx`
-that lets the player (1) pick any two abilities for the boost-choice pair,
-(2) pick any trained skill, (3) type a free-text Lore subcategory (same
-free-text pattern already used for the fixed backgrounds' Lore field),
-and (4) pick a skill feat. That last part doesn't need new data — the
-`GENERAL_FEATS` catalog from Phase 2 already includes the Skill-trait
-feats (the ones with a `prereq` like "Trained in X"), so the picker can
-just offer that list, ideally filtered to feats whose prereq matches the
-skill chosen in step 2 (with an "show all" escape hatch, same
-trust-the-player spirit as how prereqs are already handled elsewhere in
-this app — shown, not hard-enforced).
+Implementation shortcut that turned out cleaner than the original plan:
+rather than an artificial "define a 2-ability pair, then pick 1 of them"
+step, a custom background just lets the player pick any ability outright
+for the chosen boost, then any other for the free boost — since the
+player *is* the background's author here, there's no meaningful
+difference between defining the pair and picking from it. Same idea for
+skill: `skillChoice` is set to *every* skill instead of a curated
+2–4-option list, so the existing "Choice of skill" section (unmodified)
+just offers all 16.
 
-Open question: whether the custom background also needs a free-text name/
-description field for flavor (cheap to add, purely cosmetic — doesn't
-affect any calculation) — worth deciding when this is actually built.
+This landed as one new function, `buildCustomBackground()` in
+`backgrounds.js`, that assembles a synthetic background object in the
+exact same shape (`{boostChoice, skillChoice, lore, feat}`) as a preset
+— so every existing consumer (`BackgroundStep`, `SkillsStep`,
+`SummaryStep`, `useComputedCharacter`) needed zero special-casing beyond
+calling a new `getEffectiveBackground(character)` instead of
+`getBackground(id)` directly. Verified this generality live: a custom
+background's chosen skill collided with the test Fighter's own
+class-granted skill, and the existing background-skill-substitute
+handling (built for preset backgrounds) caught and resolved it correctly
+without any custom-background-specific code.
+
+New pieces: a free-text Lore input (reusing an already-declared-but-
+never-wired `character.lorePicked` field instead of adding a new one), a
+skill-feat picker pulling from `GENERAL_FEATS`' "Trained in X" entries
+(filtered to whichever match the chosen skill by default, with a "show
+all" toggle for concepts that don't fit — same trust-the-player pattern
+already used for unenforced feat prerequisites), and an optional
+free-text Name field (the open question this item shipped with — decided
+yes, cheap and purely cosmetic).
 
 ## 4. Custom PDF sheet printing
 

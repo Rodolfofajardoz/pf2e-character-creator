@@ -10,7 +10,7 @@ import SkillsStep from './components/steps/SkillsStep';
 import EquipmentStep from './components/steps/EquipmentStep';
 import SummaryStep from './components/steps/SummaryStep';
 import LivePreviewPanel from './components/LivePreviewPanel';
-import { getBackground } from './data/backgrounds';
+import { getEffectiveBackground } from './data/backgrounds';
 import { getClass } from './data/classes';
 import { getAncestry } from './data/ancestries';
 import { abilityMod, getSkillPoolSize, getBackgroundSkillInfo } from './data/skills';
@@ -43,6 +43,8 @@ const initialCharacter = {
   backgroundFreeBoost: null,
   backgroundSkillChoice: null,
   backgroundSkillSubstitute: null,
+  customBackgroundName: '',
+  customBackgroundFeat: null,
   classId: null,
   classKeyAbility: null,
   classFeat: null,
@@ -54,7 +56,7 @@ const initialCharacter = {
   freeBoosts: [],
   bonusLanguages: [],
   trainedSkills: [],
-  lorePicked: null,
+  lorePicked: '',
   weaponIds: [],
   ammoIds: [],
   armorIds: [],
@@ -80,9 +82,11 @@ function App() {
         return Boolean(character.ancestryId && character.heritageId && character.ancestryFeat && generalFeatOk);
       }
       case 'background': {
-        const bg = character.backgroundId ? getBackground(character.backgroundId) : null;
+        const bg = character.backgroundId ? getEffectiveBackground(character) : null;
         const skillOk = !bg?.skillChoice || Boolean(character.backgroundSkillChoice);
-        return Boolean(character.backgroundId && character.backgroundChosenBoost && character.backgroundFreeBoost && skillOk);
+        const isCustom = character.backgroundId === 'custom';
+        const customOk = !isCustom || (Boolean(character.lorePicked?.trim()) && Boolean(character.customBackgroundFeat));
+        return Boolean(character.backgroundId && character.backgroundChosenBoost && character.backgroundFreeBoost && skillOk && customOk);
       }
       case 'class': {
         const cls = character.classId ? getClass(character.classId) : null;
@@ -116,7 +120,7 @@ function App() {
       case 'skills': {
         const cls = character.classId ? getClass(character.classId) : null;
         const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
-        const background = character.backgroundId ? getBackground(character.backgroundId) : null;
+        const background = character.backgroundId ? getEffectiveBackground(character) : null;
         if (!cls || !ancestry || !background) return true;
         const scores = computeFinalScores(character, ancestry);
         const poolSize = getSkillPoolSize(cls, abilityMod(scores.int));

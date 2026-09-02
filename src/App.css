@@ -753,6 +753,48 @@
   border-color: var(--accent);
 }
 
+/* Generic single-line text input -- custom background's Name/Lore fields. */
+.text-input {
+  width: 100%;
+  max-width: 420px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.text-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* The "+ Create your own" background card -- dashed border so it visually
+   reads as "build one" rather than "pick one" among the 39 presets. */
+.custom-option {
+  border-style: dashed;
+}
+
+.custom-option.selected {
+  border-style: solid;
+}
+
+.link-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-size: inherit;
+}
+
+.link-toggle:hover {
+  color: var(--text-h);
+}
+
 .spell-trait-filter-row {
   display: flex;
   flex-wrap: wrap;
