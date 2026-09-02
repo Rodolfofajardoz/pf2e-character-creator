@@ -29,6 +29,7 @@ export default function BackgroundStep({ character, update }) {
   }, [focusKey]);
 
   function selectBackground(id) {
+    if (id === character.backgroundId) return;
     update({
       backgroundId: id,
       backgroundChosenBoost: null,

@@ -83,7 +83,10 @@ function App() {
       }
       case 'class': {
         const cls = character.classId ? getClass(character.classId) : null;
-        const feat1Ok = !cls || cls.feats1.length === 0 || Boolean(character.classFeat);
+        // classFeatAtLevel1 (not feats1.length) gates the required 1st-level pick: some
+        // classes keep a feats1 catalog for Natural Ambition to draw from even though their
+        // own progression doesn't grant a feat at 1st level — see classes.js's comments.
+        const feat1Ok = !cls || cls.classFeatAtLevel1 === false || Boolean(character.classFeat);
         const needsBonusFeat = cls && cls.feats1.length > 0 && character.ancestryFeat?.grantsClassFeat;
         const bonusFeatOk = !needsBonusFeat || Boolean(character.bonusClassFeat);
         const skillChoiceOk = !cls?.fixedSkillChoiceOptions || Boolean(character.classSkillChoice);

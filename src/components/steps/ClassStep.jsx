@@ -26,7 +26,7 @@ export default function ClassStep({ character, update }) {
     ? 'keyAbility'
     : cls.fixedSkillChoiceOptions && !character.classSkillChoice
     ? 'skillChoice'
-    : cls.feats1.length > 0 && !character.classFeat
+    : cls.classFeatAtLevel1 !== false && !character.classFeat
     ? 'classFeat'
     : needsBonusFeat && !character.bonusClassFeat
     ? 'bonusFeat'
@@ -38,6 +38,7 @@ export default function ClassStep({ character, update }) {
   }, [focusKey]);
 
   function selectClass(id) {
+    if (id === character.classId) return;
     const c = getClass(id);
     update({
       classId: id,
@@ -166,7 +167,7 @@ export default function ClassStep({ character, update }) {
 
           <section className="sub-section" ref={classFeatRef}>
             <h3>Class Feat (1st level)</h3>
-            {cls.feats1.length === 0 ? (
+            {cls.classFeatAtLevel1 === false ? (
               <p className="option-desc">
                 The {cls.name} doesn't gain a class feat at 1st level — it gains its first one at
                 2nd level instead.

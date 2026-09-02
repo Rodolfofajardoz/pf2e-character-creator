@@ -81,10 +81,22 @@ export const CLASSES = [
     summary: 'Weaves magic through music and words, supporting allies with Compositions.',
     // Verified against AoN (Player Core pg. 94): the Bard's 1st-level class features are
     // spellcasting, spell repertoire, composition spells, and muse — it doesn't gain its
-    // first bard feat until 2nd level. Weapon proficiency also corrected here: the enumerated
-    // legacy list (longsword/rapier/sap/shortbow/shortsword) was Core Rulebook; Player Core
-    // simplified the Bard to full simple + martial weapon proficiency.
-    feats1: [],
+    // first bard feat until 2nd level, hence classFeatAtLevel1: false below. Weapon
+    // proficiency also corrected here: the enumerated legacy list (longsword/rapier/sap/
+    // shortbow/shortsword) was Core Rulebook; Player Core simplified the Bard to full
+    // simple + martial weapon proficiency.
+    //
+    // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
+    // Ambition grants "a 1st-level class feat" with no class exception, so a Bard who
+    // takes it still needs a catalog to pick from even though the class's own progression
+    // doesn't grant one at 1st level. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    classFeatAtLevel1: false,
+    feats1: [
+      { name: 'Bardic Lore', desc: 'Requires the Enigma muse: you become trained in Bardic Lore, a special Lore that can Recall Knowledge on any topic.' },
+      { name: 'Lingering Composition', desc: 'Requires the Maestro muse: you learn the Lingering Composition focus spell, which extends one of your compositions.' },
+      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
+      { name: 'Versatile Performance', desc: 'You can use Performance in place of another skill for certain actions related to your art.' },
+    ],
   },
   {
     id: 'champion',
@@ -131,9 +143,22 @@ export const CLASSES = [
     summary: 'A channel of divine will for their deity, with access to spells and sacred miracles.',
     // Verified against AoN (Player Core pg. 108): Cleric spellcasting is prepared-only (no
     // spontaneous option) — "prepare two 1st-rank spells and five cantrips each morning".
-    // 1st-level class features are deity, cleric spellcasting, divine font, and doctrine;
-    // the first cleric feat isn't gained until 2nd level.
-    feats1: [],
+    // 1st-level class features are deity, cleric spellcasting, divine font, and doctrine
+    // (sanctification is described inside the Deity entry, not a separate feature); the
+    // first cleric feat isn't gained until 2nd level, hence classFeatAtLevel1: false below.
+    //
+    // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
+    // Ambition grants "a 1st-level class feat" with no class exception, so a Cleric who
+    // takes it still needs a catalog to pick from. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    classFeatAtLevel1: false,
+    feats1: [
+      { name: 'Deadly Simplicity', desc: "Requires a deity with a simple/unarmed favored weapon, and training in it: increase that weapon's damage die by one step." },
+      { name: 'Domain Initiate', desc: 'You gain a domain spell from your deity as a focus spell.' },
+      { name: 'Harming Hands', desc: 'Requires the harmful font: your harm spell rolls d10s instead of d8s.' },
+      { name: 'Healing Hands', desc: 'Requires the healing font: your heal spell rolls d10s instead of d8s.' },
+      { name: 'Holy Castigation', desc: 'Requires good alignment: your heal spells damage fiends as though they were undead.' },
+      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
+    ],
   },
   {
     id: 'druid',
@@ -152,10 +177,22 @@ export const CLASSES = [
     summary: 'Guardian of the natural cycles, with an Order that shapes how they wield that power.',
     // Verified against AoN (Player Core pg. 122): 1st-level class features are anathema,
     // druidic order, Shield Block, voice of nature, and Wildsong — the first druid feat
-    // isn't gained until 2nd level (all the feats formerly listed here are Order-locked
-    // anyway, e.g. "Requires the Wild Order", and Order isn't modeled yet — see ROADMAP
-    // item 5).
-    feats1: [],
+    // isn't gained until 2nd level, hence classFeatAtLevel1: false below (most of the
+    // feats below are Order-locked, e.g. "Requires the Wild Order", and Order isn't
+    // modeled yet — see ROADMAP item 5).
+    //
+    // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
+    // Ambition grants "a 1st-level class feat" with no class exception, so a Druid who
+    // takes it still needs a catalog to pick from. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    classFeatAtLevel1: false,
+    feats1: [
+      { name: 'Animal Companion', desc: 'Requires the Animal Order: you gain an animal companion that fights at your side.' },
+      { name: 'Leshy Familiar', desc: 'Requires the Leaf Order: you gain a familiar in the shape of a small leshy.' },
+      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
+      { name: 'Storm Born', desc: "Requires the Storm Order: weather doesn't penalize your ranged spell attacks or Perception, and you ignore the flat check to target a creature concealed by weather." },
+      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
+      { name: 'Wild Shape', desc: 'Requires the Wild Order: you can transform into basic animal shapes.' },
+    ],
   },
   {
     id: 'fighter',
@@ -249,8 +286,21 @@ export const CLASSES = [
     summary: 'Receives visions and divine power directly, paying the price of a Curse tied to their Mystery.',
     // Verified against AoN (Player Core 2 pg. 128): 1st-level class features are oracle
     // spellcasting, spell repertoire, and mystery — the first oracle feat isn't gained
-    // until 2nd level.
-    feats1: [],
+    // until 2nd level, hence classFeatAtLevel1: false below.
+    //
+    // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
+    // Ambition grants "a 1st-level class feat" with no class exception, so an Oracle who
+    // takes it still needs a catalog to pick from. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    classFeatAtLevel1: false,
+    feats1: [
+      { name: 'Foretell Harm', desc: 'Free action, once per round, requires your last action was a damaging spell: at the start of your target\'s next turn, it takes bonus damage matching that spell\'s type.' },
+      { name: 'Glean Lore', desc: 'You attempt a Religion check to glean useful (or, on a worse result, misleading) information from the collected lore of the divine.' },
+      { name: 'Nudge the Scales', desc: 'You heal a creature (living or undead) at range for 2 + double your level HP; during daily prep you can also align yourself with life or death to change what can heal you.' },
+      { name: 'Oracular Warning', desc: "Free action, trigger: you're about to roll initiative. Allies within 20 feet gain a status bonus to their initiative roll and temporary HP." },
+      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
+      { name: 'Whispers of Weakness', desc: "You learn a target's weaknesses and lowest save, and gain a status bonus to your own next attack against it." },
+      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
+    ],
   },
   {
     id: 'ranger',
@@ -315,8 +365,19 @@ export const CLASSES = [
     summary: 'Their magic springs from an innate bloodline that determines the tradition and flavor of their spells.',
     // Verified against AoN (Player Core 2 pg. 144): 1st-level class features are bloodline,
     // sorcerer spellcasting, spell repertoire, and sorcerous potency — the first sorcerer
-    // feat isn't gained until 2nd level.
-    feats1: [],
+    // feat isn't gained until 2nd level, hence classFeatAtLevel1: false below.
+    //
+    // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
+    // Ambition grants "a 1st-level class feat" with no class exception, so a Sorcerer who
+    // takes it still needs a catalog to pick from. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    classFeatAtLevel1: false,
+    feats1: [
+      { name: 'Familiar', desc: 'You gain a familiar that assists you with your magical tasks.' },
+      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
+      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
+      { name: 'Blood Rising', desc: "Reaction, trigger: a foe targets you with a spell of your bloodline's tradition. You trigger a blood magic effect you know, against you or the caster." },
+      { name: 'Tap Into Blood', desc: "Requires an active blood magic effect: you get a minor tradition-specific trick (e.g. a Nature check to Demoralize for a primal bloodline, or an Arcana-based Recall Knowledge for arcane)." },
+    ],
   },
   {
     id: 'swashbuckler',
@@ -363,7 +424,17 @@ export const CLASSES = [
     summary: 'Serves a mysterious Patron who grants a familiar and magic in exchange for a pact.',
     // Verified against AoN (Player Core pg. 178): unlike most classes, the Witch's 1st-level
     // class features are patron, familiar, spellcasting, and hexes — it doesn't gain its first
-    // witch feat until 2nd level.
+    // witch feat until 2nd level, hence classFeatAtLevel1: false.
+    //
+    // KNOWN GAP: feats1 stays empty here (unlike the other classFeatAtLevel1: false classes,
+    // which keep a Feat-1 catalog so Natural Ambition still has something to grant) because no
+    // AoN-verified Witch Feat-1 data has been entered yet — inventing feat text from memory
+    // would violate this project's data-verification rule (see PROJECT_NOTES.md). Net effect: a
+    // Human Witch who takes Natural Ambition currently gets nothing from it (the "Bonus Class
+    // Feat" section shows "no feats to choose from" instead of offering one). Same underlying
+    // issue as the other classFeatAtLevel1: false classes had before this comment was written;
+    // fixing it here just needs the actual Witch Feat-1 list added to this array.
+    classFeatAtLevel1: false,
     feats1: [],
   },
   {
@@ -383,10 +454,23 @@ export const CLASSES = [
     summary: 'A scholar of arcane magic, bound to an Arcane School and their Spellbook.',
     // Verified against AoN (Player Core pg. 192): 1st-level class features are wizard
     // spellcasting, arcane thesis, arcane school, and arcane bond — the first wizard feat
-    // isn't gained until 2nd level. Weapon proficiency also corrected here: the enumerated
-    // legacy list (club/crossbow/dagger/heavy crossbow/staff) was Core Rulebook; Player
-    // Core simplified the Wizard to simple weapons + unarmed attacks only.
-    feats1: [],
+    // isn't gained until 2nd level, hence classFeatAtLevel1: false below. Weapon
+    // proficiency also corrected here: the enumerated legacy list (club/crossbow/dagger/
+    // heavy crossbow/staff) was Core Rulebook; Player Core simplified the Wizard to
+    // simple weapons + unarmed attacks only.
+    //
+    // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
+    // Ambition grants "a 1st-level class feat" with no class exception, so a Wizard who
+    // takes it still needs a catalog to pick from. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    classFeatAtLevel1: false,
+    feats1: [
+      { name: 'Eschew Materials', desc: "You can provide a spell's ordinary material components (a free hand, no pouch needed) with gestures instead — costly listed materials are still required." },
+      { name: 'Familiar', desc: 'You gain a familiar that assists you with your magical tasks.' },
+      { name: 'Hand of the Apprentice', desc: 'Requires the Universalist school: you gain a focus spell that lets you magically hurl the weapon you wield at a foe.' },
+      { name: 'Counterspell', desc: 'Reaction, trigger: a creature casts a spell you have prepared. You expend that prepared spell to attempt to counteract the casting.' },
+      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
+      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
+    ],
   },
 ];
 

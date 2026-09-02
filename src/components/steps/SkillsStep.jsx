@@ -23,6 +23,19 @@ export default function SkillsStep({ character, update }) {
   const selectable = SKILLS.filter((s) => !fixedIds.has(s.id));
   const substituteOptions = SKILLS.filter((s) => !classFixedIds.has(s.id) && s.id !== rawBackgroundSkillId);
 
+  // Picking a substitute that's already in the free pool has to release its
+  // pool slot, or the same skill is counted twice: once as the background's
+  // effective training and once as a free pick. The counter would then read
+  // as satisfied with one fewer distinct skill than the character is owed,
+  // and SummaryStep -- which lists the background skill separately and then
+  // maps trainedSkills -- would print that skill on the sheet twice.
+  function selectSubstitute(id) {
+    update({
+      backgroundSkillSubstitute: id,
+      trainedSkills: character.trainedSkills.filter((s) => s !== id),
+    });
+  }
+
   function toggleSkill(id) {
     const current = character.trainedSkills;
     if (current.includes(id)) {
@@ -77,7 +90,7 @@ export default function SkillsStep({ character, update }) {
               <button
                 key={s.id}
                 className={`chip ${character.backgroundSkillSubstitute === s.id ? 'selected' : ''}`}
-                onClick={() => update({ backgroundSkillSubstitute: s.id })}
+                onClick={() => selectSubstitute(s.id)}
               >
                 <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>
               </button>

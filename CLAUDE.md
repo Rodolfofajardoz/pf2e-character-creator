@@ -25,7 +25,7 @@ non-negotiable.
 
 ## Versioning
 
-Informal semver, extended with a fourth segment. Currently `0.6.4.1`.
+Informal semver, extended with a fourth segment. Currently `0.6.5`.
 
 | Change | Bump | Example |
 |---|---|---|
