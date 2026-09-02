@@ -15,60 +15,78 @@
 // new category (wasn't modeled at all before) pulled from AoN's separate
 // "shield" item type. Mount-only gear (Barding) was excluded — a level-1
 // character doesn't have a mount to put it on.
+//
+// `traits` on WEAPONS/ARMORS (e.g. Thrown 10 ft., Versatile S, Deadly d8,
+// Flexible) were pulled from each item's AoN `trait_raw` field — display
+// strings that include the trait's number/die/damage-type suffix where the
+// rules attach one. `EquipmentStep.jsx` derives a glossary lookup id from
+// each string by stripping that trailing variable part (see
+// `traitGlossaryId` there), so "Deadly d8" and "Deadly d10" both resolve to
+// the same "deadly" glossary entry while still displaying their own value.
+//
+// Thrown's range increment is a special case: AoN's own trait_raw only
+// includes it when Thrown appears on an otherwise-melee weapon (the range
+// has nowhere else to live on that weapon's stat block). On a weapon that's
+// already ranged (Dart, Javelin, Bola), the increment normally lives in a
+// separate Range field this app doesn't otherwise track, which would have
+// made those three the only "Thrown" tags with no range shown next to ones
+// that do — so their range was pulled from that Range field too and folded
+// into the trait string by hand, for a consistent "Thrown always shows a
+// distance" reading in the shop.
 
 export const STARTING_GOLD = 15;
 
 export const WEAPONS = [
   // Simple
-  { id: 'club', name: 'Club', price: 0, category: 'simple', damage: '1d6 B' },
-  { id: 'dagger', name: 'Dagger', price: 0.2, category: 'simple', damage: '1d4 P' },
-  { id: 'gauntlet', name: 'Gauntlet', price: 0.2, category: 'simple', damage: '1d4 B' },
-  { id: 'light-mace', name: 'Light Mace', price: 0.4, category: 'simple', damage: '1d4 B' },
-  { id: 'longspear', name: 'Longspear', price: 0.5, category: 'simple', damage: '1d8 P' },
-  { id: 'mace', name: 'Mace', price: 1, category: 'simple', damage: '1d6 B' },
-  { id: 'morningstar', name: 'Morningstar', price: 1, category: 'simple', damage: '1d6 B' },
-  { id: 'sickle', name: 'Sickle', price: 0.2, category: 'simple', damage: '1d4 S' },
-  { id: 'spiked-gauntlet', name: 'Spiked Gauntlet', price: 0.3, category: 'simple', damage: '1d4 P' },
-  { id: 'spear', name: 'Spear', price: 0.1, category: 'simple', damage: '1d6 P' },
-  { id: 'staff', name: 'Staff', price: 0, category: 'simple', damage: '1d4 B' },
-  { id: 'blowgun', name: 'Blowgun', price: 0.1, category: 'simple', damage: '1 P (ranged)' },
-  { id: 'crossbow', name: 'Crossbow', price: 3, category: 'simple', damage: '1d8 P (ranged)' },
-  { id: 'dart', name: 'Dart', price: 0.01, category: 'simple', damage: '1d4 P (ranged)' },
-  { id: 'hand-crossbow', name: 'Hand Crossbow', price: 3, category: 'simple', damage: '1d6 P (ranged)' },
-  { id: 'javelin', name: 'Javelin', price: 0.1, category: 'simple', damage: '1d6 P (ranged)' },
-  { id: 'sling', name: 'Sling', price: 0, category: 'simple', damage: '1d6 B (ranged)' },
+  { id: 'club', name: 'Club', price: 0, category: 'simple', damage: '1d6 B', traits: ['Thrown 10 ft.'] },
+  { id: 'dagger', name: 'Dagger', price: 0.2, category: 'simple', damage: '1d4 P', traits: ['Agile','Finesse','Thrown 10 ft.','Versatile S'] },
+  { id: 'gauntlet', name: 'Gauntlet', price: 0.2, category: 'simple', damage: '1d4 B', traits: ['Agile','Free-Hand'] },
+  { id: 'light-mace', name: 'Light Mace', price: 0.4, category: 'simple', damage: '1d4 B', traits: ['Agile','Finesse','Shove'] },
+  { id: 'longspear', name: 'Longspear', price: 0.5, category: 'simple', damage: '1d8 P', traits: ['Reach'] },
+  { id: 'mace', name: 'Mace', price: 1, category: 'simple', damage: '1d6 B', traits: ['Shove'] },
+  { id: 'morningstar', name: 'Morningstar', price: 1, category: 'simple', damage: '1d6 B', traits: ['Versatile P'] },
+  { id: 'sickle', name: 'Sickle', price: 0.2, category: 'simple', damage: '1d4 S', traits: ['Agile','Finesse','Trip'] },
+  { id: 'spiked-gauntlet', name: 'Spiked Gauntlet', price: 0.3, category: 'simple', damage: '1d4 P', traits: ['Agile','Free-Hand'] },
+  { id: 'spear', name: 'Spear', price: 0.1, category: 'simple', damage: '1d6 P', traits: ['Thrown 20 ft.'] },
+  { id: 'staff', name: 'Staff', price: 0, category: 'simple', damage: '1d4 B', traits: ['Two-Hand 1d8'] },
+  { id: 'blowgun', name: 'Blowgun', price: 0.1, category: 'simple', damage: '1 P (ranged)', traits: ['Agile','Nonlethal'] },
+  { id: 'crossbow', name: 'Crossbow', price: 3, category: 'simple', damage: '1d8 P (ranged)', traits: [] },
+  { id: 'dart', name: 'Dart', price: 0.01, category: 'simple', damage: '1d4 P (ranged)', traits: ['Agile', 'Thrown 20 ft.'] },
+  { id: 'hand-crossbow', name: 'Hand Crossbow', price: 3, category: 'simple', damage: '1d6 P (ranged)', traits: [] },
+  { id: 'javelin', name: 'Javelin', price: 0.1, category: 'simple', damage: '1d6 P (ranged)', traits: ['Thrown 30 ft.'] },
+  { id: 'sling', name: 'Sling', price: 0, category: 'simple', damage: '1d6 B (ranged)', traits: ['Propulsive'] },
   // Martial
-  { id: 'battle-axe', name: 'Battle Axe', price: 1, category: 'martial', damage: '1d8 S' },
-  { id: 'bastard-sword', name: 'Bastard Sword', price: 4, category: 'martial', damage: '1d8 S' },
-  { id: 'falchion', name: 'Falchion', price: 3, category: 'martial', damage: '1d10 S' },
-  { id: 'flail', name: 'Flail', price: 0.8, category: 'martial', damage: '1d6 B' },
-  { id: 'greataxe', name: 'Greataxe', price: 2, category: 'martial', damage: '1d12 S' },
-  { id: 'greatclub', name: 'Greatclub', price: 1, category: 'martial', damage: '1d10 B' },
-  { id: 'greatpick', name: 'Greatpick', price: 1, category: 'martial', damage: '1d10 P' },
-  { id: 'greatsword', name: 'Greatsword', price: 2, category: 'martial', damage: '1d12 S' },
-  { id: 'guisarme', name: 'Guisarme', price: 2, category: 'martial', damage: '1d10 S' },
-  { id: 'halberd', name: 'Halberd', price: 2, category: 'martial', damage: '1d10 P' },
-  { id: 'hatchet', name: 'Hatchet', price: 0.4, category: 'martial', damage: '1d6 S' },
-  { id: 'lance', name: 'Lance', price: 1, category: 'martial', damage: '1d8 P' },
-  { id: 'light-hammer', name: 'Light Hammer', price: 0.3, category: 'martial', damage: '1d6 B' },
-  { id: 'light-pick', name: 'Light Pick', price: 0.4, category: 'martial', damage: '1d4 P' },
-  { id: 'longsword', name: 'Longsword', price: 1, category: 'martial', damage: '1d8 S' },
-  { id: 'main-gauche', name: 'Main-gauche', price: 0.5, category: 'martial', damage: '1d4 P' },
-  { id: 'maul', name: 'Maul', price: 3, category: 'martial', damage: '1d12 B' },
-  { id: 'pick', name: 'Pick', price: 0.7, category: 'martial', damage: '1d6 P' },
-  { id: 'rapier', name: 'Rapier', price: 2, category: 'martial', damage: '1d6 P' },
-  { id: 'sap', name: 'Sap', price: 0.1, category: 'martial', damage: '1d6 B' },
-  { id: 'scimitar', name: 'Scimitar', price: 1, category: 'martial', damage: '1d6 S' },
-  { id: 'scythe', name: 'Scythe', price: 2, category: 'martial', damage: '1d10 S' },
-  { id: 'shortsword', name: 'Shortsword', price: 0.9, category: 'martial', damage: '1d6 P' },
-  { id: 'trident', name: 'Trident', price: 1, category: 'martial', damage: '1d8 P' },
-  { id: 'war-flail', name: 'War Flail', price: 2, category: 'martial', damage: '1d10 B' },
-  { id: 'warhammer', name: 'Warhammer', price: 1, category: 'martial', damage: '1d8 B' },
-  { id: 'whip', name: 'Whip', price: 0.1, category: 'martial', damage: '1d4 S' },
-  { id: 'arbalest', name: 'Arbalest', price: 8, category: 'martial', damage: '1d10 P (ranged)' },
-  { id: 'bola', name: 'Bola', price: 0.5, category: 'martial', damage: '1d6 B (ranged)' },
-  { id: 'longbow', name: 'Longbow', price: 6, category: 'martial', damage: '1d8 P (ranged)' },
-  { id: 'shortbow', name: 'Shortbow', price: 3, category: 'martial', damage: '1d6 P (ranged)' },
+  { id: 'battle-axe', name: 'Battle Axe', price: 1, category: 'martial', damage: '1d8 S', traits: ['Sweep'] },
+  { id: 'bastard-sword', name: 'Bastard Sword', price: 4, category: 'martial', damage: '1d8 S', traits: ['Two-Hand 1d12'] },
+  { id: 'falchion', name: 'Falchion', price: 3, category: 'martial', damage: '1d10 S', traits: ['Forceful','Sweep'] },
+  { id: 'flail', name: 'Flail', price: 0.8, category: 'martial', damage: '1d6 B', traits: ['Disarm','Sweep','Trip'] },
+  { id: 'greataxe', name: 'Greataxe', price: 2, category: 'martial', damage: '1d12 S', traits: ['Sweep'] },
+  { id: 'greatclub', name: 'Greatclub', price: 1, category: 'martial', damage: '1d10 B', traits: ['Backswing','Shove'] },
+  { id: 'greatpick', name: 'Greatpick', price: 1, category: 'martial', damage: '1d10 P', traits: ['Fatal 1d12'] },
+  { id: 'greatsword', name: 'Greatsword', price: 2, category: 'martial', damage: '1d12 S', traits: ['Versatile P'] },
+  { id: 'guisarme', name: 'Guisarme', price: 2, category: 'martial', damage: '1d10 S', traits: ['Reach','Trip'] },
+  { id: 'halberd', name: 'Halberd', price: 2, category: 'martial', damage: '1d10 P', traits: ['Reach','Versatile S'] },
+  { id: 'hatchet', name: 'Hatchet', price: 0.4, category: 'martial', damage: '1d6 S', traits: ['Agile','Sweep','Thrown 10 ft.'] },
+  { id: 'lance', name: 'Lance', price: 1, category: 'martial', damage: '1d8 P', traits: ['Deadly d8','Jousting 1d6','Reach'] },
+  { id: 'light-hammer', name: 'Light Hammer', price: 0.3, category: 'martial', damage: '1d6 B', traits: ['Agile','Thrown 20 ft.'] },
+  { id: 'light-pick', name: 'Light Pick', price: 0.4, category: 'martial', damage: '1d4 P', traits: ['Agile','Fatal 1d8'] },
+  { id: 'longsword', name: 'Longsword', price: 1, category: 'martial', damage: '1d8 S', traits: ['Versatile P'] },
+  { id: 'main-gauche', name: 'Main-gauche', price: 0.5, category: 'martial', damage: '1d4 P', traits: ['Agile','Disarm','Finesse','Parry','Versatile S'] },
+  { id: 'maul', name: 'Maul', price: 3, category: 'martial', damage: '1d12 B', traits: ['Shove'] },
+  { id: 'pick', name: 'Pick', price: 0.7, category: 'martial', damage: '1d6 P', traits: ['Fatal 1d10'] },
+  { id: 'rapier', name: 'Rapier', price: 2, category: 'martial', damage: '1d6 P', traits: ['Deadly d8','Disarm','Finesse'] },
+  { id: 'sap', name: 'Sap', price: 0.1, category: 'martial', damage: '1d6 B', traits: ['Agile','Nonlethal'] },
+  { id: 'scimitar', name: 'Scimitar', price: 1, category: 'martial', damage: '1d6 S', traits: ['Forceful','Sweep'] },
+  { id: 'scythe', name: 'Scythe', price: 2, category: 'martial', damage: '1d10 S', traits: ['Deadly d10','Trip'] },
+  { id: 'shortsword', name: 'Shortsword', price: 0.9, category: 'martial', damage: '1d6 P', traits: ['Agile','Finesse','Versatile S'] },
+  { id: 'trident', name: 'Trident', price: 1, category: 'martial', damage: '1d8 P', traits: ['Thrown 20 ft.'] },
+  { id: 'war-flail', name: 'War Flail', price: 2, category: 'martial', damage: '1d10 B', traits: ['Disarm','Sweep','Trip'] },
+  { id: 'warhammer', name: 'Warhammer', price: 1, category: 'martial', damage: '1d8 B', traits: ['Shove'] },
+  { id: 'whip', name: 'Whip', price: 0.1, category: 'martial', damage: '1d4 S', traits: ['Disarm','Finesse','Nonlethal','Reach','Trip'] },
+  { id: 'arbalest', name: 'Arbalest', price: 8, category: 'martial', damage: '1d10 P (ranged)', traits: ['Backstabber'] },
+  { id: 'bola', name: 'Bola', price: 0.5, category: 'martial', damage: '1d6 B (ranged)', traits: ['Nonlethal', 'Ranged Trip', 'Thrown 20 ft.'] },
+  { id: 'longbow', name: 'Longbow', price: 6, category: 'martial', damage: '1d8 P (ranged)', traits: ['Deadly d10','Volley 30 ft.'] },
+  { id: 'shortbow', name: 'Shortbow', price: 3, category: 'martial', damage: '1d6 P (ranged)', traits: ['Deadly d10'] },
 ];
 
 export const WEAPON_CATEGORY_LABELS = {
@@ -89,19 +107,19 @@ export const AMMUNITION = [
 ];
 
 export const ARMORS = [
-  { id: 'none', name: 'No armor', price: 0, category: 'none', acBonus: 0, dexCap: null },
-  { id: 'explorers-clothing', name: "Explorer's Clothing", price: 0.1, category: 'none', acBonus: 0, dexCap: 5 },
-  { id: 'padded', name: 'Padded', price: 0.2, category: 'light', acBonus: 1, dexCap: 3 },
-  { id: 'leather', name: 'Leather', price: 2, category: 'light', acBonus: 1, dexCap: 4 },
-  { id: 'studded-leather', name: 'Studded Leather', price: 3, category: 'light', acBonus: 2, dexCap: 3 },
-  { id: 'chain-shirt', name: 'Chain Shirt', price: 5, category: 'light', acBonus: 2, dexCap: 3 },
-  { id: 'hide', name: 'Hide', price: 2, category: 'medium', acBonus: 3, dexCap: 2 },
-  { id: 'scale-mail', name: 'Scale Mail', price: 4, category: 'medium', acBonus: 3, dexCap: 2 },
-  { id: 'chain-mail', name: 'Chain Mail', price: 6, category: 'medium', acBonus: 4, dexCap: 1 },
-  { id: 'breastplate', name: 'Breastplate', price: 8, category: 'medium', acBonus: 4, dexCap: 1 },
-  { id: 'splint-mail', name: 'Splint Mail', price: 13, category: 'heavy', acBonus: 5, dexCap: 1 },
-  { id: 'half-plate', name: 'Half Plate', price: 18, category: 'heavy', acBonus: 5, dexCap: 1 },
-  { id: 'full-plate', name: 'Full Plate', price: 30, category: 'heavy', acBonus: 6, dexCap: 0 },
+  { id: 'none', name: 'No armor', price: 0, category: 'none', acBonus: 0, dexCap: null, traits: [] },
+  { id: 'explorers-clothing', name: "Explorer's Clothing", price: 0.1, category: 'none', acBonus: 0, dexCap: 5, traits: ['Comfort'] },
+  { id: 'padded', name: 'Padded', price: 0.2, category: 'light', acBonus: 1, dexCap: 3, traits: ['Comfort'] },
+  { id: 'leather', name: 'Leather', price: 2, category: 'light', acBonus: 1, dexCap: 4, traits: [] },
+  { id: 'studded-leather', name: 'Studded Leather', price: 3, category: 'light', acBonus: 2, dexCap: 3, traits: [] },
+  { id: 'chain-shirt', name: 'Chain Shirt', price: 5, category: 'light', acBonus: 2, dexCap: 3, traits: ['Flexible','Noisy'] },
+  { id: 'hide', name: 'Hide', price: 2, category: 'medium', acBonus: 3, dexCap: 2, traits: [] },
+  { id: 'scale-mail', name: 'Scale Mail', price: 4, category: 'medium', acBonus: 3, dexCap: 2, traits: [] },
+  { id: 'chain-mail', name: 'Chain Mail', price: 6, category: 'medium', acBonus: 4, dexCap: 1, traits: ['Flexible','Noisy'] },
+  { id: 'breastplate', name: 'Breastplate', price: 8, category: 'medium', acBonus: 4, dexCap: 1, traits: [] },
+  { id: 'splint-mail', name: 'Splint Mail', price: 13, category: 'heavy', acBonus: 5, dexCap: 1, traits: [] },
+  { id: 'half-plate', name: 'Half Plate', price: 18, category: 'heavy', acBonus: 5, dexCap: 1, traits: [] },
+  { id: 'full-plate', name: 'Full Plate', price: 30, category: 'heavy', acBonus: 6, dexCap: 0, traits: ['Bulwark'] },
 ];
 
 export const ARMOR_CATEGORY_LABELS = {

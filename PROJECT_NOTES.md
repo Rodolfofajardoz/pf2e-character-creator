@@ -1049,28 +1049,48 @@ worth keeping for the next time a bundled PDF's fields need mapping:
    (extensionless relative imports, `import.meta.env`) exactly like the
    real app does, without needing a live browser at all.
 
-## To-do list (small polish items, separate from ROADMAP.md)
+## To-do list (small polish items, separate from ROADMAP.md) — done (v0.7.1)
 
-Not roadmap items (those are the big 9 toward v1.0, in ROADMAP.md) — just
-two smaller UI requests noted for a future session:
+Both items noted here were shipped in v0.7.1:
 
 1. **Collapsible sections for Spells (by rank) and Equipment (by
-   group)**: both lists have grown long enough (spells across ranks;
-   the equipment shop across Weapons/Armor/Shields/Adventuring Gear)
-   that being able to collapse/expand each group would help — right now
-   everything renders open at once and you scroll past whatever you're
-   not currently shopping/picking in.
-2. **Inspect support in the Equipment shop**: weapon/armor traits like
-   damage type (currently shown as bare letters — P/S/B for
-   Piercing/Slashing/Bludgeoning) and traits like Thrown or Two-Hand
-   aren't explained anywhere in the shop, unlike the rest of the app
-   where Inspect Mode covers exactly this kind of jargon. Flagged
-   directly after a screenshot of the Weapons list showing plain "P"/"S"
-   with no context — new players won't know what those mean. Likely
-   needs both new glossary entries (damage types, weapon traits) and
-   surfacing weapon/armor trait data that isn't in `equipment.js` yet
-   (only `damage` and category are modeled currently, not the full
-   trait list e.g. "Thrown 10 ft.", "Two-Hand d8", "Deadly d10").
+   group)**. New shared `src/components/Collapsible.jsx` — a
+   `.sub-section` whose heading (a `role="button"` div around an `<h3>`,
+   same reasoning as `GlossaryTerm`'s span-not-button: it can end up
+   nested inside other clickable containers) toggles its body open/closed,
+   defaulting open. `SpellsStep.jsx`'s two `SpellPicker` sections and
+   `EquipmentStep.jsx`'s four `ShopGroup`s (Weapons, Armor, Shields,
+   Adventuring Gear — the latter two converted from a raw
+   `<section>`/`<h3>` pair to `ShopGroup` so all four behave the same
+   way) each now collapse independently.
+2. **Inspect support in the Equipment shop.** Two new data pieces:
+   - `traits` added to all 47 `WEAPONS` and 13 `ARMORS` entries in
+     `equipment.js`, pulled from each item's AoN `trait_raw` field (the
+     display string including its number/die/damage-letter suffix,
+     e.g. "Thrown 10 ft.", "Deadly d8", "Versatile S") — verified the
+     same way every other AoN pull this project has done, filtered to a
+     Player-Core-sourced hit per item.
+   - 26 weapon/armor trait entries + 3 damage-type entries (Piercing/
+     Slashing/Bludgeoning) added to `glossary.js`. `EquipmentStep.jsx`'s
+     `traitGlossaryId()` strips a trait string's trailing variable part
+     (`/\s+(\d+\s*ft\.?|\d*d\d+|[A-Z])$/`) to get the lookup id, so
+     "Deadly d8" and "Deadly d10" both resolve to one `deadly` entry.
+     The existing `trip` entry (already covering the Athletics action)
+     was extended rather than duplicated, since the weapon trait is a
+     minor variant of the same concept ("...even without a free hand").
+   - Trait tags reuse spell cards' `.trait-tag` badge look, but the
+     `GlossaryTerm` goes *inside* the tag span rather than replacing it —
+     `GlossaryTerm` renders bare `children` (no wrapper element at all)
+     when Inspect is off, so wrapping the whole tag in it would have
+     dropped the badge styling whenever Inspect wasn't active. Damage
+     letters get the same treatment: `1d4 P` renders as `1d4 Piercing`,
+     the type name wrapped in `GlossaryTerm`.
+
+Verified live: toggling each of the four Equipment groups and both Spell
+sections closed/reopened independently without affecting the others;
+Inspect on, clicking a Dagger's "Thrown 10 ft." tag and the "Piercing"
+damage-type word both opened the correct popover text; a Chain Shirt
+correctly showed Flexible + Noisy tags.
 
 ## How to run the dev server
 

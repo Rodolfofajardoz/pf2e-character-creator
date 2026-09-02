@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { getClass } from '../../data/classes';
 import { CANTRIPS, SPELLS_RANK_1, getSpellsForTradition, TRADITION_LABELS } from '../../data/spells';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
+import Collapsible from '../Collapsible';
 
 // AoN writes casting time as a number of action icons (or a named badge for
 // Reaction/Free Action/longer activities). `cast` is only set on entries
@@ -108,10 +109,7 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
   const knownNames = known.map((id) => pool.find((s) => s.id === id)?.name).filter(Boolean);
 
   return (
-    <section className="sub-section">
-      <h3>
-        {title} ({known.length}/{maxKnown})
-      </h3>
+    <Collapsible title={`${title} (${known.length}/${maxKnown})`}>
       <p className="hint spell-selected-summary">
         <strong>Selected:</strong> {knownNames.length > 0 ? knownNames.join(', ') : 'None yet'}
       </p>
@@ -154,7 +152,7 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
           />
         ))}
       </div>
-    </section>
+    </Collapsible>
   );
 }
 

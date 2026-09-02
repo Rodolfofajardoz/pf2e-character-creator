@@ -25,7 +25,7 @@ non-negotiable.
 
 ## Versioning
 
-Informal semver, extended with a fourth segment. Currently `0.7.0`.
+Informal semver, extended with a fourth segment. Currently `0.7.1`.
 
 **Note:** `v0.6.7` (language selection) and `v0.6.8` (custom backgrounds)
 were roadmap items and should have been minor bumps (`0.7.0`, `0.8.0`)

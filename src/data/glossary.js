@@ -54,7 +54,7 @@ export const GLOSSARY = [
   { id: 'strike', term: 'Strike', desc: "The basic attack action: swing a weapon or unarmed attack at a foe within reach or range." },
   { id: 'stance', term: 'Stance', desc: "A special combat mode (usually entered with a single action) that changes what Strikes you can make and grants passive benefits while active. You can only be in one stance at a time, and most end if you're knocked out or otherwise incapacitated." },
   { id: 'grapple', term: 'Grapple', desc: "An Athletics action to seize a foe (or keep holding one already Grabbed), leaving them grabbed or immobilized on a strong enough success." },
-  { id: 'trip', term: 'Trip', desc: "An Athletics action to knock a foe off their feet, leaving them prone on a success." },
+  { id: 'trip', term: 'Trip', desc: "An Athletics action to knock a foe off their feet, leaving them prone on a success. As a weapon trait, it lets you Trip with that weapon even without a free hand, using the weapon's reach and item bonus." },
   { id: 'reactive-strike', term: 'Reactive Strike', desc: "A reaction (granted by some classes, notably the Fighter) letting you Strike a foe that leaves a threatened square, uses a manipulate action, or makes a ranged attack near you." },
   { id: 'reaction', term: 'Reaction', desc: 'An action you can take outside your own turn, triggered by a specific event, if you have an ability that grants one. You get one per turn by default.' },
   { id: 'free-action', term: 'Free Action', desc: "An action that doesn't use up any of your three actions per turn (though it may still have its own trigger or limit)." },
@@ -107,6 +107,40 @@ export const GLOSSARY = [
   { id: 'stealth', term: 'Stealth', desc: 'A Dexterity-based Skill: stay out of sight. Move unseen and hide from watching eyes.' },
   { id: 'survival', term: 'Survival', desc: 'A Wisdom-based Skill: track quarry, forage for food, and endure in the wild.' },
   { id: 'thievery', term: 'Thievery', desc: "A Dexterity-based Skill: pick locks, disarm traps, and steal without being noticed." },
+
+  // Damage types (the letter shown after a weapon's dice, e.g. "1d4 P")
+  { id: 'piercing', term: 'Piercing', desc: 'A damage type from stabbing or puncturing weapons — daggers, arrows, spears, and the like.' },
+  { id: 'slashing', term: 'Slashing', desc: 'A damage type from cutting weapons — swords, axes, and the like.' },
+  { id: 'bludgeoning', term: 'Bludgeoning', desc: 'A damage type from blunt-force weapons — clubs, hammers, fists, and the like.' },
+
+  // Weapon & armor traits (see equipment.js's `traits` field). Ids match a
+  // trait's base name with any trailing number/die/damage-type value
+  // stripped — "Deadly d8" and "Deadly d10" both resolve to 'deadly'.
+  { id: 'agile', term: 'Agile', desc: "The multiple attack penalty for a second attack with this weapon is lighter than normal (−4 instead of −5), and for a third+ attack (−8 instead of −10)." },
+  { id: 'finesse', term: 'Finesse', desc: "You can use your Dexterity modifier instead of Strength on attack rolls with this weapon. Damage still uses Strength." },
+  { id: 'thrown', term: 'Thrown', desc: 'This weapon can be thrown as a ranged attack, adding your Strength modifier to damage just like a melee attack would.' },
+  { id: 'versatile', term: 'Versatile', desc: "This weapon can deal an alternate damage type instead of its listed one — the trait's letter says which (e.g. Versatile S = piercing or slashing). You choose the type each time you attack." },
+  { id: 'free-hand', term: 'Free-Hand', desc: "This weapon doesn't take up your hand (it's usually built into your armor) and can't be Disarmed — you can still use that hand for other things when you're not attacking with it." },
+  { id: 'shove', term: 'Shove', desc: "You can use this weapon to Shove (an Athletics action) even without a free hand, using the weapon's reach and item bonus." },
+  { id: 'reach', term: 'Reach', desc: 'This weapon can attack creatures up to 10 feet away instead of only adjacent ones.' },
+  { id: 'nonlethal', term: 'Nonlethal', desc: "Attacks with this weapon knock a creature out instead of killing it. You can still make a lethal attack with it at a −2 circumstance penalty." },
+  { id: 'propulsive', term: 'Propulsive', desc: "You add half your Strength modifier (or all of it, if it's negative) to damage rolls with this ranged weapon." },
+  { id: 'sweep', term: 'Sweep', desc: 'You gain a +1 circumstance bonus to your attack roll with this weapon if you already attempted to attack a different target this turn with it.' },
+  { id: 'two-hand', term: 'Two-Hand', desc: "Wielding this weapon with two hands changes all of its damage dice to the die size the trait lists." },
+  { id: 'forceful', term: 'Forceful', desc: 'Attacking more than once on your turn with this weapon builds momentum: the second attack gains a circumstance bonus to damage equal to its number of damage dice, and each attack after that gains double that bonus.' },
+  { id: 'disarm', term: 'Disarm', desc: "You can use this weapon to Disarm (an Athletics action) even without a free hand, using the weapon's reach and item bonus." },
+  { id: 'backswing', term: 'Backswing', desc: 'After missing an attack with this weapon on your turn, you gain a +1 circumstance bonus to your next attack with it before the end of that turn.' },
+  { id: 'fatal', term: 'Fatal', desc: "On a critical hit, this weapon's damage die increases to the size the trait lists (instead of its normal size), and it adds one additional die of that size." },
+  { id: 'deadly', term: 'Deadly', desc: 'On a critical hit, this weapon adds one extra damage die of the size the trait lists, rolled after doubling the damage.' },
+  { id: 'jousting', term: 'Jousting', desc: "Built for mounted combat: while mounted, moving at least 10 feet before attacking adds a damage bonus, and the weapon can be wielded one-handed at the die size the trait lists." },
+  { id: 'parry', term: 'Parry', desc: 'While wielding this weapon, if trained or better with it, you can spend an action to position it defensively for a +1 circumstance bonus to AC until the start of your next turn.' },
+  { id: 'backstabber', term: 'Backstabber', desc: 'This weapon deals 1 extra precision damage when it hits an off-guard creature.' },
+  { id: 'ranged-trip', term: 'Ranged Trip', desc: "This ranged weapon can Trip (an Athletics action) within its first range increment, at a −2 circumstance penalty, without dealing any damage." },
+  { id: 'volley', term: 'Volley', desc: 'This ranged weapon is less effective at close range — attacks against a target within the distance the trait lists take a −2 penalty.' },
+  { id: 'comfort', term: 'Comfort', desc: "This armor is comfortable enough that you can rest normally while wearing it." },
+  { id: 'flexible', term: 'Flexible', desc: "This armor doesn't apply its check penalty to Acrobatics or Athletics checks." },
+  { id: 'noisy', term: 'Noisy', desc: "This armor is loud — its check penalty applies to Stealth checks even if you meet its Strength requirement." },
+  { id: 'bulwark', term: 'Bulwark', desc: 'This armor covers you so completely that, on a Reflex save against a damaging effect, you use a +3 modifier in place of your Dexterity modifier.' },
 ];
 
 export function getGlossaryTerm(id) {

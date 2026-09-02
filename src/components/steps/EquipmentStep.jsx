@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import Collapsible from '../Collapsible';
+import { GlossaryTerm } from '../../context/InspectContext';
 import {
   WEAPONS,
   WEAPON_CATEGORY_LABELS,
@@ -33,13 +35,55 @@ function groupByCategory(items, categoryLabels, order = Object.keys(categoryLabe
   }));
 }
 
+// The letter after a weapon's dice (e.g. "1d4 P") is its damage type —
+// wrapped here in a GlossaryTerm instead of shown bare, per an explicit
+// request that new players shouldn't need to already know what "P" means.
+const DAMAGE_TYPE_IDS = { P: 'piercing', S: 'slashing', B: 'bludgeoning' };
+const DAMAGE_TYPE_LABELS = { P: 'Piercing', S: 'Slashing', B: 'Bludgeoning' };
+
+function DamageLine({ damage }) {
+  const m = damage.match(/^(.+?)\s+([PSB])(\s*\(ranged\))?$/);
+  if (!m) return <span className="shop-row-meta">{damage}</span>;
+  const [, dice, letter, ranged] = m;
+  return (
+    <span className="shop-row-meta">
+      {dice} <GlossaryTerm id={DAMAGE_TYPE_IDS[letter]}>{DAMAGE_TYPE_LABELS[letter]}</GlossaryTerm>
+      {ranged || ''}
+    </span>
+  );
+}
+
+// A trait's display string often carries a variable value the rules text
+// itself doesn't change with (Thrown 10 ft. vs Thrown 20 ft., Deadly d8 vs
+// Deadly d10) -- strip that trailing number/die/damage-letter to get the
+// glossary id, so every value of a given trait resolves to one definition.
+function traitGlossaryId(trait) {
+  return trait
+    .replace(/\s+(\d+\s*ft\.?|\d*d\d+|[A-Z])$/, '')
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
+
+function TraitTags({ traits }) {
+  if (!traits || traits.length === 0) return null;
+  return (
+    <div className="shop-row-traits">
+      {traits.map((t) => (
+        <span key={t} className="trait-tag">
+          <GlossaryTerm id={traitGlossaryId(t)}>{t}</GlossaryTerm>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function ShopRow({ item, qty, remaining, deniedId, onAdd, onRemove }) {
   const unaffordable = item.price > remaining;
   return (
     <div className={`shop-row ${deniedId === item.id ? 'deny-shake' : ''}`}>
       <div className="shop-row-info">
         <span className="shop-row-name">{item.name}</span>
-        {item.damage && <span className="shop-row-meta">{item.damage}</span>}
+        {item.damage && <DamageLine damage={item.damage} />}
         {item.acBonus !== undefined && item.category !== undefined && (
           <span className="shop-row-meta">AC +{item.acBonus}</span>
         )}
@@ -48,6 +92,7 @@ function ShopRow({ item, qty, remaining, deniedId, onAdd, onRemove }) {
             Hardness {item.hardness}, HP {item.hp} (BT {item.bt}){item.speedPenalty ? `, ${item.speedPenalty} Speed` : ''}
           </span>
         )}
+        <TraitTags traits={item.traits} />
         <span className="shop-row-price">{formatGold(item.price)}</span>
       </div>
       <div className="shop-row-stepper">
@@ -94,16 +139,17 @@ function ShopSection({ title, items, ownedIds, remaining, deniedId, onAdd, onRem
   );
 }
 
-// Groups multiple ShopSections under one bigger heading — "Weapons"
-// containing Simple/Martial/Ammunition, "Armor" containing Heavy/Medium/
-// Light/Unarmored — so the two big catalogs read as organized categories
-// instead of one long undifferentiated scroll of section headings.
+// Groups multiple ShopSections under one bigger, collapsible heading —
+// "Weapons" containing Simple/Martial/Ammunition, "Armor" containing
+// Heavy/Medium/Light/Unarmored, and (with no subsections of their own)
+// Shields and Adventuring Gear — so the four catalogs read as organized,
+// collapsible categories instead of one long scroll you have to page past
+// to reach whichever one you're actually shopping in.
 function ShopGroup({ title, children }) {
   return (
-    <div className="shop-group">
-      <h3 className="shop-group-title">{title}</h3>
+    <Collapsible title={title} className="shop-group">
       {children}
-    </div>
+    </Collapsible>
   );
 }
 
@@ -211,11 +257,10 @@ export default function EquipmentStep({ character, update }) {
       </ShopGroup>
 
       {/* Shields and Adventuring Gear don't have book subcategories the
-          way Weapons/Armor do, so they're a single flat shop-grid under
-          one heading rather than a ShopGroup wrapping a ShopSection —
-          that combo would just repeat the same title twice. */}
-      <section className="sub-section shop-group">
-        <h3 className="shop-group-title">Shields</h3>
+          way Weapons/Armor do, so it's a single flat shop-grid directly
+          inside the ShopGroup rather than a ShopSection under it — that
+          combo would just repeat the same title twice. */}
+      <ShopGroup title="Shields">
         <div className="shop-grid">
           {SHIELDS.map((item) => (
             <ShopRow
@@ -228,10 +273,9 @@ export default function EquipmentStep({ character, update }) {
             />
           ))}
         </div>
-      </section>
+      </ShopGroup>
 
-      <section className="sub-section shop-group">
-        <h3 className="shop-group-title">Adventuring Gear</h3>
+      <ShopGroup title="Adventuring Gear">
         <div className="shop-grid">
           {GEAR.map((item) => (
             <ShopRow
@@ -244,7 +288,7 @@ export default function EquipmentStep({ character, update }) {
             />
           ))}
         </div>
-      </section>
+      </ShopGroup>
 
       <section className="sub-section">
         <h3>Your Purchases</h3>
