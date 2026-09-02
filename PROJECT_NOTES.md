@@ -1092,6 +1092,53 @@ Inspect on, clicking a Dagger's "Thrown 10 ft." tag and the "Piercing"
 damage-type word both opened the correct popover text; a Chain Shirt
 correctly showed Flexible + Noisy tags.
 
+## Patch: v0.7.2 — weapon trait filter, Inspect on filter chips
+
+Shipped the trait-filter idea floated at the end of v0.7.1 the same
+session, faster than expected — the "likely fast fix" noted at the time
+worked as predicted:
+
+1. **Multi-select trait filter for the Weapons shop section**, same
+   pattern as `SpellsStep.jsx`'s spell-trait filter. Built on
+   `traitGlossaryId()` exactly as anticipated: one filter chip per *base*
+   trait id, matching a weapon if any of its raw trait strings (`Thrown
+   10 ft.`, `Thrown 20 ft.`, `Thrown 30 ft.`, ...) normalize to the
+   selected id — so "Thrown" is one chip covering all four range variants
+   instead of fragmenting into separate options.
+2. **Inspect now works on the filter chips themselves**, not just on
+   trait tags in the item list. Wrapped each chip's label in
+   `GlossaryTerm`: with Inspect off it renders bare `children` (no
+   wrapper), so the chip's own click-to-filter behavior is untouched;
+   with Inspect on, `GlossaryTerm`'s `activate()` calls
+   `e.stopPropagation()` before opening the popover, so clicking a chip
+   shows its definition *instead of* toggling the filter, with zero
+   special-casing needed in the chip's own button — this is the same
+   nested-clickable pattern already used for trait tags and card
+   descriptions elsewhere in the app, just applied to a filter control
+   for the first time.
+3. **Three range-less "Thrown" weapons fixed for display consistency**:
+   Dart, Javelin, and Bola are already-ranged weapons, so AoN's own
+   `trait_raw` for their Thrown trait has no range increment (that lives
+   in a separate Range field this app doesn't otherwise track) — unlike
+   Club/Dagger/Spear/Hatchet/Light Hammer/Trident, where Thrown is the
+   *only* place the range increment can live since they're melee
+   weapons. That made those three the only bare "Thrown" tags in a shop
+   where every other Thrown tag shows a distance, which read as a
+   glitch. Fixed by pulling each one's actual Range field from AoN by
+   hand and folding it into the trait string (Dart 20 ft., Javelin
+   30 ft., Bola 20 ft.) — a display-only fix, not a rules change.
+
+**Tried and reverted the same session**: a per-item purchase quantity cap
+(20), added after live-testing exposed a Club purchased 117 times over
+via rapid `+` clicks. Investigated first — Club's AoN price is genuinely
+0 gp, not a display rounding artifact, so buying it in any quantity is
+gold-neutral and not a data bug. Built a `MAX_QTY` ceiling anyway as a
+UX sanity guard, then reverted on request: a free item bought in bulk
+isn't a real problem worth a code-level restriction, and it's the kind
+of thing better handled at the table than by the app second-guessing the
+player. Worth remembering if this comes up again — the fix was cheap and
+is easy to redo, but isn't wanted right now.
+
 ## How to run the dev server
 
 ```bash

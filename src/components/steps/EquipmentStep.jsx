@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Collapsible from '../Collapsible';
 import { GlossaryTerm } from '../../context/InspectContext';
+import { getGlossaryTerm } from '../../data/glossary';
 import {
   WEAPONS,
   WEAPON_CATEGORY_LABELS,
@@ -63,6 +64,16 @@ function traitGlossaryId(trait) {
     .toLowerCase()
     .replace(/\s+/g, '-');
 }
+
+// One filter chip per *base* trait (Thrown, not "Thrown 10 ft."/"Thrown 20
+// ft."/"Thrown 30 ft." separately) — built from the same traitGlossaryId
+// normalization the trait tags themselves already use, so picking "Thrown"
+// matches a weapon carrying any range variant of it. Computed once at
+// module scope since WEAPONS is static; label comes from the glossary term
+// itself so the chip reads "Thrown" rather than the raw id "thrown".
+const WEAPON_TRAIT_OPTIONS = Array.from(new Set(WEAPONS.flatMap((w) => (w.traits || []).map(traitGlossaryId))))
+  .map((id) => ({ id, label: getGlossaryTerm(id)?.term || id }))
+  .sort((a, b) => a.label.localeCompare(b.label));
 
 function TraitTags({ traits }) {
   if (!traits || traits.length === 0) return null;
@@ -192,7 +203,22 @@ export default function EquipmentStep({ character, update }) {
   const shieldHandlers = makeHandlers('shieldIds');
   const gearHandlers = makeHandlers('gearIds');
 
-  const weaponGroups = groupByCategory(WEAPONS, WEAPON_CATEGORY_LABELS);
+  const [weaponTraitFilters, setWeaponTraitFilters] = useState([]);
+  function toggleWeaponTraitFilter(id) {
+    setWeaponTraitFilters((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }
+
+  // Ammunition isn't filtered by weapon trait -- it doesn't carry combat
+  // traits of its own, so it stays visible regardless of the selection.
+  // No useMemo: WEAPONS is under 50 entries, cheap to re-filter every render.
+  const weaponGroupsAll = groupByCategory(WEAPONS, WEAPON_CATEGORY_LABELS);
+  const weaponGroups =
+    weaponTraitFilters.length === 0
+      ? weaponGroupsAll
+      : weaponGroupsAll.map((g) => ({
+          ...g,
+          items: g.items.filter((item) => (item.traits || []).some((t) => weaponTraitFilters.includes(traitGlossaryId(t)))),
+        }));
   // Heaviest-to-lightest — most players think "what tier of armor" before
   // "what's cheap," so leading with Heavy reads better than the ascending
   // none→light→medium→heavy order the data itself happens to be in.
@@ -221,6 +247,29 @@ export default function EquipmentStep({ character, update }) {
       </p>
 
       <ShopGroup title="Weapons">
+        <div className="spell-trait-filter-row">
+          <span className="spell-trait-filter-label">
+            Filter by trait{weaponTraitFilters.length > 0 ? ` (${weaponTraitFilters.length})` : ''}:
+          </span>
+          {WEAPON_TRAIT_OPTIONS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`chip small ${weaponTraitFilters.includes(t.id) ? 'selected' : ''}`}
+              onClick={() => toggleWeaponTraitFilter(t.id)}
+            >
+              <GlossaryTerm id={t.id}>{t.label}</GlossaryTerm>
+            </button>
+          ))}
+          {weaponTraitFilters.length > 0 && (
+            <button type="button" className="chip small ghost" onClick={() => setWeaponTraitFilters([])}>
+              Clear
+            </button>
+          )}
+        </div>
+        {weaponGroups.every((g) => g.items.length === 0) && (
+          <p className="hint">No weapons match that filter.</p>
+        )}
         {weaponGroups.map((g) => (
           <ShopSection
             key={g.key}
