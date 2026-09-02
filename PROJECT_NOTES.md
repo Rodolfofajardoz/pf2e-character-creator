@@ -409,10 +409,10 @@ Cleric + Acolyte (both train Religion).
 Phase 4 onward is the full personalization roadmap, now designed and
 written up in **[ROADMAP.md](./ROADMAP.md)**, ordered by difficulty
 (quickest first): ~~live side-panel preview~~ done (v0.6.0), ~~language
-selection~~ done (v0.6.7), ~~custom backgrounds~~ done (v0.6.8), custom
-sheet printing, a save/load character catalog, class sub-choices,
-familiars, multiclass/archetypes, and leveling 2–20 last as the single
-largest item. Two items
+selection~~ done (v0.6.7), ~~custom backgrounds~~ done (v0.6.8), ~~custom
+PDF sheet printing~~ done (v0.7.0), a save/load character catalog, class
+sub-choices, familiars, multiclass/archetypes, and leveling 2–20 last as
+the single largest item. Two items
 (familiars, multiclass/archetypes) rank ahead of leveling by size but
 actually need it done first — flagged explicitly in the doc rather than
 reordered around it. App versioning is being tracked as each item lands
@@ -1005,6 +1005,49 @@ common spell list each day, so there's nothing narrower to switch to.
 Witch prepares from spells its familiar knows, which isn't modeled yet
 (ROADMAP item 7) — same simplification as before, just now called out
 explicitly next to the Wizard fix instead of implicitly.
+
+### Roadmap item 4: custom PDF sheet printing — done (v0.7.0)
+
+Full technical writeup lives in `ROADMAP.md`'s item 4 (implementation,
+what's filled vs. deliberately blank, and the verification approach).
+This note is specifically about **the PDF field-inspection technique**,
+worth keeping for the next time a bundled PDF's fields need mapping:
+
+1. Load the PDF with `pdf-lib`, call `form.getFields()`, and for each
+   field walk `field.acroField.getWidgets()[0].P()` to get its page
+   reference, then match that against `doc.getPages()` to find the page
+   index. This is how the app confirmed the bundled sheet's page 1/page 3
+   field counts (249 and 343) before writing any fill code.
+2. **Some PDF fields have no real name** — the bundled sheet's page 3 had
+   only 59 of 343 fields properly named; the rest were left as
+   auto-generated `undefined_N` placeholders by whatever tool built the
+   PDF. `field.getName()` alone can't distinguish "this field is really
+   called that" from "this field was never named." Don't assume a field
+   list's names are all meaningful without checking for that pattern.
+3. To recover structure from unnamed fields, pull each widget's
+   `getRectangle()` (x/y/width/height in PDF points) and cluster by
+   position: group into rows by y (with a couple points of tolerance —
+   fields in the "same" row aren't always pixel-exact), then sort each
+   row by x to recover column order. This is how the spellbook table's
+   real 20×2 grid was found underneath 284 unnamed fields — every row
+   had an identical 10-field pattern (checkbox, name, type/level,
+   actions, page-ref, repeated for two side-by-side columns), matching
+   the pattern the 2 properly-named rows already showed.
+4. Once field names are recovered this way, they're stable for that
+   specific PDF file (position-based reconstruction was a one-time
+   offline step, not something the app redoes at runtime) — hardcode the
+   resulting name list, don't recompute it in the browser.
+5. When testing fill logic against a real multi-hundred-field PDF,
+   **prefer a Node script over browser automation**: `pdf-lib`'s pure-JS
+   PDF parser is CPU-bound, and this session's automated browser test
+   pane turned out to be resource-constrained enough that
+   `PDFDocument.load()` on a ~1MB, 2213-field form didn't finish in a
+   reasonable time, while the identical call in Node finished in under a
+   second. A Vite script run via `createServer({ server: { middlewareMode:
+   true } })` + `server.ssrLoadModule('/path/to/test.mjs')` gives a quick
+   Node-side feedback loop that resolves the app's own import graph
+   (extensionless relative imports, `import.meta.env`) exactly like the
+   real app does, without needing a live browser at all.
 
 ## To-do list (small polish items, separate from ROADMAP.md)
 

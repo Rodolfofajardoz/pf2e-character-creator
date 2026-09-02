@@ -20,7 +20,7 @@ milestone to schedule in the middle of it.
 | 1 | ~~Live side-panel preview~~ | S | ✅ Done (v0.6.0). |
 | 2 | ~~Language selection~~ | S | ✅ Done (v0.6.7). |
 | 3 | ~~Custom backgrounds~~ | S–M | ✅ Done (v0.6.8). |
-| 4 | Custom PDF sheet printing | S–M | File inspected — real fillable AcroForm PDF, no longer blocked. |
+| 4 | ~~Custom PDF sheet printing~~ | S–M | ✅ Done (v0.7.0). |
 | 5 | Save/load character catalog | M | Pure engineering (storage + CRUD screens), no rules research. |
 | 6 | Class sub-choices | M | AoN verification across 8 classes, plus new spell data it unlocks. |
 | 7 | Familiars | M | ⚠ blocked — full scope needs item 9 (Level-up) done first. |
@@ -136,53 +136,69 @@ already used for unenforced feat prerequisites), and an optional
 free-text Name field (the open question this item shipped with — decided
 yes, cheap and purely cosmetic).
 
-## 4. Custom PDF sheet printing
+## 4. Custom PDF sheet printing — ✅ Done (v0.7.0)
 
-**Size: S–M (downgraded from M — file inspected, turned out to be the
-easy case).** Filling the user's own character sheet PDF with the
-builder's output instead of the current `window.print()` of the on-page
-summary.
+Fills the user's own character sheet PDF with the builder's output,
+alongside the existing `window.print()` on-page summary — a "Download
+filled character sheet" button on `SummaryStep`.
 
-The file was inspected with `pdf-lib` (now installed as a project
-dependency): it's a genuine **fillable AcroForm PDF** — 22 pages, Letter
-size, 2213 form fields (2001 text fields, 201 checkboxes, 9 dropdowns, no
-radio groups). No coordinate-guessing needed; `pdf-lib` can set each named
-field directly and export the filled PDF for download.
+Confirmed it's a genuine **fillable AcroForm PDF** — 22 pages, 2213 form
+fields. Only the first 2 relevant pages get filled (a level-1 sheet has
+nothing to put on the other 20 — crafting, downtime, higher-rank
+spellbook pages, etc.):
 
-It's a full lifetime sheet (crafting, downtime, backstory, and enough
-spellbook pages for a 10th-rank caster), far more than this level-1
-builder currently produces — but only **two of the 22 pages** are
-relevant right now:
-- **Page 1** (249 fields): the main stat block — name, ancestry,
-  background, class, level, ability scores/mods, AC, Perception, Class
-  DC, saves, all 17 skills (total + a single "trained" checkbox each —
-  conveniently, no expert/master/legendary bubbles to worry about, since
-  this app doesn't produce those ranks yet either), up to 4 weapon
-  Strikes, armor/weapon proficiency checkboxes, and languages. Field
-  names are clean and self-describing (`ANCESTRY  HERITAGE`,
-  `ARMOR CLASS`, `ACROBATICS_TOTAL`, `ACROBATICS_TEML`, etc.) and map
-  almost 1:1 onto the `character` state and `SummaryStep`'s computed
-  stats.
-- **Page 3** (343 fields): spellcasting — cantrip/1st-rank spell name
-  slots, a tradition checkbox row, and spell DC/attack fields. Also maps
-  cleanly, with one small gap: this app doesn't currently compute a
-  spell DC/attack number anywhere — cheap to add, same `10 + proficiency
-  + ability mod` pattern already used for Class DC.
+- **Page 1** (249 fields): identity, all 6 ability mods, HP, AC,
+  Perception, Class DC, saves, all 17 skills (total + trained checkbox),
+  languages, Hero Points, armor/weapon proficiency checkboxes, the
+  equipped weapon's name/damage, and the shield block (hardness/HP/BT/AC
+  bonus) if one was bought.
+- **Page 3** (343 fields, spellcasting): tradition checkbox, spell
+  DC/attack (new `spellDC`/`spellAttack`/`spellAbility` fields added to
+  `useComputedCharacter`, same `10 + trained + ability mod` pattern
+  Class DC already used), and every known cantrip/1st-rank spell written
+  into the spellbook table.
 
-Everything else (page 2's backstory/flavor fields, page 4's crafting
-formulas, and pages 5 onward — feat grids, inventory tracking, and
-spellbook pages for higher ranks) stays blank in the output until later
-roadmap items (leveling, crafting, more equipment slots) give this app
-data to put there — which is fine; a level-1 sheet with only the first
-two pages filled in is exactly what a level-1 builder should produce.
+**A real surprise found during implementation**: only 59 of page 3's 343
+fields have real names (`NAME`, `TYPE  LEVEL`, `SDC1_TOTAL`, etc.) — the
+other 284 were left as PDF-authoring-tool defaults (`undefined_151`,
+`undefined_152`, ...), which ROADMAP's original scoping note above
+("also maps cleanly") didn't anticipate. Recovered them anyway: every
+page-3 field's widget rect was pulled via `pdf-lib` and clustered by
+y-position into rows, by x-position into columns, which revealed a
+clean, fully addressable **20-row × 2-column spellbook table** (40 slots)
+underneath the auto-generated names. That row/column reconstruction was
+a one-time offline step (see `PROJECT_NOTES.md`'s PDF section for the
+technique) — the resulting 40 field-name pairs are hardcoded in
+`fillCharacterSheet.js` as `SPELLBOOK_SLOTS`, since they're fixed for
+this specific bundled PDF file, not something to recompute at runtime.
 
-Work: a field-name mapping table (roughly 80–100 relevant fields, not
-2213) from `character`/computed-stats to PDF field name, a fill function
-using `pdf-lib`, and a "Download filled sheet" button alongside (or
-replacing) the current print button.
+Deliberately left blank, with reasons: per-strike attack bonus and the
+`ATK MOD` ability dropdowns (weapon proficiency isn't tracked per
+category/finesse yet — showing a guessed number risks being wrong,
+which this project treats as worse than a blank field); strikes 2–4 and
+a second Lore skill (the app only tracks one weapon and one Lore at
+character creation); pages 2/4/5+ (nothing to put there yet).
 
-Open question: none — this is scoped and ready to start whenever picked
-up next, no longer blocked.
+`pdf-lib` is dynamically imported inside the fill function rather than
+statically at the top of the module — it's a large library needed only
+on this one click, and a static import grew the main JS bundle from
+~450kB to ~880kB gzipped; the dynamic import keeps it a separate chunk
+fetched on demand instead.
+
+Verified with a Node script (`server.ssrLoadModule` via Vite's own
+programmatic API, so the exact same code path the app uses resolves
+correctly) across two character builds — a full caster with every
+optional field populated, and a bare-minimum non-caster with a custom
+background and zero purchases — filling every field pdf-lib reported
+back with **zero name mismatches** in either case, confirmed by reading
+the saved PDF's field values back and checking them against expected
+output. A live in-browser click wasn't verified this session: the
+automated browser pane used for testing turned out to be too CPU
+constrained to run `pdf-lib`'s PDF parser in reasonable time (`PDFDocument
+.load()` alone exceeded several seconds there against ~700ms in Node on
+the same file) — a sandbox resource limit, not a code issue, but real
+device performance for actual users is still worth a first real click
+to confirm.
 
 ## 5. Save/load character catalog
 

@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS } from '../../data/skills';
 import { CANTRIPS, SPELLS_RANK_1, TRADITION_LABELS } from '../../data/spells';
 import { InspectText, GlossaryTerm } from '../../context/InspectContext';
 import { ABILITY_TERM_ID } from '../../data/glossary';
 import { useComputedCharacter } from '../../hooks/useComputedCharacter';
+import { fillCharacterSheet } from '../../utils/fillCharacterSheet';
 
 const LEVEL = 1;
 
@@ -15,6 +17,7 @@ function profBonus(rank) {
 }
 
 export default function SummaryStep({ character, update, onRestart }) {
+  const computed = useComputedCharacter(character);
   const {
     ancestry,
     background,
@@ -36,7 +39,29 @@ export default function SummaryStep({ character, update, onRestart }) {
     perceptionMod,
     classDCAbility,
     classDC,
-  } = useComputedCharacter(character);
+  } = computed;
+
+  const [sheetStatus, setSheetStatus] = useState('idle');
+
+  async function handleDownloadSheet() {
+    setSheetStatus('working');
+    try {
+      const bytes = await fillCharacterSheet(character, computed);
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${character.name || 'character'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setSheetStatus('idle');
+    } catch (e) {
+      console.error('Failed to fill character sheet PDF', e);
+      setSheetStatus('error');
+    }
+  }
 
   return (
     <div className="step summary">
@@ -235,10 +260,16 @@ export default function SummaryStep({ character, update, onRestart }) {
         <button className="btn primary" onClick={() => window.print()}>
           Print / Save as PDF
         </button>
+        <button className="btn secondary" onClick={handleDownloadSheet} disabled={sheetStatus === 'working'}>
+          {sheetStatus === 'working' ? 'Filling sheet…' : 'Download filled character sheet'}
+        </button>
         <button className="btn secondary" onClick={onRestart}>
           Create another character
         </button>
       </div>
+      {sheetStatus === 'error' && (
+        <p className="option-warning">Couldn't fill the sheet — check the browser console for details.</p>
+      )}
     </div>
   );
 }

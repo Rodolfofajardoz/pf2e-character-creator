@@ -79,6 +79,14 @@ export function useComputedCharacter(character) {
           }
         : null;
 
+    // Every caster starts Trained in spellcasting at 1st level (no class
+    // has a higher starting rank) -- same assumption Class DC/Perception
+    // already make by defaulting to 'trained' rather than reading a
+    // per-class rank field that doesn't exist yet.
+    const spellAbility = cls?.spellcasting?.cantripsKnown ? character.classKeyAbility : null;
+    const spellDC = spellAbility && mods ? 10 + profBonus('trained') + mods[spellAbility] : null;
+    const spellAttack = spellAbility && mods ? profBonus('trained') + mods[spellAbility] : null;
+
     return {
       ancestry,
       background,
@@ -101,6 +109,9 @@ export function useComputedCharacter(character) {
       armorProfRank,
       isProficientInArmor,
       perceptionMod,
+      spellAbility,
+      spellDC,
+      spellAttack,
       classDCAbility,
       classDC,
       saves,
