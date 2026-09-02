@@ -21,7 +21,7 @@ milestone to schedule in the middle of it.
 | 2 | ~~Language selection~~ | S | ✅ Done (v0.6.7). |
 | 3 | ~~Custom backgrounds~~ | S–M | ✅ Done (v0.6.8). |
 | 4 | ~~Custom PDF sheet printing~~ | S–M | ✅ Done (v0.7.0). |
-| 5 | Save/load character catalog | M | Pure engineering (storage + CRUD screens), no rules research. |
+| 5 | ~~Save/load character catalog~~ | M | ✅ Done (v0.8.0). |
 | 6 | Class sub-choices | M | AoN verification across 8 classes, plus new spell data it unlocks. |
 | 7 | Familiars | M | ⚠ blocked — full scope needs item 9 (Level-up) done first. |
 | 8 | Multiclass & Archetypes | L | ⚠ blocked — needs item 9 (Level-up) done first; also the largest data surface after leveling itself. |
@@ -200,28 +200,49 @@ the same file) — a sandbox resource limit, not a code issue, but real
 device performance for actual users is still worth a first real click
 to confirm.
 
-## 5. Save/load character catalog
+## 5. Save/load character catalog — ✅ Done (v0.8.0)
 
-**Size: M.** A "My Characters" screen: list saved characters, load one
-back into the builder, duplicate, delete, and start a new one. Storage
-via `localStorage` (simplest, no backend) keyed by a generated id per
-character, holding the full `character` state object plus a
-last-modified timestamp. No rules research involved — this is pure
-engineering, which is why it ranks ahead of the content-heavy items of
-the same nominal size.
+A "My Characters" screen (`CatalogView.jsx`) is now the app's landing
+view: list saved characters, open one back into the builder, duplicate,
+export, delete, or start a new one. Storage via `localStorage`
+(`src/utils/characterCatalog.js`) as one `{ [id]: { character, savedAt }
+}` map — a level-1 character is tiny, so rewriting the whole map on every
+save is simplest and cheap.
 
-Important limitation to flag to the user directly: `localStorage` is
-per-browser, per-device — a character saved on a phone won't appear on a
-laptop. Since this project is already being worked on from multiple
-devices via GitHub, that's worth calling out before building it. Adding
-a **JSON export/import** button (download the character as a `.json`
-file, re-upload it elsewhere) is a cheap way to make characters portable
-across devices without standing up real cloud storage/accounts — worth
-including in this phase rather than as a separate one.
+No separate "Save" button: `App.jsx` autosaves on every `character`
+change once a character is actively being edited (a `characterId`,
+generated when you start or open one, tracked outside `character` itself
+so it never leaks into exports). Closing the tab or navigating back to
+the catalog mid-build loses nothing.
 
-Open question: confirm `localStorage` + export/import is enough, versus
-wanting real account-based cloud sync (a materially bigger project —
-needs auth and a backend, not just frontend work).
+**A real bug caught before shipping**: opening a saved character
+originally jumped straight to the Summary step unconditionally, which
+crashed (`Cannot read properties of null`) on any character that wasn't
+fully finished — Summary was previously only ever reachable by
+completing every step in order, so it never had to handle a null class/
+ancestry/background. Fixed by extracting the step-completion checks
+already living inline in `canGoNext`'s switch into a standalone
+`isStepComplete(stepId, character)`, and adding `findResumeStepIndex()`
+that walks the steps to find the first incomplete one. Opening a
+character now resumes exactly where it was left off — Summary only if
+everything before it actually checks out.
+
+Export/import shipped as scoped: an Export button downloads a `.json`
+file (standard Blob + object-URL + hidden `<a>` pattern, no server
+round-trip); Import reads a file back with `FileReader`, does a light
+shape check (rejects anything that doesn't look like a character export,
+with a clear message) rather than full schema validation, and adds it as
+a new catalog entry. Answers the open question above: `localStorage` +
+export/import shipped as-is, real account-based cloud sync stays out of
+scope.
+
+Verified live: empty-state → new character → autosave confirmed by
+reading `localStorage` directly mid-build → back to catalog shows the
+in-progress entry correctly labeled by ancestry → Open resumes on the
+exact step it was left on (tested both an incomplete character, which
+lands back on Ancestry, and a fully completed one, which lands on
+Summary with every field intact) → Duplicate, Delete (with its two-click
+confirm), and Export all work with no console errors.
 
 ## 6. Class sub-choices
 

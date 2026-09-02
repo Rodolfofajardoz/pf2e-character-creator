@@ -1258,6 +1258,56 @@
   border: 1px solid var(--border);
 }
 
+.btn.danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn.small {
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+/* -- My Characters (catalog) -- */
+
+.catalog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.catalog-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.catalog-card {
+  cursor: default;
+}
+
+.catalog-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.catalog-empty {
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 24px 0;
+}
+
+.back-to-catalog {
+  display: inline-block;
+  margin-top: 8px;
+}
+
 .sheet-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

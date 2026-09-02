@@ -1139,7 +1139,24 @@ of thing better handled at the table than by the app second-guessing the
 player. Worth remembering if this comes up again — the fix was cheap and
 is easy to redo, but isn't wanted right now.
 
-## How to run the dev server
+## Roadmap item 5: save/load character catalog — done (v0.8.0)
+
+Full write-up is in `ROADMAP.md`'s item 5 (kept there rather than
+duplicated here, since that's where the scoping/open-question context
+already lived). Short version: a "My Characters" screen is now the app's
+landing view, backed by `localStorage`
+(`src/utils/characterCatalog.js`), autosaving on every change with no
+separate Save step, plus JSON export/import for moving a character
+across devices.
+
+One thing worth restating here since it's the kind of bug easy to
+reintroduce: **any code path that jumps straight to a specific step
+(rather than advancing one at a time through `goNext`) has to go through
+`findResumeStepIndex()`, not assume the target step's data exists.**
+`SummaryStep` in particular was written under the assumption it's only
+ever reached by finishing every prior step in order, and doesn't null-
+check the class/ancestry/background it reads — true again the moment
+save/load could land you there directly with a half-built character.
 
 ```bash
 cd pf2e-character-creator
