@@ -18,7 +18,7 @@ milestone to schedule in the middle of it.
 | # | Item | Size | Notes |
 |---|------|------|-------|
 | 1 | ~~Live side-panel preview~~ | S | ✅ Done (v0.6.0). |
-| 2 | Language selection | S | Rule confirmed; small, contained data + a simple choice step. |
+| 2 | ~~Language selection~~ | S | ✅ Done (v0.6.7). |
 | 3 | Custom backgrounds | S–M | Reuses existing data (abilities, skills, `GENERAL_FEATS`); just a form. |
 | 4 | Custom PDF sheet printing | S–M | File inspected — real fillable AcroForm PDF, no longer blocked. |
 | 5 | Save/load character catalog | M | Pure engineering (storage + CRUD screens), no rules research. |
@@ -54,23 +54,48 @@ values update live while stepping through Ancestry → Background → Class,
 match `SummaryStep`'s numbers exactly, and the mobile collapse/expand
 works.
 
-## 2. Language selection
+## 2. Language selection — ✅ Done (v0.6.7)
 
-**Size: S.** Rule confirmed via AoN (Rules pg. 65, `2e.aonprd.com`
-rules-131): *"Having a positive Intelligence modifier grants a number of
-additional languages equal to your Intelligence modifier."* Chosen from
-the ancestry's own bonus-language list plus the Common/Uncommon tables
-(Table 2-1/2-2), with GM approval needed for anything off those lists —
-which this app can simplify to "anything on the standard tables," noting
-the GM-approval case as a caveat like the subclass-spell one.
+Rule confirmed via AoN's remaster "Languages" rules page (Player Core pg.
+89 — note this superseded the Core Rulebook pg. 65 version cited when
+this item was first scoped; the table itself changed in the remaster,
+not just the page number, see below): a positive Intelligence modifier
+grants that many bonus languages, chosen from the ancestry's own list
+plus the general Common/Uncommon tables. Human is the one exception —
+"1 + your Intelligence modifier," so it always gets at least 1 bonus
+language.
 
-Work: add a bonus-language list per ancestry to `ancestries.js` (not
-currently modeled — a real data gap, verified against AoN's ancestry
-pages the same way `languages` was), add a language-choice step gated on
-`abilityMod(int) > 0`, letting the player pick exactly that many extra
-languages. Ties in cleanly at 1st level; no dependency on level-up.
+Shipped as a new step (`LanguagesStep.jsx`, positioned after Ability
+Scores since it needs the Intelligence modifier) with three new data
+pieces in `src/data/languages.js` and `ancestries.js`:
+- `COMMON_LANGUAGES` (11) and `UNCOMMON_LANGUAGES` (13), fetched from
+  AoN's own `Language`-type entries (155 total, most irrelevant splatbook
+  regional languages) filtered to Player Core's specific two tables.
+  **The remaster table is genuinely different from the legacy one** —
+  Fey and Sakvroth became Common, Sylvan and Undercommon dropped off it,
+  and several outsider/elemental languages were renamed (Celestial->
+  Empyrean, Infernal->Diabolic, Abyssal->Chthonian, Terran->Petran,
+  Ignan->Pyric, Auran->Sussuran, Aquan->Thalassic) or added new (Kholo,
+  Muan, Talican). Worth noting since this item's own original scoping
+  note (above) cited the old table by mistake before this was verified.
+- `bonusLanguages: [...]` added to all 16 ancestries — each one's
+  specific bonus list from its own AoN entry. Human is a special case
+  (its entry says "choose from the list of common languages" rather than
+  naming a short list) and got the full `COMMON_LANGUAGES` array instead.
+- Picker offers ancestry's list + both general tables, minus anything
+  already known automatically; **uncommon options are shown, not
+  hidden**, each flagged "⚠ Uncommon — needs your GM's approval"
+  (explicit request — trust-the-player like unenforced feat
+  prerequisites, not a hard block).
 
-Open question: none.
+Verification note: AoN's search returns legacy (Core Rulebook/Advanced
+Player's Guide) ancestry entries alongside the Player Core ones for
+several ancestries, with *different* bonus-language lists on each — every
+fetch here was filtered to a `primary_source_raw` starting with "Player
+Core" before reading its language data, after an initial pass without
+that filter produced a wrong answer for Kobold (Draconic from the legacy
+entry, instead of Sakvroth from Player Core 2) that got caught before
+shipping.
 
 ## 3. Custom backgrounds
 

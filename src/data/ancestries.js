@@ -3,6 +3,19 @@
 // free boost + 1 flaw — except Human, Orc, and Tengu, which have no flaw and
 // instead get fewer fixed boosts and more free ones (Human/Orc: 0 fixed + 2
 // free; Tengu: 1 fixed + 1 free).
+//
+// `bonusLanguages` is each ancestry's specific bonus-language list (from its
+// AoN entry's "Languages" paragraph, Player-Core-sourced) — the pool a
+// player picks from when their Intelligence modifier grants extra languages
+// (roadmap item 2). Human is the one exception: its entry says "choose from
+// the list of common languages" rather than naming a specific short list, so
+// its bonusLanguages is every COMMON_LANGUAGES entry instead of a curated
+// subset. Verified per-ancestry against Player Core (the 8 core ancestries)
+// / Player Core 2 (the 8 uncommon ones) specifically — AoN's search also
+// returns older Core Rulebook/Advanced Player's Guide entries for several of
+// these with different (legacy) bonus lists, so every fetch here was
+// filtered to the Player Core source before reading its text.
+import { COMMON_LANGUAGES } from './languages';
 
 export const ANCESTRIES = [
   {
@@ -14,6 +27,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['con', 'wis'], free: 1 },
     flaw: 'cha',
     languages: ['Common', 'Dwarven'],
+    bonusLanguages: ['Gnomish', 'Goblin', 'Jotun', 'Orcish', 'Petran', 'Sakvroth'],
     senses: ['Darkvision'],
     traits: ['Dwarf', 'Humanoid'],
     description: 'Stout and tenacious, heirs to ancestral traditions deep beneath the mountains.',
@@ -42,6 +56,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'int'], free: 1 },
     flaw: 'con',
     languages: ['Common', 'Elven'],
+    bonusLanguages: ['Draconic', 'Empyrean', 'Fey', 'Gnomish', 'Goblin', 'Kholo', 'Orcish'],
     senses: ['Low-Light Vision'],
     traits: ['Elf', 'Humanoid'],
     description: 'Long-lived and perceptive, with a deep connection to magic and the passage of time.',
@@ -71,6 +86,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['con', 'cha'], free: 1 },
     flaw: 'str',
     languages: ['Common', 'Fey', 'Gnomish'],
+    bonusLanguages: ['Draconic', 'Dwarven', 'Elven', 'Goblin', 'Jotun', 'Orcish'],
     senses: ['Low-Light Vision'],
     traits: ['Gnome', 'Humanoid'],
     description: 'Curious and bound to the First World, with a boundless imagination.',
@@ -100,6 +116,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'cha'], free: 1 },
     flaw: 'wis',
     languages: ['Common', 'Goblin'],
+    bonusLanguages: ['Draconic', 'Dwarven', 'Gnomish', 'Halfling', 'Kholo', 'Orcish'],
     senses: ['Darkvision'],
     traits: ['Goblin', 'Humanoid'],
     description: 'Energetic and resilient, with an unusual relationship with fire and food.',
@@ -131,6 +148,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'wis'], free: 1 },
     flaw: 'str',
     languages: ['Common', 'Halfling'],
+    bonusLanguages: ['Dwarven', 'Elven', 'Gnomish', 'Goblin'],
     senses: [],
     traits: ['Halfling', 'Humanoid'],
     description: 'Lucky, cautious, and adaptable in the face of any adversity.',
@@ -161,6 +179,10 @@ export const ANCESTRIES = [
     boosts: { fixed: [], free: 2 },
     flaw: null,
     languages: ['Common'],
+    // Human's own AoN text says "choose from the list of common languages"
+    // rather than naming a curated subset like every other ancestry — hence
+    // the full COMMON_LANGUAGES list instead of a hand-picked one.
+    bonusLanguages: COMMON_LANGUAGES,
     senses: [],
     traits: ['Human', 'Humanoid'],
     description: 'Versatile and ambitious, capable of adapting to any path in life.',
@@ -189,6 +211,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['con', 'wis'], free: 1 },
     flaw: 'int',
     languages: ['Common', 'Fey'],
+    bonusLanguages: ['Draconic', 'Elven', 'Gnomish', 'Goblin', 'Halfling', 'Sakvroth'],
     senses: ['Low-Light Vision'],
     traits: ['Leshy', 'Plant'],
     description: 'Living plant beings animated by nature spirits, born from a magical seed.',
@@ -219,6 +242,7 @@ export const ANCESTRIES = [
     boosts: { fixed: [], free: 2 },
     flaw: null,
     languages: ['Common', 'Orcish'],
+    bonusLanguages: ['Goblin', 'Jotun', 'Petran', 'Sakvroth'],
     senses: ['Darkvision'],
     traits: ['Humanoid', 'Orc'],
     description: 'Strong and resilient, with a culture rich in warrior traditions and honor.',
@@ -252,6 +276,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'cha'], free: 1 },
     flaw: 'wis',
     languages: ['Amurrun', 'Common'],
+    bonusLanguages: ['Draconic', 'Elven', 'Gnomish', 'Goblin', 'Halfling', 'Iruxi', 'Jotun', 'Fey'],
     senses: ['Low-Light Vision'],
     traits: ['Catfolk', 'Humanoid'],
     description: 'Curious and gregarious wanderers who combine feline and humanoid features in body and temperament.',
@@ -286,6 +311,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['con', 'int'], free: 1 },
     flaw: 'wis',
     languages: ['Common', 'Goblin'],
+    bonusLanguages: ['Draconic', 'Dwarven', 'Jotun', 'Halfling', 'Kholo', 'Orcish'],
     senses: ['Darkvision'],
     traits: ['Hobgoblin', 'Humanoid'],
     description: 'Taller and stronger than their goblin kin, with a culture built around military hierarchy and discipline.',
@@ -319,6 +345,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['str', 'int'], free: 1 },
     flaw: 'wis',
     languages: ['Common', 'Kholo'],
+    bonusLanguages: ['Draconic', 'Elven', 'Fey', 'Iruxi', 'Necril', 'Orcish'],
     senses: ['Low-Light Vision'],
     traits: ['Kholo', 'Humanoid'],
     description: 'Practical, pragmatic hyena-headed hunters and raiders who value their pack and ancestors above all.',
@@ -353,6 +380,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'cha'], free: 1 },
     flaw: 'con',
     languages: ['Common', 'Sakvroth'],
+    bonusLanguages: ['Aklo', 'Diabolic', 'Draconic', 'Dwarven', 'Empyrean', 'Fey', 'Gnomish', 'Petran'],
     senses: ['Darkvision'],
     traits: ['Kobold', 'Humanoid'],
     description: 'Small reptilian humanoids whose physical traits are marked by the powerful being their warren serves.',
@@ -384,6 +412,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['str', 'wis'], free: 1 },
     flaw: 'int',
     languages: ['Common', 'Iruxi'],
+    bonusLanguages: ['Amurrun', 'Boggard', 'Draconic', 'Elven', 'Fey', 'Jotun', 'Thalassic'],
     senses: [],
     traits: ['Lizardfolk', 'Humanoid'],
     description: 'Scaled humanoids descended from ancient empires, valued as outstanding rangers and unsentimental fighters.',
@@ -418,6 +447,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'int'], free: 1 },
     flaw: 'str',
     languages: ['Common', 'Ysoki'],
+    bonusLanguages: ['Aklo', 'Draconic', 'Dwarven', 'Gnomish', 'Goblin', 'Halfling', 'Kholo', 'Orcish', 'Sakvroth'],
     senses: ['Low-Light Vision'],
     traits: ['Ratfolk', 'Humanoid'],
     description: 'Small, clever, and adaptable humanoids with ratlike features and a strong communal culture.',
@@ -453,6 +483,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex'], free: 1 },
     flaw: null,
     languages: ['Common', 'Tengu'],
+    bonusLanguages: ['Dwarven', 'Elven', 'Halfling', 'Gnomish', 'Goblin', 'Fey'],
     senses: ['Low-Light Vision'],
     traits: ['Tengu', 'Humanoid'],
     description: 'Gregarious, resourceful avian humanoids who collect knowledge, tools, and companions as they travel.',
@@ -488,6 +519,7 @@ export const ANCESTRIES = [
     boosts: { fixed: ['dex', 'wis'], free: 1 },
     flaw: 'str',
     languages: ['Common', 'Tripkee'],
+    bonusLanguages: ['Boggard', 'Chthonian', 'Draconic', 'Elven', 'Fey', 'Iruxi', 'Thalassic'],
     senses: ['Low-Light Vision'],
     traits: ['Tripkee', 'Humanoid'],
     description: 'Shy, cautious froglike humanoids who reshape the treetop canopy into fortified, hidden homes.',

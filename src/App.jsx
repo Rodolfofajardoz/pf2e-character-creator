@@ -5,6 +5,7 @@ import BackgroundStep from './components/steps/BackgroundStep';
 import ClassStep from './components/steps/ClassStep';
 import SpellsStep from './components/steps/SpellsStep';
 import AbilityScoresStep from './components/steps/AbilityScoresStep';
+import LanguagesStep, { getBonusLanguageCount } from './components/steps/LanguagesStep';
 import SkillsStep from './components/steps/SkillsStep';
 import EquipmentStep from './components/steps/EquipmentStep';
 import SummaryStep from './components/steps/SummaryStep';
@@ -23,9 +24,10 @@ const STEPS = [
   { id: 'class', label: '3. Class' },
   { id: 'spells', label: '4. Spells' },
   { id: 'abilities', label: '5. Ability Scores' },
-  { id: 'skills', label: '6. Skills' },
-  { id: 'equipment', label: '7. Equipment' },
-  { id: 'summary', label: '8. Summary' },
+  { id: 'languages', label: '6. Languages' },
+  { id: 'skills', label: '7. Skills' },
+  { id: 'equipment', label: '8. Equipment' },
+  { id: 'summary', label: '9. Summary' },
 ];
 
 const initialCharacter = {
@@ -50,6 +52,7 @@ const initialCharacter = {
   knownCantrips: [],
   knownSpells1: [],
   freeBoosts: [],
+  bonusLanguages: [],
   trainedSkills: [],
   lorePicked: null,
   weaponIds: [],
@@ -103,6 +106,13 @@ function App() {
       }
       case 'abilities':
         return character.freeBoosts.length === 4;
+      case 'languages': {
+        const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
+        if (!ancestry) return true;
+        const scores = computeFinalScores(character, ancestry);
+        const bonusCount = getBonusLanguageCount(ancestry, abilityMod(scores.int));
+        return character.bonusLanguages.length === bonusCount;
+      }
       case 'skills': {
         const cls = character.classId ? getClass(character.classId) : null;
         const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
@@ -212,6 +222,7 @@ function App() {
             {step.id === 'class' && <ClassStep character={character} update={update} />}
             {step.id === 'spells' && <SpellsStep character={character} update={update} />}
             {step.id === 'abilities' && <AbilityScoresStep character={character} update={update} />}
+            {step.id === 'languages' && <LanguagesStep character={character} update={update} />}
             {step.id === 'skills' && <SkillsStep character={character} update={update} />}
             {step.id === 'equipment' && <EquipmentStep character={character} update={update} />}
             {step.id === 'summary' && <SummaryStep character={character} update={update} onRestart={restart} />}

@@ -65,7 +65,7 @@ export default function SummaryStep({ character, update, onRestart }) {
             Level {LEVEL} · <GlossaryTerm id="hit-points">HP</GlossaryTerm> {hp} · Size {ancestry.size} ·{' '}
             <GlossaryTerm id="speed">Speed</GlossaryTerm> {ancestry.speed} feet
           </p>
-          <p>Languages: {ancestry.languages.join(', ')}</p>
+          <p>Languages: {[...ancestry.languages, ...character.bonusLanguages].join(', ')}</p>
           {ancestry.abilities?.length > 0 && (
             <p>
               {ancestry.abilities.map((ab, i) => (

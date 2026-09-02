@@ -68,6 +68,11 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
           {cls ? ` · ${cls.name}` : ''}
         </p>
         {background && <p className="live-preview-line">Background: {background.name}</p>}
+        {ancestry && (
+          <p className="live-preview-line">
+            Languages: {[...ancestry.languages, ...character.bonusLanguages].join(', ')}
+          </p>
+        )}
 
         {scores && mods && (
           <div className="live-preview-abilities">
