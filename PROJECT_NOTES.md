@@ -985,6 +985,25 @@ acknowledges that this project already tracks several of the absences it
 reports. What deserves priority is the opposite group: the bugs in features
 that *do* exist and fail silently.
 
+### Patch: Wizard spell counts — spellbook, not daily-prepared (v0.6.6)
+
+The Wizard's `cantripsKnown`/`rank1Known` were 5/2, matching what a 1st-level
+Wizard *prepares each morning* — not what they actually know. Per AoN's
+Wizard Spellcasting (Player Core pg. 192), the spellbook itself holds
+**10 cantrips and 5 1st-rank spells** at 1st level; preparing only 5/2 of
+those daily is a recurring in-play choice, not something that belongs on a
+character-creation sheet. Fixed to 10/5.
+
+Checked the other 5 spellcasting classes for the same mistake — none had
+it: Bard/Oracle/Sorcerer's numbers already equal their spell *repertoire*
+size (verified against each class's Spell Repertoire feature), which for
+spontaneous casters genuinely is "what they know." Cleric/Druid have no
+fixed "known" list at all — they prepare from their entire tradition's
+common spell list each day, so there's nothing narrower to switch to.
+Witch prepares from spells its familiar knows, which isn't modeled yet
+(ROADMAP item 7) — same simplification as before, just now called out
+explicitly next to the Wizard fix instead of implicitly.
+
 ## To-do list (small polish items, separate from ROADMAP.md)
 
 Not roadmap items (those are the big 9 toward v1.0, in ROADMAP.md) — just

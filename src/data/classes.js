@@ -450,7 +450,17 @@ export const CLASSES = [
     weapons: 'Simple weapons, and unarmed attacks',
     armor: 'No armor',
     armorProficiency: [],
-    spellcasting: { tradition: 'Arcane', type: 'prepared', traditionCode: 'arcane', cantripsKnown: 5, rank1Known: 2 },
+    // cantripsKnown/rank1Known are the SPELLBOOK's contents, not the 5 cantrips + 2
+    // rank-1 spells a 1st-level Wizard actually prepares each morning — this app is a
+    // character-creation tool, so the right question is "what does the character know",
+    // not "what's castable today" (which changes every morning and isn't a creation-time
+    // choice anyway). Per AoN's Wizard Spellcasting (Player Core pg. 192): "The spellbook
+    // contains your choice of 10 arcane cantrips and five 1st-rank arcane spells" — hence
+    // 10/5 below, not the 5/2 daily-prepared count. (Bard/Oracle/Sorcerer's numbers are
+    // already their spell *repertoire* size, which for spontaneous casters genuinely is
+    // what they know — no similar fix needed there. Cleric/Druid have no fixed "known"
+    // list at all, just "prepare from the whole common list" — also nothing to fix.)
+    spellcasting: { tradition: 'Arcane', type: 'prepared', traditionCode: 'arcane', cantripsKnown: 10, rank1Known: 5 },
     summary: 'A scholar of arcane magic, bound to an Arcane School and their Spellbook.',
     // Verified against AoN (Player Core pg. 192): 1st-level class features are wizard
     // spellcasting, arcane thesis, arcane school, and arcane bond — the first wizard feat
