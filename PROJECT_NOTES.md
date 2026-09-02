@@ -707,13 +707,84 @@ deploys to GitHub Pages, meant every commit was an immediate production
 deploy with no review step. The branch-and-PR rule in `CLAUDE.md` exists to
 put a reviewable gate in front of that.
 
+### Patch: v0.6.5 — six audit bugs (three state, three mobile)
+
+The first six findings from the external audit, all of them confirmed
+against the code before being touched. They were picked first for one
+reason: **every one of them is silent.** The interface reports success, the
+numbers look plausible, and the error reaches the printed sheet. Nothing
+here touches rules data, so none of it was waiting on Archives of Nethys.
+
+**APP-01 — a duplicate-skill substitution could count without adding a
+skill.** When background and class train the same skill, the player picks a
+substitute. `substituteOptions` excluded the class's fixed skills and the
+background's own, but not skills already sitting in `trainedSkills` — so
+picking one that was already a free pick counted it twice: once as the
+background's effective training, once in the pool. The counter read as
+satisfied with one fewer distinct skill than the character was owed, and
+`SummaryStep` (which prints the background skill separately, then maps
+`trainedSkills`) put that skill on the sheet twice. Choosing a substitute
+now releases its pool slot, so the count and the sheet both stay honest.
+Reproduced end to end in a browser with Scholar + Wizard colliding on
+Arcana: the counter goes 1/5 → 0/5 on substituting, the skill moves out of
+the free grid into automatic training, Next stays disabled until another is
+picked, and the finished sheet lists eight distinct skills with no
+duplicate.
+
+**APP-02 — Natural Ambition left an orphaned class feat.** The ancestry-feat
+handler updated only `ancestryFeat` and `generalFeatChoice`, while
+`bonusClassFeat` was cleared solely when the *class* changed. Switching the
+ancestry feat away from Natural Ambition therefore left its bonus feat in
+the character, still labelled "Bonus (Natural Ambition)" on a sheet where
+Natural Ambition no longer appeared — an extra feat with no source. The
+grant and the pick it produces now live and die together, and changing
+ancestry clears it too.
+
+**APP-03 — re-clicking a selected option wiped dependent choices.** The
+ancestry, background and class cards stay enabled once chosen, which is
+right — they should still read as the active choice — but a second click
+ran the full selection path and reset everything downstream. On Class that
+meant losing an entire spell list. Re-selecting what you already have is
+now a no-op. The same guard went on heritage and ancestry feat, which had
+the identical problem one level down.
+
+**MOB-01 — the spell grid forced horizontal overflow.** `minmax(340px, 1fr)`
+against a container of `min(1800px, 94vw)` less 40px of padding: below
+roughly 405px of viewport the track is wider than the box that holds it, on
+the step with the most text to read. Now `minmax(min(340px, 100%), 1fr)`,
+which keeps 340px columns where they fit and collapses to the container
+where they don't. Measured at 360px: the grid computes to 298px, exactly
+the content width.
+
+**MOB-02 — the quantity steppers were 26×26px with a 6px gap.** Adjacent
+controls tapped repeatedly while shopping, with the interactive area
+matching the visual one exactly. Now 36×36 with a 10px gap.
+
+**MOB-03 — the Inspect popover could not fit a 320px screen.**
+`box-sizing: border-box` is set per-element in this project rather than
+globally, and `.inspect-popover` didn't have it — so 12px of padding and a
+1px border sat *outside* its 300px width, making a 326px box that, pinned
+8px from the left, ran 14px off the screen. The element is border-box now,
+and the positioning maths in `InspectContext.jsx` reads a shared
+`POPOVER_WIDTH` constant instead of a hardcoded 328 that no longer matched
+anything. Measured at 320px: the popover sits at x=12 with its right edge
+at 312.
+
+All six were verified in a real browser with Playwright, not just by
+reading the diff — the three mobile ones by measuring computed geometry at
+320 and 360px, the three state ones by driving the wizard through the exact
+sequences that used to produce the bad state.
+
 ## External audit of v0.6.4 — verification status
 
 An external audit (produced with ChatGPT, delivered as a Word document)
 reported **24 findings** against v0.6.4 / commit `fe0512d`, with IDs and
 S1–S4 severities. Every claim was checked against the actual code in the
-session that received it. Summary: **17 confirmed, 1 refuted, 6 still
-unverified.** The audit is accurate — where it gives a number, the number
+session that received it, and the six rules claims were then verified
+against Archives of Nethys in a follow-up session once the environment's
+network policy allowed it. Final tally: **23 confirmed, 1 refuted** — the
+audit was right about everything except one reading of a lint warning, and
+in two places it understated the problem. The audit is accurate — where it gives a number, the number
 is exact.
 
 Keep this section until the 6 open items are settled; it is the handoff
@@ -724,6 +795,10 @@ for that work.
 The ones worth acting on first, because they are **silent**: the UI reports
 success, the numbers look plausible, and the error survives to the printed
 sheet.
+
+**APP-01, APP-02, APP-03 and MOB-01/02/03 were fixed in v0.6.5** — see that
+patch section below. RULE-02, RULE-03 and the legacy-data findings are still
+open.
 
 - **APP-01 — a duplicate-skill substitution can count without adding a
   skill.** `substituteOptions` in `SkillsStep.jsx` excludes the class's
@@ -779,46 +854,63 @@ sheet.
   the whole `character` object, which would recompute *more* often, not
   less. This is exactly why the four warnings are the documented baseline.
 
-### Open — 6 rules claims needing Archives of Nethys
+### Resolved — the 6 rules claims, verified against Archives of Nethys
 
-These could not be checked because **the session's network policy blocked
-every TTRPG rules host** (`2e.aonprd.com`, `elasticsearch.aonprd.com`,
-`pf2.d20pfsrd.com`, `pathfinderwiki.com` all refused; GitHub was
-reachable). Resolving it means allowing those domains on the environment's
-network policy — and the change only takes effect in a *new* session, since
-the proxy is configured when the container is created.
+Checked against AoN's Elasticsearch index (`aon-20260802-141253`), with
+`foundryvtt/pf2e` as a second source. **All six were real.** None of the
+corrections below has been applied to the data yet.
 
-1. **RULE-04 — Wizard.** Is the first class feat gained at 2nd level rather
-   than 1st? What are the 1st-level class features (Arcane School, Arcane
-   Thesis)? What does the starting spellbook contain? *Broaden this:* the
-   app gives `feats1` to 15 of 16 classes — only Witch has zero, and
-   `App.jsx:83` already carries an explicit `cls.feats1.length === 0`
-   branch. Somebody previously established that classes without a 1st-level
-   class feat exist and wrote the code for it, then applied it to one class.
-   Determine the correct answer for all 16.
-2. **RULE-05 — Cleric.** The app says `"prepared or spontaneous (your
-   choice)"`. Is the class prepared-only? Are deity, divine font, doctrine
-   and sanctification 1st-level class features?
-3. **RULE-06 — ⚠ the delicate one.** Rogue and Wizard weapon proficiencies.
-   The audit claims Player Core gives Rogue simple + martial + unarmed and
-   Wizard simple + unarmed; the app carries enumerated lists instead. There
-   is real doubt the audit is right here, and **this is the only finding
-   where acting without verification would do damage** — if it's wrong and
-   we "correct" it, every Rogue gains martial proficiency they don't have
-   and a currently-correct value becomes wrong. Quote AoN directly.
-4. **RULE-08** — Does the universal option of two free boosts in place of
-   the ancestry's pattern exist? And voluntary flaws at character creation?
-5. **RULE-09** — Do Aiuvarin and Dromaar replace Half-Elf and Half-Orc as
-   versatile heritages? Are they restricted to Human? What other versatile
-   heritages does Player Core carry?
-6. **RULE-10** — Does Player Core list exactly 40 backgrounds, and are
-   Bandit, Cook, Cultist, Raised by Belief and Teacher the five missing
-   ones? The app has 35.
+| # | Claim | Verdict |
+|---|---|---|
+| RULE-04 | Wizard's first class feat is at 2nd level | **Confirmed** — and wider than reported |
+| RULE-05 | Cleric is prepared-only | **Confirmed**, with one nuance |
+| RULE-06 | Rogue/Wizard weapon proficiencies are legacy | **Confirmed** |
+| RULE-08 | Alternate ancestry boosts and voluntary flaws exist | **Confirmed**, both parts |
+| RULE-09 | Aiuvarin/Dromaar replace Half-Elf/Half-Orc | **Confirmed** — but *not* Human-only |
+| RULE-10 | Player Core lists 40 backgrounds | **Confirmed**, exactly |
 
-When these are checked, cross-reference more than one source (d20pfsrd,
-PathfinderWiki, the `foundryvtt/pf2e` data on GitHub) but keep AoN
-authoritative per `CLAUDE.md`, and record any disagreement between sources
-— it usually points at an erratum or a mislabelled legacy entry.
+What the audit got wrong by being too narrow:
+
+- **RULE-04 affects 6 classes, not 1.** The 7 full casters (Bard, Cleric,
+  Druid, Oracle, Sorcerer, Witch, Wizard) get their first class feat at 2nd
+  level, trading the 1st-level slot for their tradition feature. The app
+  gives `feats1` to all of them except Witch, which is right by accident
+  rather than by decision.
+- **RULE-06 also affects Bard.** Its weapon string is the same legacy copy
+  as Rogue's and Wizard's — and an incomplete one, missing the whip that
+  the Core Rulebook list actually included. Today it is neither correct as
+  remaster nor faithful as legacy.
+- **RULE-09's Human restriction is wrong in the app, not just the name.**
+  Player Core's "Playing a Versatile Heritage" lets any ancestry take one;
+  a dwarf aiuvarin is legal. The app files them inside Human's heritage
+  list with the legacy text.
+- **RULE-05's nuance**: Sanctification is not a separate 1st-level class
+  feature. It is described inside the Deity entry, and Foundry's 1st-level
+  Cleric items agree (Deity, Cleric Spellcasting, Doctrine, First Doctrine,
+  Divine Font — no Sanctification).
+
+Two things to settle before touching data:
+
+1. **Natural Ambition breaks if `feats1` is simply emptied.** The feat
+   grants "a 1st-level class feat for your class" with no class exception,
+   so a Wizard taking it does get one. But `App.jsx` and `ClassStep.jsx`
+   both gate the bonus picker on `cls.feats1.length > 0`. The catalog has
+   to stay; what's needed is a separate flag (`classFeatAtLevel1: false`)
+   that only controls whether the *required* 1st-level pick is offered.
+2. **RULE-09 is two changes, not one.** Renaming to Aiuvarin/Dromaar with
+   their remaster text is cheap. Making versatile heritages available to
+   every ancestry restructures `ancestries.js`, `AncestryStep.jsx` and the
+   meaning of `heritageId`, and brings in Changeling and Nephilim. Also
+   rename the Human heritage `Versatile Heritage` to `Versatile Human`:
+   the remaster renamed it, and the old name now collides head-on with
+   "versatile heritage" as a category.
+
+**Source note:** `pf2.d20pfsrd.com` is dead — it answers `410 Gone` at the
+origin, not blocked by any proxy. Don't try it as a cross-reference.
+PathfinderWiki is lore, not mechanics; it was only useful for RULE-09, and
+its line about aiuvarins all descending from humans is setting flavour that
+reads misleadingly like a mechanical restriction. `foundryvtt/pf2e`
+disagreed with AoN on nothing that was checked.
 
 ### A framing note on the audit's severities
 

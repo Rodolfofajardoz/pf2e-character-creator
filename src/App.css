@@ -640,7 +640,11 @@
    grid like .card-grid would squeeze paragraphs into a tall, narrow column. */
 .spell-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  /* min(340px, 100%) instead of a bare 340px: below ~405px of viewport the
+     content box (0.94vw - 40px of padding) is narrower than 340px, and a
+     bare minimum forces the track wider than its container -- horizontal
+     overflow on exactly the step with the most text to read. */
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
   gap: 14px;
   margin: 12px 0;
   align-items: start;
@@ -923,13 +927,16 @@
 .shop-row-stepper {
   display: flex;
   align-items: center;
-  gap: 6px;
+  /* Adjacent +/- controls that get tapped repeatedly while shopping: the
+     old 26px squares 6px apart were about as wide as a fingertip, with the
+     interactive area matching the visual one exactly. */
+  gap: 10px;
   flex: none;
 }
 
 .stepper-btn {
-  width: 26px;
-  height: 26px;
+  width: 36px;
+  height: 36px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--panel-bg-raised);
@@ -1305,6 +1312,11 @@
 .inspect-popover {
   position: fixed;
   z-index: 91;
+  /* border-box is set per-element in this project, not globally, so without
+     it here the 12px padding and 1px border sit *outside* the 300px: a
+     326px box pinned 8px from the left runs off a 320px screen. Keep this
+     in sync with POPOVER_WIDTH in InspectContext.jsx. */
+  box-sizing: border-box;
   width: 300px;
   max-width: calc(100vw - 16px);
   border: 1px solid var(--inspect);

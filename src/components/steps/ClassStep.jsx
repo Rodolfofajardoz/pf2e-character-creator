@@ -38,6 +38,7 @@ export default function ClassStep({ character, update }) {
   }, [focusKey]);
 
   function selectClass(id) {
+    if (id === character.classId) return;
     const c = getClass(id);
     update({
       classId: id,
