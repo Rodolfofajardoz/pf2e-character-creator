@@ -6,22 +6,22 @@ planned.
 
 ## Workflow rules
 
-**Never push without explicit confirmation.** Show the diff and wait for an
-OK. This applies to every push, including docs-only changes.
+**Never push without explicit confirmation.** Report what changed and wait
+for an explicit go-ahead (e.g. "Subelo") before pushing. This applies to
+every push, including docs-only changes — this chat confirmation *is* the
+review gate for this repo.
 
-**Work on a branch, open a PR — never commit straight to `master`.** The
-review happens in the PR. Releases are cut afterwards, from `master`:
-
-```
-branch → PR → user reviews and merges → tag vX.Y.Z → GitHub Release
-```
-
-The tag and the Release therefore land in a **second step after the merge**,
-not inside the PR. Don't skip them: every version is a restore point, so the
-release history is deliberately kept complete.
+**Commit straight to `master`.** No feature branches, no PRs — solo
+project, and the confirmation above already does the reviewing a PR would.
+A branch+PR flow was tried for one PR (see PROJECT_NOTES.md's "External
+audit" section) and reverted: heavier than it needed to be for how this
+repo is actually worked on. Tag and cut the GitHub Release as part of the
+same confirmed push, not as a separate later step.
 
 Pushing to `master` triggers the GitHub Pages deploy
-(`.github/workflows/deploy.yml`), so a merge is also a production deploy.
+(`.github/workflows/deploy.yml`), so every confirmed push is also a
+production deploy — which is exactly why the confirmation step above is
+non-negotiable.
 
 ## Versioning
 

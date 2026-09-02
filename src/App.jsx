@@ -33,6 +33,7 @@ const initialCharacter = {
   ancestryId: null,
   heritageId: null,
   ancestryFreeBoosts: [],
+  useAlternateAncestryBoosts: false,
   ancestryFeat: null,
   generalFeatChoice: null,
   backgroundId: null,

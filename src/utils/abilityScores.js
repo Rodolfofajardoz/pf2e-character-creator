@@ -26,13 +26,18 @@ export function applyBoosts(scores, abilityList) {
 
 export function computeScoresBeforeFreeBoosts(character, ancestry) {
   let scores = baseScores();
-  ancestry.boosts.fixed.forEach((a) => {
-    scores = boostScore(scores, a);
-  });
+  // Alternate Ancestry Boosts (Player Core pg. 23): replaces the ancestry's
+  // listed boosts and flaw entirely with two fully free boosts — so unlike
+  // the normal path, ancestry.boosts.fixed and ancestry.flaw are skipped.
+  if (!character.useAlternateAncestryBoosts) {
+    ancestry.boosts.fixed.forEach((a) => {
+      scores = boostScore(scores, a);
+    });
+  }
   character.ancestryFreeBoosts.forEach((a) => {
     scores = boostScore(scores, a);
   });
-  if (ancestry.flaw) scores = applyFlaw(scores, ancestry.flaw);
+  if (ancestry.flaw && !character.useAlternateAncestryBoosts) scores = applyFlaw(scores, ancestry.flaw);
   if (character.backgroundChosenBoost) scores = boostScore(scores, character.backgroundChosenBoost);
   if (character.backgroundFreeBoost) scores = boostScore(scores, character.backgroundFreeBoost);
   if (character.classKeyAbility) scores = boostScore(scores, character.classKeyAbility);

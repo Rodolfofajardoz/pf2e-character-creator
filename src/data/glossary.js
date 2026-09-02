@@ -48,6 +48,7 @@ export const GLOSSARY = [
   { id: 'bulk', term: 'Bulk', desc: 'How much space and weight an item takes up to carry. Carrying too much Bulk encumbers you.' },
   { id: 'ac', term: 'AC', desc: 'Short for Armor Class.' },
   { id: 'difficult-terrain', term: 'difficult terrain', desc: "Terrain (rubble, undergrowth, and the like) that costs an extra 5 feet of movement to enter — a normal Stride into it only gets you 5 feet unless you have a way around that cost." },
+  { id: 'alternate-ancestry-boosts', term: 'Alternate Ancestry Boosts', desc: "An always-available option (not GM approval needed) to replace your ancestry's listed attribute boosts and flaw entirely with two fully free boosts, for a character whose ancestry doesn't push them toward the usual traits of their kind." },
 
   // Actions & spellcasting
   { id: 'strike', term: 'Strike', desc: "The basic attack action: swing a weapon or unarmed attack at a foe within reach or range." },

@@ -1,7 +1,10 @@
-// The 35 general backgrounds from the Player Core, verified one by one
-// against Archives of Nethys (2e.aonprd.com/Backgrounds.aspx). Each grants a
-// boost chosen between two abilities, a free boost, training in one skill +
-// one Lore skill, and a specific skill feat.
+// 39 of Player Core's 40 general backgrounds, verified one by one against
+// Archives of Nethys (2e.aonprd.com/Backgrounds.aspx). Each grants a boost
+// chosen between two abilities, a free boost, training in one skill + one
+// Lore skill, and a specific skill feat. The 40th, Raised by Belief, is
+// deliberately omitted: its boost pair and trained skill are both tied to
+// "your deity" (Player Core pg. 88), which this app doesn't model — see
+// PROJECT_NOTES.md.
 
 export const BACKGROUNDS = [
   {
@@ -45,6 +48,17 @@ export const BACKGROUNDS = [
     feat: { name: 'Specialty Crafting', desc: 'You gain a circumstance bonus in a specific Crafting subcategory of your choice (in your case, art-related).' },
   },
   {
+    id: 'bandit',
+    name: 'Bandit',
+    boostChoice: ['dex', 'cha'],
+    skill: 'intimidation',
+    lore: 'a terrain Lore related to where you worked, such as Desert Lore or Plains Lore (your choice)',
+    feat: {
+      name: 'Group Coercion',
+      desc: "Requires training in Intimidation: when you Coerce, you can compare your check result against the Will DCs of up to five targets at once, instead of just one (10 targets if you're an expert, 25 if a master, 50 if legendary).",
+    },
+  },
+  {
     id: 'barkeep',
     name: 'Barkeep',
     boostChoice: ['con', 'cha'],
@@ -75,6 +89,28 @@ export const BACKGROUNDS = [
     skill: 'deception',
     lore: 'Underworld Lore',
     feat: { name: 'Charming Liar', desc: 'You gain a circumstance bonus to Deception to Lie when you flatter your target.' },
+  },
+  {
+    id: 'cook',
+    name: 'Cook',
+    boostChoice: ['con', 'int'],
+    skill: 'survival',
+    lore: 'Cooking Lore',
+    feat: {
+      name: 'Seasoned',
+      desc: "Requires training in Alcohol Lore, Cooking Lore, or Crafting: you gain a +1 circumstance bonus (+2 if you're a master in one of those skills) to Craft checks to make food and drink, including elixirs (with Alchemical Crafting) and potions (with Magical Crafting).",
+    },
+  },
+  {
+    id: 'cultist',
+    name: 'Cultist',
+    boostChoice: ['int', 'cha'],
+    skill: 'occultism',
+    lore: 'a Lore related to your deity or cult (your choice)',
+    feat: {
+      name: 'Schooled in Secrets',
+      desc: "Requires training in Occultism: you can use Occultism in place of Diplomacy to Gather Information about secret societies, and in place of Deception to Impersonate a member of one. If you belong to such a group, you automatically recognize fellow members (and they recognize your standing) unless either side is specifically concealing it.",
+    },
   },
   {
     id: 'criminal',
@@ -267,6 +303,17 @@ export const BACKGROUNDS = [
     skill: 'thievery',
     lore: 'a Lore skill for the city you grew up in',
     feat: { name: 'Pickpocket', desc: 'You can Steal small items without it being as easily noticed.' },
+  },
+  {
+    id: 'teacher',
+    name: 'Teacher',
+    boostChoice: ['int', 'wis'],
+    skillChoice: ['performance', 'society'],
+    lore: 'Academia Lore',
+    feat: {
+      name: 'Experienced Professional',
+      desc: "Requires training in Lore: when you use that Lore to Earn Income, a critical failure becomes a normal failure instead. If you're an expert in it, a failed (non-critical) Earn Income check earns twice as much income.",
+    },
   },
   {
     id: 'tinker',

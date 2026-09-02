@@ -74,17 +74,17 @@ export const CLASSES = [
     classDC: 'trained',
     skillsBase: 4,
     fixedSkills: ['occultism', 'performance'],
-    weapons: 'Simple weapons, longsword, rapier, sap, shortbow, and shortsword; unarmed attacks',
+    weapons: 'Simple and martial weapons, and unarmed attacks',
     armor: 'Light armor',
     armorProficiency: ['light'],
     spellcasting: { tradition: 'Occult', type: 'spontaneous (compositions)', traditionCode: 'occult', cantripsKnown: 5, rank1Known: 2 },
     summary: 'Weaves magic through music and words, supporting allies with Compositions.',
-    feats1: [
-      { name: 'Bardic Lore', desc: 'Requires the Enigma muse: you become trained in Bardic Lore, a special Lore that can Recall Knowledge on any topic.' },
-      { name: 'Lingering Composition', desc: 'Requires the Maestro muse: you learn the Lingering Composition focus spell, which extends one of your compositions.' },
-      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
-      { name: 'Versatile Performance', desc: 'You can use Performance in place of another skill for certain actions related to your art.' },
-    ],
+    // Verified against AoN (Player Core pg. 94): the Bard's 1st-level class features are
+    // spellcasting, spell repertoire, composition spells, and muse — it doesn't gain its
+    // first bard feat until 2nd level. Weapon proficiency also corrected here: the enumerated
+    // legacy list (longsword/rapier/sap/shortbow/shortsword) was Core Rulebook; Player Core
+    // simplified the Bard to full simple + martial weapon proficiency.
+    feats1: [],
   },
   {
     id: 'champion',
@@ -127,16 +127,13 @@ export const CLASSES = [
     // defaults to the Cloistered Cleric baseline (no armor proficiency beyond
     // unarmored) rather than overstating AC for a doctrine the player may not have.
     armorProficiency: [],
-    spellcasting: { tradition: 'Divine', type: 'prepared or spontaneous (your choice)', traditionCode: 'divine', cantripsKnown: 5, rank1Known: 2 },
+    spellcasting: { tradition: 'Divine', type: 'prepared', traditionCode: 'divine', cantripsKnown: 5, rank1Known: 2 },
     summary: 'A channel of divine will for their deity, with access to spells and sacred miracles.',
-    feats1: [
-      { name: 'Deadly Simplicity', desc: "Requires a deity with a simple/unarmed favored weapon, and training in it: increase that weapon's damage die by one step." },
-      { name: 'Domain Initiate', desc: 'You gain a domain spell from your deity as a focus spell.' },
-      { name: 'Harming Hands', desc: 'Requires the harmful font: your harm spell rolls d10s instead of d8s.' },
-      { name: 'Healing Hands', desc: 'Requires the healing font: your heal spell rolls d10s instead of d8s.' },
-      { name: 'Holy Castigation', desc: 'Requires good alignment: your heal spells damage fiends as though they were undead.' },
-      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
-    ],
+    // Verified against AoN (Player Core pg. 108): Cleric spellcasting is prepared-only (no
+    // spontaneous option) — "prepare two 1st-rank spells and five cantrips each morning".
+    // 1st-level class features are deity, cleric spellcasting, divine font, and doctrine;
+    // the first cleric feat isn't gained until 2nd level.
+    feats1: [],
   },
   {
     id: 'druid',
@@ -153,14 +150,12 @@ export const CLASSES = [
     armorProficiency: ['light', 'medium'],
     spellcasting: { tradition: 'Primal', type: 'prepared', traditionCode: 'primal', cantripsKnown: 5, rank1Known: 2 },
     summary: 'Guardian of the natural cycles, with an Order that shapes how they wield that power.',
-    feats1: [
-      { name: 'Animal Companion', desc: 'Requires the Animal Order: you gain an animal companion that fights at your side.' },
-      { name: 'Leshy Familiar', desc: 'Requires the Leaf Order: you gain a familiar in the shape of a small leshy.' },
-      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
-      { name: 'Storm Born', desc: "Requires the Storm Order: weather doesn't penalize your ranged spell attacks or Perception, and you ignore the flat check to target a creature concealed by weather." },
-      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
-      { name: 'Wild Shape', desc: 'Requires the Wild Order: you can transform into basic animal shapes.' },
-    ],
+    // Verified against AoN (Player Core pg. 122): 1st-level class features are anathema,
+    // druidic order, Shield Block, voice of nature, and Wildsong — the first druid feat
+    // isn't gained until 2nd level (all the feats formerly listed here are Order-locked
+    // anyway, e.g. "Requires the Wild Order", and Order isn't modeled yet — see ROADMAP
+    // item 5).
+    feats1: [],
   },
   {
     id: 'fighter',
@@ -247,20 +242,15 @@ export const CLASSES = [
     classDC: 'trained',
     skillsBase: 3,
     fixedSkills: ['religion'],
-    weapons: 'Simple weapons',
+    weapons: 'Simple weapons, and unarmed attacks',
     armor: 'Light armor',
     armorProficiency: ['light'],
     spellcasting: { tradition: 'Divine', type: 'spontaneous', traditionCode: 'divine', cantripsKnown: 5, rank1Known: 3 },
     summary: 'Receives visions and divine power directly, paying the price of a Curse tied to their Mystery.',
-    feats1: [
-      { name: 'Foretell Harm', desc: 'Free action, once per round, requires your last action was a damaging spell: at the start of your target\'s next turn, it takes bonus damage matching that spell\'s type.' },
-      { name: 'Glean Lore', desc: 'You attempt a Religion check to glean useful (or, on a worse result, misleading) information from the collected lore of the divine.' },
-      { name: 'Nudge the Scales', desc: 'You heal a creature (living or undead) at range for 2 + double your level HP; during daily prep you can also align yourself with life or death to change what can heal you.' },
-      { name: 'Oracular Warning', desc: "Free action, trigger: you're about to roll initiative. Allies within 20 feet gain a status bonus to their initiative roll and temporary HP." },
-      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
-      { name: 'Whispers of Weakness', desc: "You learn a target's weaknesses and lowest save, and gain a status bonus to your own next attack against it." },
-      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
-    ],
+    // Verified against AoN (Player Core 2 pg. 128): 1st-level class features are oracle
+    // spellcasting, spell repertoire, and mystery — the first oracle feat isn't gained
+    // until 2nd level.
+    feats1: [],
   },
   {
     id: 'ranger',
@@ -293,7 +283,10 @@ export const CLASSES = [
     classDC: 'trained',
     skillsBase: 7,
     fixedSkills: ['stealth'],
-    weapons: 'Simple weapons, rapier, sap, shortbow, and shortsword; unarmed attacks',
+    // Verified against AoN (Player Core pg. 164): the enumerated legacy weapon list
+    // (rapier/sap/shortbow/shortsword) was Core Rulebook; Player Core simplified the
+    // Rogue to full simple + martial weapon proficiency.
+    weapons: 'Simple and martial weapons, and unarmed attacks',
     armor: 'Light armor',
     armorProficiency: ['light'],
     summary: "A versatile specialist who strikes with deadly precision (Sneak Attack) when they have the advantage.",
@@ -320,13 +313,10 @@ export const CLASSES = [
     armorProficiency: [],
     spellcasting: { tradition: 'Depends on bloodline (Arcane, Divine, Occult, or Primal)', type: 'spontaneous', traditionOptions: ['arcane', 'divine', 'occult', 'primal'], cantripsKnown: 5, rank1Known: 3 },
     summary: 'Their magic springs from an innate bloodline that determines the tradition and flavor of their spells.',
-    feats1: [
-      { name: 'Familiar', desc: 'You gain a familiar that assists you with your magical tasks.' },
-      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
-      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
-      { name: 'Blood Rising', desc: "Reaction, trigger: a foe targets you with a spell of your bloodline's tradition. You trigger a blood magic effect you know, against you or the caster." },
-      { name: 'Tap Into Blood', desc: "Requires an active blood magic effect: you get a minor tradition-specific trick (e.g. a Nature check to Demoralize for a primal bloodline, or an Arcana-based Recall Knowledge for arcane)." },
-    ],
+    // Verified against AoN (Player Core 2 pg. 144): 1st-level class features are bloodline,
+    // sorcerer spellcasting, spell repertoire, and sorcerous potency — the first sorcerer
+    // feat isn't gained until 2nd level.
+    feats1: [],
   },
   {
     id: 'swashbuckler',
@@ -386,19 +376,17 @@ export const CLASSES = [
     classDC: 'trained',
     skillsBase: 2,
     fixedSkills: ['arcana'],
-    weapons: 'Club, crossbow, dagger, heavy crossbow, and staff; unarmed attacks',
+    weapons: 'Simple weapons, and unarmed attacks',
     armor: 'No armor',
     armorProficiency: [],
     spellcasting: { tradition: 'Arcane', type: 'prepared', traditionCode: 'arcane', cantripsKnown: 5, rank1Known: 2 },
     summary: 'A scholar of arcane magic, bound to an Arcane School and their Spellbook.',
-    feats1: [
-      { name: 'Eschew Materials', desc: "You can provide a spell's ordinary material components (a free hand, no pouch needed) with gestures instead — costly listed materials are still required." },
-      { name: 'Familiar', desc: 'You gain a familiar that assists you with your magical tasks.' },
-      { name: 'Hand of the Apprentice', desc: 'Requires the Universalist school: you gain a focus spell that lets you magically hurl the weapon you wield at a foe.' },
-      { name: 'Counterspell', desc: 'Reaction, trigger: a creature casts a spell you have prepared. You expend that prepared spell to attempt to counteract the casting.' },
-      { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
-      { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
-    ],
+    // Verified against AoN (Player Core pg. 192): 1st-level class features are wizard
+    // spellcasting, arcane thesis, arcane school, and arcane bond — the first wizard feat
+    // isn't gained until 2nd level. Weapon proficiency also corrected here: the enumerated
+    // legacy list (club/crossbow/dagger/heavy crossbow/staff) was Core Rulebook; Player
+    // Core simplified the Wizard to simple weapons + unarmed attacks only.
+    feats1: [],
   },
 ];
 

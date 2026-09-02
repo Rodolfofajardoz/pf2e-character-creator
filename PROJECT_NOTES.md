@@ -704,8 +704,13 @@ It documents:
 **Process note:** this was also the repo's first pull request. Every commit
 before it went directly to `master` — which, given that a push to `master`
 deploys to GitHub Pages, meant every commit was an immediate production
-deploy with no review step. The branch-and-PR rule in `CLAUDE.md` exists to
-put a reviewable gate in front of that.
+deploy with no review step. The branch-and-PR rule was added to `CLAUDE.md`
+to put a reviewable gate in front of that — then reverted the same day: the
+project is worked on solo across sessions/devices, and an explicit
+go-ahead in chat before each push (already the standing rule, and what
+every prior release actually used) already serves as that gate without the
+overhead of a branch and a GitHub-side merge. `CLAUDE.md` now says commit
+straight to `master`.
 
 ## External audit of v0.6.4 — verification status
 
@@ -779,46 +784,107 @@ sheet.
   the whole `character` object, which would recompute *more* often, not
   less. This is exactly why the four warnings are the documented baseline.
 
-### Open — 6 rules claims needing Archives of Nethys
+### The 6 open items — resolved (2026-09-01)
 
-These could not be checked because **the session's network policy blocked
-every TTRPG rules host** (`2e.aonprd.com`, `elasticsearch.aonprd.com`,
-`pf2.d20pfsrd.com`, `pathfinderwiki.com` all refused; GitHub was
-reachable). Resolving it means allowing those domains on the environment's
-network policy — and the change only takes effect in a *new* session, since
-the proxy is configured when the container is created.
+Checked directly against AoN (this session has network access, unlike the
+one that first hit the block). All 6 were real, none were already fixed by
+anything in between. Fixes for the confirmed ones landed the same session
+— see "Patch: class feat/weapon fixes, 4 new backgrounds, Alternate
+Ancestry Boosts" below.
 
-1. **RULE-04 — Wizard.** Is the first class feat gained at 2nd level rather
-   than 1st? What are the 1st-level class features (Arcane School, Arcane
-   Thesis)? What does the starting spellbook contain? *Broaden this:* the
-   app gives `feats1` to 15 of 16 classes — only Witch has zero, and
-   `App.jsx:83` already carries an explicit `cls.feats1.length === 0`
-   branch. Somebody previously established that classes without a 1st-level
-   class feat exist and wrote the code for it, then applied it to one class.
-   Determine the correct answer for all 16.
-2. **RULE-05 — Cleric.** The app says `"prepared or spontaneous (your
-   choice)"`. Is the class prepared-only? Are deity, divine font, doctrine
-   and sanctification 1st-level class features?
-3. **RULE-06 — ⚠ the delicate one.** Rogue and Wizard weapon proficiencies.
-   The audit claims Player Core gives Rogue simple + martial + unarmed and
-   Wizard simple + unarmed; the app carries enumerated lists instead. There
-   is real doubt the audit is right here, and **this is the only finding
-   where acting without verification would do damage** — if it's wrong and
-   we "correct" it, every Rogue gains martial proficiency they don't have
-   and a currently-correct value becomes wrong. Quote AoN directly.
-4. **RULE-08** — Does the universal option of two free boosts in place of
-   the ancestry's pattern exist? And voluntary flaws at character creation?
-5. **RULE-09** — Do Aiuvarin and Dromaar replace Half-Elf and Half-Orc as
-   versatile heritages? Are they restricted to Human? What other versatile
-   heritages does Player Core carry?
-6. **RULE-10** — Does Player Core list exactly 40 backgrounds, and are
-   Bandit, Cook, Cultist, Raised by Belief and Teacher the five missing
-   ones? The app has 35.
+1. **RULE-04 — Wizard, broadened to all 16 classes.** Fetched every
+   class's `Class Features` table and `attack_proficiency` field from AoN
+   in one batch (`_mget` on `class-32`..`class-63`). Confirmed pattern:
+   **every full spellcasting class's first class feat is at 2nd level, not
+   1st** — Bard, Cleric, Druid, Oracle, Sorcerer, Wizard all had this
+   wrong (`feats1` was populated when it should have been empty, same as
+   Witch already was). Champion is the one caster-adjacent exception — it
+   does get a 1st-level feat, and was already correct. The 9 martial/
+   hybrid classes (Alchemist, Barbarian, Champion, Fighter, Investigator,
+   Monk, Ranger, Rogue, Swashbuckler) were all already correct. Fixed:
+   `feats1: []` for the 6 wrong classes, each with a comment citing the
+   AoN page and the actual 1st-level feature list.
+2. **RULE-05 — Cleric.** Confirmed prepared-only: AoN's Cleric
+   Spellcasting feature text is "you can prepare two 1st-rank spells and
+   five cantrips each morning" — no spontaneous option anywhere. Fixed
+   `type: 'prepared or spontaneous (your choice)'` → `'prepared'`. Deity,
+   divine font, and doctrine are confirmed 1st-level features, but stay a
+   documented gap — they need deity/doctrine modeling (ROADMAP item 5).
+3. **RULE-06 — confirmed correct, not refuted.** The audit was right on
+   both: Rogue is `Trained in simple weapons, Trained in martial weapons,
+   Trained in unarmed attacks` and Wizard is `Trained in simple weapons,
+   Trained in unarmed attacks` per their `attack_proficiency` fields. The
+   app had the enumerated Core Rulebook legacy lists for both (Rogue:
+   rapier/sap/shortbow/shortsword; Wizard: club/crossbow/dagger/heavy
+   crossbow/staff) instead of Player Core's simplified proficiency. Fixed
+   both. **Also found the same legacy-vs-remaster bug on Bard** (not in
+   the original 24 findings) — its enumerated list was legacy too; Player
+   Core gives it full simple + martial. Fixed. Oracle's weapon line was
+   also missing "unarmed attacks" (present in AoN, absent in the app) —
+   fixed as a minor addition.
+4. **RULE-08 — split into two different rules.** "Optional: Voluntary
+   Flaws" (Player Core pg. 23) is explicitly marked Optional in its own
+   title — a GM-table variant, correctly out of scope. **"Alternate
+   Ancestry Boosts"** (same page, no "Optional:" prefix) is not a variant
+   rule — it reads "You always have the option to replace your ancestry's
+   listed attribute boosts and attribute flaws entirely and instead select
+   two free attribute boosts." That's a real, always-available gap. Added:
+   a checkbox in the ancestry step's boost section that, when checked,
+   skips `ancestry.boosts.fixed` and `ancestry.flaw` and lets the player
+   freely pick 2 boosts from all 6 abilities instead (`useAlternateAncestryBoosts`
+   on `character`, handled in `computeScoresBeforeFreeBoosts`).
+5. **RULE-09 — bigger than a rename.** Aiuvarin and Dromaar (Player Core
+   pg. 82–83) are typed `Versatile Heritage` in AoN, a category that isn't
+   restricted to Human and isn't attached to one specific ancestry the way
+   a normal heritage is — Player Core has 4 total (Changeling, Nephilim,
+   Aiuvarin, Dromaar). The app's Half-Elf/Half-Orc are Human-only
+   sub-heritages, a structurally different (and legacy) mechanic. **Not
+   fixed this session** — this needs an actual design decision on how
+   Versatile Heritages should work in the data model (a heritage not
+   scoped to one ancestry doesn't fit `ancestry.heritages` as-is), not a
+   find/replace. Left as a documented gap.
+6. **RULE-10 — confirmed exact.** Player Core has exactly 40 backgrounds
+   (verified via `primary_source_raw` starting with `"Player Core pg"`,
+   excluding Player Core 2's 24). The app had 35, missing exactly Bandit,
+   Cook, Cultist, Raised by Belief, and Teacher — the same 5 the audit
+   named, no more, no fewer. Added 4 of the 5 (Bandit, Cook, Cultist,
+   Teacher) with verified boost/skill/Lore/feat data. **Raised by Belief
+   deliberately left out**: its boost pair and trained skill are both
+   defined relative to "your deity" (Player Core pg. 88) rather than two
+   fixed abilities/one fixed skill, which doesn't fit any background's
+   current data shape (`boostChoice: [a, b]`, `skill: 'x'`) — it needs
+   deity modeling to add correctly, same underlying gap as Cleric's
+   doctrine. Bonus finding beyond RULE-10's original scope: Player Core 2
+   has 24 more backgrounds not in the app at all (Amnesiac, Astrologer,
+   Barber, Blessed, Bookkeeper, Courier, Cursed, Driver, Feral Child,
+   Feybound, Haunted, Insurgent, Outrider, Pilgrim, Refugee, Returned,
+   Root Worker, Royalty, Saboteur, Scavenger, Servant, Squire, Tax
+   Collector, Ward) — noted here, not added; a bigger content pass than
+   this round's scope.
 
-When these are checked, cross-reference more than one source (d20pfsrd,
-PathfinderWiki, the `foundryvtt/pf2e` data on GitHub) but keep AoN
-authoritative per `CLAUDE.md`, and record any disagreement between sources
-— it usually points at an erratum or a mislabelled legacy entry.
+### Patch: class feat/weapon fixes, 4 new backgrounds, Alternate Ancestry Boosts
+
+Everything actionable from the 6 items above, applied in one pass:
+`src/data/classes.js` (6 classes' `feats1` emptied, 4 classes' `weapons`
+corrected, Cleric's spellcasting type corrected), `src/data/backgrounds.js`
+(Bandit/Cook/Cultist/Teacher added, 35 → 39), and a new Alternate Ancestry
+Boosts checkbox in `AncestryStep.jsx` / `abilityScores.js` /
+`glossary.js`. Verified: `npm run lint` (0 errors, same 4 baseline
+warnings), `npm run build` (clean), and live in the browser — Wizard/
+Cleric/Bard/Druid/Oracle/Sorcerer show "doesn't gain a class feat at 1st
+level" and Rogue/Fighter/etc. still show theirs; Rogue/Wizard/Bard weapon
+lines read the remaster text; toggling Alternate Ancestry Boosts on a
+Dwarf correctly drops the Con/Wis boosts and Charisma flaw, offers all 6
+abilities, caps at 2, and reverts cleanly when unchecked.
+
+Remaining from this audit, not yet done: RULE-09 (Versatile Heritages —
+needs a data-model decision), Raised by Belief and the 24 Player Core 2
+backgrounds (need deity modeling / are just more data entry), and all the
+`APP-*`/other `RULE-*` findings confirmed earlier in this document that
+haven't been fixed yet (APP-01 duplicate-skill substitution, APP-02
+orphaned bonus feat, APP-03 re-click wipes choices, RULE-02 unenforced
+prerequisites, RULE-03 feats not reaching calculations, DATA-01/02 legacy
+spell sources/names, MOB-01/02/03 mobile overflows).
 
 ### A framing note on the audit's severities
 

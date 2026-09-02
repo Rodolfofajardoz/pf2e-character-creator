@@ -43,16 +43,26 @@ export default function AncestryStep({ character, update }) {
       heritageId: null,
       ancestryFeat: null,
       ancestryFreeBoosts: [],
+      useAlternateAncestryBoosts: false,
       generalFeatChoice: null,
     });
   }
 
+  // Player Core's "Alternate Ancestry Boosts" (pg. 23): always available,
+  // not an optional/GM-approval rule like voluntary flaws — replaces the
+  // ancestry's listed boosts and flaw entirely with two fully free boosts.
+  const boostMax = character.useAlternateAncestryBoosts ? 2 : ancestry?.boosts.free;
+  const boostFixedList = character.useAlternateAncestryBoosts ? [] : ancestry?.boosts.fixed;
+
+  function toggleAlternateBoosts() {
+    update({ useAlternateAncestryBoosts: !character.useAlternateAncestryBoosts, ancestryFreeBoosts: [] });
+  }
+
   function toggleFreeBoost(ability) {
     const current = character.ancestryFreeBoosts;
-    const max = ancestry.boosts.free;
     if (current.includes(ability)) {
       update({ ancestryFreeBoosts: current.filter((a) => a !== ability) });
-    } else if (current.length < max) {
+    } else if (current.length < boostMax) {
       update({ ancestryFreeBoosts: [...current, ability] });
     }
   }
@@ -95,17 +105,32 @@ export default function AncestryStep({ character, update }) {
           {ancestry.boosts.free > 0 && (
             <section className="sub-section" ref={boostsRef}>
               <h3>Free Ancestry Boost(s)</h3>
+              <label className="option-toggle">
+                <input
+                  type="checkbox"
+                  checked={character.useAlternateAncestryBoosts}
+                  onChange={toggleAlternateBoosts}
+                />
+                Use <GlossaryTerm id="alternate-ancestry-boosts">Alternate Ancestry Boosts</GlossaryTerm> instead
+                (two fully free boosts, replacing {ancestry.name}'s usual pattern and flaw entirely)
+              </label>
               <p className="hint">
-                Choose {ancestry.boosts.free} ability score(s) other than the fixed ones (
-                <AbilityTermList codes={ancestry.boosts.fixed} empty="none" />).
+                {character.useAlternateAncestryBoosts ? (
+                  'Choose 2 ability scores — any combination.'
+                ) : (
+                  <>
+                    Choose {ancestry.boosts.free} ability score(s) other than the fixed ones (
+                    <AbilityTermList codes={ancestry.boosts.fixed} empty="none" />).
+                  </>
+                )}
               </p>
               <div className="chip-row">
-                {ABILITIES.filter((ab) => !ancestry.boosts.fixed.includes(ab)).map((ab) => (
+                {ABILITIES.filter((ab) => !boostFixedList.includes(ab)).map((ab) => (
                   <button
                     key={ab}
                     className={`chip ${character.ancestryFreeBoosts.includes(ab) ? 'selected' : ''}`}
                     onClick={() => toggleFreeBoost(ab)}
-                    disabled={!character.ancestryFreeBoosts.includes(ab) && character.ancestryFreeBoosts.length >= ancestry.boosts.free}
+                    disabled={!character.ancestryFreeBoosts.includes(ab) && character.ancestryFreeBoosts.length >= boostMax}
                   >
                     <AbilityTerm code={ab} />
                   </button>
