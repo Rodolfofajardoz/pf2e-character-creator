@@ -62,10 +62,15 @@ export default function ClassStep({ character, update }) {
   // Changing a Sorcerer/Witch's subclass can change their tradition (a new
   // Bloodline/Patron's spell list), so any spells already picked under the
   // old tradition need to be cleared along with it -- same reasoning as
-  // selectClass resetting them.
+  // selectClass resetting them. backgroundSkillSubstitute also has to reset:
+  // a subclass grants its own fixed skills (getEffectiveFixedSkills), so a
+  // substitute chosen to dodge a collision with the *previous* subclass's
+  // skills can end up colliding with the *new* one instead -- without this
+  // reset, getBackgroundSkillInfo would silently fall back to that stale,
+  // now-also-duplicate substitute instead of asking the player to re-pick.
   function selectSubclass(id) {
     if (id === character.subclassChoice) return;
-    update({ subclassChoice: id, spellTradition: null, knownCantrips: [], knownSpells1: [] });
+    update({ subclassChoice: id, spellTradition: null, knownCantrips: [], knownSpells1: [], backgroundSkillSubstitute: null });
   }
 
   return (

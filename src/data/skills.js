@@ -46,16 +46,24 @@ export function abilityMod(score) {
 // beyond skillsBase + Int modifier. Classes with a concrete, enumerable
 // choice (the Fighter's Acrobatics-or-Athletics, or a Sorcerer/Witch whose
 // subclass has been picked — see getEffectiveFixedSkills) get those skills
-// as fixed training instead and aren't counted here, since that slot isn't
-// part of the free pool. The `cls.id === 'sorcerer' ? 2 : 1` fallback only
-// still matters for the brief window before a subclass is chosen (e.g. the
-// live preview panel, which renders from step 1 onward).
+// as fixed training instead and normally aren't counted here at all, since
+// that slot isn't part of the free pool. But a subclass's `skills` array
+// isn't always the FULL count the class's fixedSkillChoice text promises —
+// the Draconic bloodline only lists 1 concrete skill (`skills: ['intimidation']`)
+// because its second skill depends on an unmodeled exemplar sub-choice, so
+// the gap between what's normally promised (2, for a Sorcerer) and what the
+// subclass actually delivers is still added to the free pool here, rather
+// than silently costing the player a trained skill. The
+// `cls.id === 'sorcerer' ? 2 : 1` fallback (no subclass chosen yet) only
+// matters for the brief window before one is — e.g. the live preview panel,
+// which renders from step 1 onward.
 export function getExtraSkillsFromChoice(cls, character) {
   if (cls.fixedSkillChoiceOptions) return 0;
   if (!cls.fixedSkillChoice) return 0;
+  const normalCount = cls.id === 'sorcerer' ? 2 : 1;
   const sub = getSubclassOption(cls.id, character?.subclassChoice);
-  if (sub?.skills) return 0;
-  return cls.id === 'sorcerer' ? 2 : 1;
+  if (!sub?.skills) return normalCount;
+  return Math.max(0, normalCount - sub.skills.length);
 }
 
 export function getSkillPoolSize(cls, intMod, character) {

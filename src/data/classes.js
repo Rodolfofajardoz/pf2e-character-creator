@@ -473,11 +473,16 @@ export const CLASSES = [
     // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
     // Ambition grants "a 1st-level class feat" with no class exception, so a Wizard who
     // takes it still needs a catalog to pick from. See needsBonusFeat in App.jsx/ClassStep.jsx.
+    //
+    // "Hand of the Apprentice" (Core Rulebook pg. 209, prerequisite "universalist wizard")
+    // removed from this list — confirmed Legacy Content on AoN, tied to the pre-remaster
+    // Universalist school (also removed, from subclasses.js). In Player Core it isn't a
+    // pickable class feat at all: it's automatically granted as the School of Unified
+    // Magical Theory's initial school spell (see subclasses.js).
     classFeatAtLevel1: false,
     feats1: [
       { name: 'Eschew Materials', desc: "You can provide a spell's ordinary material components (a free hand, no pouch needed) with gestures instead — costly listed materials are still required." },
       { name: 'Familiar', desc: 'You gain a familiar that assists you with your magical tasks.' },
-      { name: 'Hand of the Apprentice', desc: 'Requires the Universalist school: you gain a focus spell that lets you magically hurl the weapon you wield at a foe.' },
       { name: 'Counterspell', desc: 'Reaction, trigger: a creature casts a spell you have prepared. You expend that prepared spell to attempt to counteract the casting.' },
       { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
       { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },

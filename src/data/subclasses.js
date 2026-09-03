@@ -60,14 +60,18 @@ export const SUBCLASSES = {
     label: 'Mystery',
     fieldLabel: 'Mystery',
     options: [
-      { id: 'ancestors', name: 'Ancestors', desc: 'The voices of generations past speak to you. Mystery Skill: Society. Initial Revelation Spell: Ancestral Touch (focus spell). Comes with a Curse of Ancestral Meddling — while cursebound, you become clumsy equal to your cursebound value.' },
-      { id: 'battle', name: 'Battle', desc: 'Warlike forces fill you with physical might and tactical knowledge. Mystery Skill: Athletics. Initial Revelation Spell: Weapon Trance. Comes with a Curse of the Mortal Warrior — while cursebound, you take weakness to spell damage and a penalty to saves against spells.' },
-      { id: 'bones', name: 'Bones', desc: 'Your mystery imparts an understanding of death and undeath. Mystery Skill: Medicine. Initial Revelation Spell: Soul Siphon. Comes with a Curse of Living Death — while cursebound, you take weakness to vitality and void damage and a penalty to Fortitude saves.' },
-      { id: 'cosmos', name: 'Cosmos', desc: 'Celestial bodies great and small exert influence on you. Mystery Skill: Nature. Initial Revelation Spell: Spray of Stars. Comes with a Curse of the Sky\'s Call — while cursebound, you become enfeebled and penalized against forced movement.' },
-      { id: 'flames', name: 'Flames', desc: 'Fire lives at the center of the world, and you revere or siphon its power. Mystery Skill: Acrobatics. Initial Revelation Spell: Incendiary Aura. Comes with a Curse of Engulfing Flames — while cursebound, you catch fire and take persistent fire damage.' },
-      { id: 'life', name: 'Life', desc: "The never-ending flow of life force within living beings is palpable to you. Mystery Skill: Medicine. Initial Revelation Spell: Life Link. Comes with a Curse of Outpouring Life — while cursebound, magic that restores your own Hit Points is weakened." },
-      { id: 'lore', name: 'Lore', desc: 'Knowledge and information come freely to you. Mystery Skill: Occultism and one Lore skill of your choice. Initial Revelation Spell: Brain Drain. Comes with a Curse of Torrential Knowledge — while cursebound, you take a penalty to Perception and Will saves.' },
-      { id: 'tempest', name: 'Tempest', desc: 'The fury of wind and waves pounds in your heart. Mystery Skill: Nature. Initial Revelation Spell: Tempest Touch. Comes with a Curse of Inclement Headwinds — while cursebound, you take electricity weakness, a ranged attack penalty, and a Speed penalty.' },
+      { id: 'ancestors', name: 'Ancestors', skills: ['society'], desc: 'The voices of generations past speak to you. Mystery Skill: Society. Initial Revelation Spell: Ancestral Touch (focus spell). Comes with a Curse of Ancestral Meddling — while cursebound, you become clumsy equal to your cursebound value.' },
+      { id: 'battle', name: 'Battle', skills: ['athletics'], desc: 'Warlike forces fill you with physical might and tactical knowledge. Mystery Skill: Athletics. Initial Revelation Spell: Weapon Trance. Comes with a Curse of the Mortal Warrior — while cursebound, you take weakness to spell damage and a penalty to saves against spells.' },
+      { id: 'bones', name: 'Bones', skills: ['medicine'], desc: 'Your mystery imparts an understanding of death and undeath. Mystery Skill: Medicine. Initial Revelation Spell: Soul Siphon. Comes with a Curse of Living Death — while cursebound, you take weakness to vitality and void damage and a penalty to Fortitude saves.' },
+      { id: 'cosmos', name: 'Cosmos', skills: ['nature'], desc: 'Celestial bodies great and small exert influence on you. Mystery Skill: Nature. Initial Revelation Spell: Spray of Stars. Comes with a Curse of the Sky\'s Call — while cursebound, you become enfeebled and penalized against forced movement.' },
+      { id: 'flames', name: 'Flames', skills: ['acrobatics'], desc: 'Fire lives at the center of the world, and you revere or siphon its power. Mystery Skill: Acrobatics. Initial Revelation Spell: Incendiary Aura. Comes with a Curse of Engulfing Flames — while cursebound, you catch fire and take persistent fire damage.' },
+      { id: 'life', name: 'Life', skills: ['medicine'], desc: "The never-ending flow of life force within living beings is palpable to you. Mystery Skill: Medicine. Initial Revelation Spell: Life Link. Comes with a Curse of Outpouring Life — while cursebound, magic that restores your own Hit Points is weakened." },
+      // Lore's Mystery Skill is "Occultism and one Lore skill of your choice"
+      // — only Occultism is modeled as an automatic grant here; the free-text
+      // Lore-of-choice half isn't (no UI for it yet), same documented-gap
+      // spirit as other free-text Lore choices this app doesn't fully model.
+      { id: 'lore', name: 'Lore', skills: ['occultism'], desc: 'Knowledge and information come freely to you. Mystery Skill: Occultism and one Lore skill of your choice. Initial Revelation Spell: Brain Drain. Comes with a Curse of Torrential Knowledge — while cursebound, you take a penalty to Perception and Will saves.' },
+      { id: 'tempest', name: 'Tempest', skills: ['nature'], desc: 'The fury of wind and waves pounds in your heart. Mystery Skill: Nature. Initial Revelation Spell: Tempest Touch. Comes with a Curse of Inclement Headwinds — while cursebound, you take electricity weakness, a ranged attack penalty, and a Speed penalty.' },
     ],
   },
   sorcerer: {
@@ -108,9 +112,19 @@ export const SUBCLASSES = {
       { id: 'civic-wizardry', name: 'School of Civic Wizardry', desc: 'The fruits of arcane study should help the common citizen — construction, finding lost things, and swift movement. Curriculum cantrips: Prestidigitation, Read Aura. Two curriculum 1st-rank spells (from Hydraulic Push, Pummeling Rubble, Summon Construct) are added to your spellbook. Initial school spell: Earthworks.' },
       { id: 'mentalism', name: 'School of Mentalism', desc: 'You study the arts of befuddling lesser minds with figments, illusions, and implanted sensations. Curriculum cantrips: Daze, Figment. Two curriculum 1st-rank spells (from Dizzying Colors, Sleep, Sure Strike) are added to your spellbook. Initial school spell: Charming Push.' },
       { id: 'protean-form', name: 'School of Protean Form', desc: 'Your magic focuses on convincing living matter into another shape. Curriculum cantrips: Gouging Claw, Tangle Vine. Two curriculum 1st-rank spells (from Jump, Pest Form, Spider Sting) are added to your spellbook. Initial school spell: Scramble Body.' },
+      // "Universalist" (Core Rulebook pg. 210) was this school's pre-remaster
+      // name and mechanics — confirmed Legacy Content on AoN, its own page
+      // banner marks it superseded. School of Unified Magical Theory is the
+      // Player Core replacement, not a second option alongside it; a
+      // duplicate `universalist` entry briefly existed here with slightly
+      // different (also legacy) text and was removed once traced back to
+      // AoN. The legacy "Hand of the Apprentice" class feat (Core Rulebook
+      // pg. 209, prerequisite "universalist wizard") was removed the same
+      // way from classes.js's Wizard feats1 — in Player Core it's simply
+      // this option's automatic initial school spell, not a separately
+      // pickable feat gated on a now-nonexistent prerequisite.
       { id: 'unified-magical-theory', name: 'School of Unified Magical Theory', desc: "You study the best of every school rather than specializing. No curriculum, but instead: gain an additional 1st-level wizard class feat, and add one 1st-rank spell of your choice to your spellbook. Initial school spell: Hand of the Apprentice." },
       { id: 'battle-magic', name: 'School of Battle Magic', desc: 'Magic is power, and you turn it to the art of battle. Curriculum cantrips: Shield, Telekinetic Projectile. Two curriculum 1st-rank spells (from Breathe Fire, Force Barrage, Mystic Armor) are added to your spellbook. Initial school spell: Force Bolt.' },
-      { id: 'universalist', name: 'Universalist', desc: 'Instead of specializing, you study all the schools equally. Gain an extra wizard class feat, add one 1st-level spell of your choice to your spellbook, and you can use Drain Bonded Item once per day per level of wizard spell slot you have (instead of once per day total).' },
     ],
   },
   champion: {

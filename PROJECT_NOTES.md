@@ -1208,6 +1208,87 @@ in `CLAUDE.md`.
 The other 6 classes' gated spells remain open, roughly ordered by
 complexity in `ROADMAP.md`.
 
+## Patch: internal full-codebase audit, 6 correctness fixes (v0.9.2)
+
+Ran a full-codebase audit (not diff-based — 9 parallel finder agents across
+correctness, cross-file consistency, JS/React pitfalls, wrapper-function
+correctness, save/load data-shape regression risk, reuse, efficiency,
+altitude/CLAUDE.md conventions, and PF2e rules-internal-consistency) at
+the user's request, independent of any specific bug report. 15 findings
+verified and reported; the 6 real correctness bugs among them were fixed
+the same session:
+
+1. **`characterCatalog.js`'s `loadCharacter()` never merged onto
+   `initialCharacter`'s defaults** — a character saved before a field
+   existed (e.g. `subclassChoice`, added in v0.9.0) came back with that
+   field simply `undefined`, and several call sites with no fallback
+   would throw the moment that step/panel rendered. Fixed in
+   `App.jsx`'s `openCharacter()`: `setCharacter({ ...initialCharacter,
+   ...saved })` instead of `setCharacter(saved)`. Verified by seeding a
+   synthetic legacy character (missing `subclassChoice`,
+   `bonusLanguages`, `trainedSkills`, `knownCantrips`/`knownSpells1`)
+   directly into `localStorage` and opening it — resumes cleanly on the
+   first incomplete step instead of crashing.
+2. **`fillCharacterSheet.js`'s tradition checkbox never checked
+   `subOption?.tradition`** — the same three-way fallback
+   (`sc.traditionCode || subOption?.tradition || character.spellTradition`)
+   `SpellsStep.jsx`/`SummaryStep.jsx` already used was missing here, so
+   any Sorcerer/Witch other than a manually-picked Draconic bloodline
+   exported a PDF with no tradition marked, even though the on-screen
+   Summary showed it correctly. Fixed by importing `getSubclassOption`
+   and adding the same fallback.
+3. **Draconic Sorcerer silently lost a trained skill** —
+   `getExtraSkillsFromChoice()` zeroed the abstract "+2 skills" fallback
+   pool the moment *any* subclass `skills` array existed, but the
+   Draconic bloodline's array has only 1 entry (its second skill depends
+   on an unmodeled exemplar sub-choice) — so Draconic Sorcerers got 1
+   trained skill instead of 2, no other bloodline affected. Fixed by
+   making the function fill the *gap* (`normalCount - sub.skills.length`)
+   instead of zeroing outright — verified live: the Skills step now
+   shows "2 + Int mod **+ 1 from your class** = 4 skills" for a Draconic
+   Sorcerer instead of silently dropping to 3.
+4. **Oracle Mystery Skill was described but never granted** — all 8
+   Mystery options named a skill in their prose ("Mystery Skill:
+   Athletics") but had no `skills` array, unlike Sorcerer Bloodlines and
+   Witch Patrons which do. Added `skills: [...]` to all 8 (Lore's
+   "Occultism and one Lore skill of your choice" only auto-grants the
+   Occultism half — the Lore-of-choice half stays an unmodeled,
+   documented simplification). Verified live: choosing the Battle
+   mystery now shows Athletics as automatically trained.
+5. **Wizard's Arcane School list had a duplicate, contradictory
+   entry** — "Universalist" and "School of Unified Magical Theory" were
+   both listed as separate options with overlapping-but-different
+   mechanics; checking AoN directly showed Universalist's own page
+   carries a **Legacy Content** banner — it's the pre-remaster name/
+   mechanics for the same school, not a second option. Removed it, and
+   removed the matching legacy-only "Hand of the Apprentice" class feat
+   from Wizard's `feats1` (Core Rulebook pg. 209, prerequisite
+   "universalist wizard" — no Player Core version of that *feat*
+   exists; in the remaster it's just School of Unified Magical Theory's
+   automatic initial school spell, already captured correctly in
+   `subclasses.js`). This also fixed a documentation bug for free: the
+   file's header comment claiming "49 options" was actually describing
+   50 before this fix.
+6. **Switching a subclass didn't clear a stale background-skill
+   substitute** — `selectClass()` resets `backgroundSkillSubstitute` to
+   `null`, but `selectSubclass()` didn't, so a substitute picked to
+   dodge a collision with one Bloodline/Patron/Mystery could silently
+   collide with a *different* one after switching, without re-prompting
+   the player — the same class of bug as the external audit's APP-01
+   finding, reintroduced by the new subclass feature. Fixed by adding
+   the same reset to `selectSubclass()`.
+
+The remaining 9 findings (duplicated `profBonus()` across 3 files
+instead of `useComputedCharacter`, `LivePreviewPanel` omitting the
+background Lore skill, the already-known Human-Witch-gets-nothing-from-
+Natural-Ambition gap, a custom-background feat shape mismatch, a
+`useMemo` missing a currently-harmless dependency, an unconfirmed
+Champion Iniquity reaction name, an unmemoized/undebounced spell search,
+and duplicated capped-array-toggle logic across 3 step files) are lower
+severity — efficiency/reuse polish or latent-but-currently-unreachable
+edge cases — and were left as documented follow-ups rather than fixed
+this pass.
+
 ```bash
 cd pf2e-character-creator
 npm install   # first time only, or after pulling dependency changes

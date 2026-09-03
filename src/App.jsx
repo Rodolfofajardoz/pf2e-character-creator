@@ -250,7 +250,14 @@ function App() {
     const saved = loadCharacter(id);
     if (!saved) return;
     setCharacterId(id);
-    setCharacter(saved);
+    // Merge onto initialCharacter's defaults, not the raw saved object --
+    // a character saved before some field existed (subclassChoice, the
+    // custom-background fields, etc.) would otherwise come back with that
+    // field simply undefined, and the many call sites across this app that
+    // call .length/.includes/.map on a character.* array with no fallback
+    // (App.jsx's own isStepComplete included) would throw on the very next
+    // render instead of resuming safely.
+    setCharacter({ ...initialCharacter, ...saved });
     // Resume exactly where this character left off -- the first
     // incomplete step, or Summary if every step before it already checks
     // out. Jumping straight to Summary unconditionally used to crash on a

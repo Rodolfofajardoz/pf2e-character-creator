@@ -1,5 +1,6 @@
 import { SKILLS, PROFICIENCY_RANKS, getEffectiveFixedSkills } from '../data/skills';
 import { CANTRIPS, SPELLS_RANK_1 } from '../data/spells';
+import { getSubclassOption } from '../data/subclasses';
 
 const LEVEL = 1;
 const SHEET_URL = `${import.meta.env.BASE_URL}pf2e-character-sheet.pdf`;
@@ -213,7 +214,12 @@ export function buildFieldValues(character, computed) {
   // Spellcasting (page 3): tradition checkbox, spell DC/attack, and every
   // known cantrip/1st-rank spell into the spellbook table, cantrips first.
   if (spellAbility) {
-    const traditionCode = cls.spellcasting.traditionCode || character.spellTradition;
+    // Same fallback chain as SpellsStep.jsx/SummaryStep.jsx: a subclass's
+    // Bloodline/Patron sets the tradition directly for every option except
+    // the Draconic bloodline, whose manual character.spellTradition picker
+    // is the last resort.
+    const subOption = getSubclassOption(cls.id, character.subclassChoice);
+    const traditionCode = cls.spellcasting.traditionCode || subOption?.tradition || character.spellTradition;
     if (traditionCode && TRADITION_CHECKBOX[traditionCode]) checks[TRADITION_CHECKBOX[traditionCode]] = true;
     text['SDC1_TOTAL'] = String(spellDC);
     text['SATK1_TOTAL'] = signed(spellAttack);
