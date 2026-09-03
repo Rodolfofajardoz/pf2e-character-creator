@@ -41,6 +41,8 @@ const initialCharacter = {
   useAlternateAncestryBoosts: false,
   ancestryFeat: null,
   generalFeatChoice: null,
+  heritageSkillChoices: [],
+  ancestryFeatSkillChoices: [],
   backgroundId: null,
   backgroundChosenBoost: null,
   backgroundFreeBoost: null,
@@ -83,7 +85,13 @@ function isStepComplete(stepId, character) {
       const heritage = ancestry?.heritages.find((h) => h.id === character.heritageId);
       const needsGeneralFeat = heritage?.grantsGeneralFeat || character.ancestryFeat?.grantsGeneralFeat;
       const generalFeatOk = !needsGeneralFeat || Boolean(character.generalFeatChoice);
-      return Boolean(character.ancestryId && character.heritageId && character.ancestryFeat && generalFeatOk);
+      const heritageSkillOk = !heritage?.grantsSkillChoice || character.heritageSkillChoices.length === heritage.grantsSkillChoice;
+      const featSkillOk =
+        !character.ancestryFeat?.grantsSkillChoice ||
+        character.ancestryFeatSkillChoices.length === character.ancestryFeat.grantsSkillChoice;
+      return Boolean(
+        character.ancestryId && character.heritageId && character.ancestryFeat && generalFeatOk && heritageSkillOk && featSkillOk
+      );
     }
     case 'background': {
       const bg = character.backgroundId ? getEffectiveBackground(character) : null;

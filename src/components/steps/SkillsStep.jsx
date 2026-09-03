@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { getAncestry } from '../../data/ancestries';
 import { getEffectiveBackground } from '../../data/backgrounds';
 import { getClass } from '../../data/classes';
-import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo, getEffectiveFixedSkills } from '../../data/skills';
+import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo, getEffectiveFixedSkills, getAncestryGrantedSkills } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
 import { getGlossaryTerm } from '../../data/glossary';
@@ -21,6 +21,19 @@ export default function SkillsStep({ character, update }) {
   const { rawId: rawBackgroundSkillId, hasCollision, effectiveId: backgroundSkillId, classFixedIds } = getBackgroundSkillInfo(character, cls, background);
   const fixedIds = new Set([...classFixedIds, ...(backgroundSkillId ? [backgroundSkillId] : [])]);
   const selectable = SKILLS.filter((s) => !fixedIds.has(s.id));
+
+  // Shown as their own "(from your ancestry)" line below rather than folded
+  // into classFixedIds' loop, which is unconditionally labeled "from your
+  // class" -- deduped against every other automatic-training source so a
+  // skill more than one of them happens to land on (e.g. Natural Skill picks
+  // Athletics, and the class's fixedSkillChoice also lands on Athletics)
+  // isn't printed twice.
+  const ancestryGrantedSkills = getAncestryGrantedSkills(character).filter(
+    (id) =>
+      !getEffectiveFixedSkills(character, cls).includes(id) &&
+      id !== character.classSkillChoice &&
+      id !== backgroundSkillId
+  );
   const substituteOptions = SKILLS.filter((s) => !classFixedIds.has(s.id) && s.id !== rawBackgroundSkillId);
 
   // Picking a substitute that's already in the free pool has to release its
@@ -71,6 +84,11 @@ export default function SkillsStep({ character, update }) {
               (from your background{hasCollision ? ', substituted — see below' : ''})
             </li>
           )}
+          {ancestryGrantedSkills.map((s) => (
+            <li key={s}>
+              <GlossaryTerm id={s}>{SKILLS.find((sk) => sk.id === s)?.name}</GlossaryTerm> (from your ancestry)
+            </li>
+          ))}
           <li><InspectText text={background.lore} /> (from your background)</li>
         </ul>
       </section>
@@ -80,7 +98,7 @@ export default function SkillsStep({ character, update }) {
           <h3>Background skill substitute</h3>
           <p className="hint">
             Your background would train <GlossaryTerm id={rawBackgroundSkillId}>{SKILLS.find((sk) => sk.id === rawBackgroundSkillId)?.name}</GlossaryTerm>,
-            but your class already trains it automatically. Per the rules, choose a different skill to train instead.
+            but you're already trained in it from your class or ancestry. Per the rules, choose a different skill to train instead.
           </p>
           <div className="chip-row">
             {substituteOptions.map((s) => (

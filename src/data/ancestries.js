@@ -189,7 +189,7 @@ export const ANCESTRIES = [
     heritages: [
       { id: 'half-elf', name: 'Half-Elf', desc: 'You gain the elf trait, the half-elf trait, and low-light vision; you can select elf, half-elf, and human feats.' },
       { id: 'half-orc', name: 'Half-Orc', desc: 'You gain the orc trait, the half-orc trait, and low-light vision; you can select orc, half-orc, and human feats.' },
-      { id: 'skilled', name: 'Skilled Heritage', desc: 'You become trained in a skill of your choice; at 5th level you become an expert in that skill.' },
+      { id: 'skilled', name: 'Skilled Heritage', desc: 'You become trained in a skill of your choice; at 5th level you become an expert in that skill.', grantsSkillChoice: 1 },
       { id: 'versatile', name: 'Versatile Heritage', desc: 'You select a general feat for which you meet the prerequisites.', grantsGeneralFeat: true },
     ],
     feats1: [
@@ -198,7 +198,7 @@ export const ANCESTRIES = [
       { name: 'General Training', desc: 'You gain a 1st-level general feat.', grantsGeneralFeat: true },
       { name: 'Haughty Obstinacy', desc: 'Successes on saves against mental control become critical successes; failed attempts to Coerce you via Intimidation become critical failures.' },
       { name: 'Natural Ambition', desc: 'You gain a 1st-level class feat for your class.', grantsClassFeat: true },
-      { name: 'Natural Skill', desc: 'You gain the trained proficiency rank in two skills of your choice.' },
+      { name: 'Natural Skill', desc: 'You gain the trained proficiency rank in two skills of your choice.', grantsSkillChoice: 2 },
       { name: 'Unconventional Weaponry', desc: 'You gain access to an uncommon simple or martial weapon associated with another ancestry or culture.' },
     ],
   },

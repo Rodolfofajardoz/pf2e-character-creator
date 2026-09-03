@@ -56,6 +56,11 @@ export default function ClassStep({ character, update }) {
       spellTradition: null,
       knownCantrips: [],
       knownSpells1: [],
+      // A different class fixes different skills automatically (skillsBase,
+      // fixedSkills, skill pool size all change), so free picks made against
+      // the old class's fixed set can no longer be trusted -- see skills.js's
+      // getEffectiveFixedSkills for what "fixed" means here.
+      trainedSkills: [],
     });
   }
 
@@ -70,7 +75,18 @@ export default function ClassStep({ character, update }) {
   // now-also-duplicate substitute instead of asking the player to re-pick.
   function selectSubclass(id) {
     if (id === character.subclassChoice) return;
-    update({ subclassChoice: id, spellTradition: null, knownCantrips: [], knownSpells1: [], backgroundSkillSubstitute: null });
+    update({
+      subclassChoice: id,
+      spellTradition: null,
+      knownCantrips: [],
+      knownSpells1: [],
+      backgroundSkillSubstitute: null,
+      // A subclass grants its own fixed skills (getEffectiveFixedSkills), so
+      // switching subclass can change that fixed set the same way switching
+      // class does -- a free pick trusted under the old subclass may now
+      // collide with (or be freed up by) the new one.
+      trainedSkills: [],
+    });
   }
 
   return (

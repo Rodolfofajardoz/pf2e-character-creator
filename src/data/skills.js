@@ -81,18 +81,33 @@ export function getEffectiveFixedSkills(character, cls) {
   return [...(cls.fixedSkills || []), ...(sub?.skills || [])];
 }
 
+// Skills a Human's heritage (Skilled Heritage) or ancestry feat (Natural
+// Skill) grants training in, player-chosen at the Ancestry step (see
+// AncestryStep.jsx's heritageSkillChoices/ancestryFeatSkillChoices
+// pickers). Kept out of getEffectiveFixedSkills on purpose: every consumer
+// of that function labels its results "(from your class)", which would be
+// wrong for these -- callers that need the full automatically-trained set
+// (skill-pool exclusion, background-collision detection, the PDF's trained
+// checkboxes) combine this with getEffectiveFixedSkills themselves instead.
+export function getAncestryGrantedSkills(character) {
+  return [...(character?.heritageSkillChoices || []), ...(character?.ancestryFeatSkillChoices || [])];
+}
+
 // PF2e rule: "If you would become trained in a skill you're already trained
 // in, you instead become trained in a different skill of your choice." This
 // can only be detected once both background and class are known (background
 // comes first in the wizard), so it's resolved here rather than in
 // BackgroundStep. Returns the background's *effective* trained skill: either
 // its own skill/skillChoice, or `character.backgroundSkillSubstitute` if
-// that skill collides with one the class already grants automatically.
+// that skill collides with one the class already grants automatically (or
+// one a Human heritage/ancestry feat already trained -- picked even earlier,
+// at the Ancestry step).
 export function getBackgroundSkillInfo(character, cls, background) {
   const rawId = background.skillChoice ? character.backgroundSkillChoice : background.skill;
   const classFixedIds = new Set([
     ...getEffectiveFixedSkills(character, cls),
     ...(character.classSkillChoice ? [character.classSkillChoice] : []),
+    ...getAncestryGrantedSkills(character),
   ]);
   const hasCollision = Boolean(rawId) && classFixedIds.has(rawId);
   const effectiveId = hasCollision ? character.backgroundSkillSubstitute : rawId;

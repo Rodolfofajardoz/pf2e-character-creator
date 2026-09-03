@@ -9,7 +9,7 @@ export default function AbilityScoresStep({ character, update }) {
 
   const preFreeScores = useMemo(
     () => computeScoresBeforeFreeBoosts(character, ancestry),
-    [ancestry, character.ancestryFreeBoosts, character.backgroundChosenBoost, character.backgroundFreeBoost, character.classKeyAbility]
+    [ancestry, character.ancestryFreeBoosts, character.useAlternateAncestryBoosts, character.backgroundChosenBoost, character.backgroundFreeBoost, character.classKeyAbility]
   );
 
   const finalScores = useMemo(() => {

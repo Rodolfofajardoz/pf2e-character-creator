@@ -56,6 +56,10 @@ export default function BackgroundStep({ character, update }) {
       customBackgroundName: '',
       customBackgroundFeat: null,
       lorePicked: '',
+      // A different background trains a different skill, which can free up
+      // (or newly collide with) whatever the player already put in the free
+      // pool -- same reasoning ClassStep's selectClass uses for this field.
+      trainedSkills: [],
     });
   }
 

@@ -421,7 +421,14 @@ export const CLASSES = [
     weapons: 'Simple weapons, and unarmed attacks',
     armor: 'No armor',
     armorProficiency: [],
-    spellcasting: { tradition: 'Depends on patron (Arcane, Divine, Occult, or Primal)', type: 'prepared', traditionOptions: ['arcane', 'divine', 'occult', 'primal'], cantripsKnown: 5, rank1Known: 2 },
+    // cantripsKnown/rank1Known are the familiar's KNOWN pool, not the 5/2 the
+    // Witch prepares per day -- same "known, not castable-today" convention
+    // as the Wizard's spellbook above. Per AoN's Witch Spellcasting (Player
+    // Core pg. 214): "your familiar starts off knowing 10 cantrips [and] five
+    // 1st-rank spells" (plus one patron-specific spell, which -- like every
+    // other patron-granted spell -- is a documented, not-yet-modeled gap;
+    // see subclasses.js's witch section comment).
+    spellcasting: { tradition: 'Depends on patron (Arcane, Divine, Occult, or Primal)', type: 'prepared', traditionOptions: ['arcane', 'divine', 'occult', 'primal'], cantripsKnown: 10, rank1Known: 5 },
     summary: 'Serves a mysterious Patron who grants a familiar and magic in exchange for a pact.',
     // Verified against AoN (Player Core pg. 178): unlike most classes, the Witch's 1st-level
     // class features are patron, familiar, spellcasting, and hexes — it doesn't gain its first

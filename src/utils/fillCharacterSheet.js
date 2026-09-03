@@ -1,4 +1,4 @@
-import { SKILLS, PROFICIENCY_RANKS, getEffectiveFixedSkills } from '../data/skills';
+import { SKILLS, PROFICIENCY_RANKS, getEffectiveFixedSkills, getAncestryGrantedSkills } from '../data/skills';
 import { CANTRIPS, SPELLS_RANK_1 } from '../data/spells';
 import { getSubclassOption } from '../data/subclasses';
 
@@ -194,6 +194,7 @@ export function buildFieldValues(character, computed) {
       ...(cls ? getEffectiveFixedSkills(character, cls) : []),
       ...(character.classSkillChoice ? [character.classSkillChoice] : []),
       ...(computed.backgroundSkillId ? [computed.backgroundSkillId] : []),
+      ...getAncestryGrantedSkills(character),
       ...character.trainedSkills,
     ]);
     SKILLS.forEach((s) => {

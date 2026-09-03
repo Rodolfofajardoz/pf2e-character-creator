@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ANCESTRIES, getAncestry } from '../../data/ancestries';
-import { ABILITIES } from '../../data/skills';
+import { ABILITIES, SKILLS } from '../../data/skills';
 import { GENERAL_FEATS } from '../../data/generalFeats';
 import { InspectText, GlossaryTerm, AbilityTerm, AbilityTermList } from '../../context/InspectContext';
 import { scrollIntoViewCentered } from '../../utils/scrollFocus';
@@ -9,10 +9,14 @@ export default function AncestryStep({ character, update }) {
   const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
   const heritage = ancestry?.heritages.find((h) => h.id === character.heritageId);
   const needsGeneralFeat = Boolean(heritage?.grantsGeneralFeat || character.ancestryFeat?.grantsGeneralFeat);
+  const needsHeritageSkill = Boolean(heritage?.grantsSkillChoice);
+  const needsFeatSkill = Boolean(character.ancestryFeat?.grantsSkillChoice);
 
   const boostsRef = useRef(null);
   const heritageRef = useRef(null);
+  const heritageSkillRef = useRef(null);
   const featRef = useRef(null);
+  const featSkillRef = useRef(null);
   const generalFeatRef = useRef(null);
 
   // The next sub-section still missing a choice, in reading order — the
@@ -26,14 +30,25 @@ export default function AncestryStep({ character, update }) {
     ? 'boosts'
     : !character.heritageId
     ? 'heritage'
+    : needsHeritageSkill && character.heritageSkillChoices.length < heritage.grantsSkillChoice
+    ? 'heritageSkill'
     : !character.ancestryFeat
     ? 'feat'
+    : needsFeatSkill && character.ancestryFeatSkillChoices.length < character.ancestryFeat.grantsSkillChoice
+    ? 'featSkill'
     : needsGeneralFeat && !character.generalFeatChoice
     ? 'generalFeat'
     : null;
 
   useEffect(() => {
-    const refs = { boosts: boostsRef, heritage: heritageRef, feat: featRef, generalFeat: generalFeatRef };
+    const refs = {
+      boosts: boostsRef,
+      heritage: heritageRef,
+      heritageSkill: heritageSkillRef,
+      feat: featRef,
+      featSkill: featSkillRef,
+      generalFeat: generalFeatRef,
+    };
     if (focusKey) scrollIntoViewCentered(refs[focusKey]);
   }, [focusKey]);
 
@@ -53,12 +68,21 @@ export default function AncestryStep({ character, update }) {
       // Natural Ambition's bonus class feat is granted by the ancestry
       // feat, so it can't outlive the ancestry that offered it.
       bonusClassFeat: null,
+      // heritageSkillChoices/ancestryFeatSkillChoices and trainedSkills all
+      // go with it too: a different ancestry may not offer a skill-granting
+      // heritage/feat at all, and even a same-named one's picks shouldn't
+      // survive changing what ancestry (and thus what else is trained) they
+      // apply on top of -- same reasoning selectClass already uses below.
+      heritageSkillChoices: [],
+      ancestryFeatSkillChoices: [],
+      bonusLanguages: [],
+      trainedSkills: [],
     });
   }
 
   function selectHeritage(id) {
     if (id === character.heritageId) return;
-    update({ heritageId: id, generalFeatChoice: null });
+    update({ heritageId: id, generalFeatChoice: null, heritageSkillChoices: [], trainedSkills: [] });
   }
 
   // The bonus class feat exists only while an ancestry feat that grants one
@@ -71,7 +95,27 @@ export default function AncestryStep({ character, update }) {
       ancestryFeat: feat,
       generalFeatChoice: null,
       bonusClassFeat: feat.grantsClassFeat ? character.bonusClassFeat : null,
+      ancestryFeatSkillChoices: [],
+      trainedSkills: [],
     });
+  }
+
+  function toggleHeritageSkill(id) {
+    const current = character.heritageSkillChoices;
+    if (current.includes(id)) {
+      update({ heritageSkillChoices: current.filter((s) => s !== id) });
+    } else if (current.length < heritage.grantsSkillChoice) {
+      update({ heritageSkillChoices: [...current, id] });
+    }
+  }
+
+  function toggleFeatSkill(id) {
+    const current = character.ancestryFeatSkillChoices;
+    if (current.includes(id)) {
+      update({ ancestryFeatSkillChoices: current.filter((s) => s !== id) });
+    } else if (current.length < character.ancestryFeat.grantsSkillChoice) {
+      update({ ancestryFeatSkillChoices: [...current, id] });
+    }
   }
 
   // Player Core's "Alternate Ancestry Boosts" (pg. 23): always available,
@@ -181,6 +225,30 @@ export default function AncestryStep({ character, update }) {
             </div>
           </section>
 
+          {needsHeritageSkill && (
+            <section className="sub-section" ref={heritageSkillRef}>
+              <h3>Choose {heritage.name}'s skill{heritage.grantsSkillChoice > 1 ? 's' : ''}</h3>
+              <p className="hint">
+                {heritage.name} trains you in {heritage.grantsSkillChoice} skill{heritage.grantsSkillChoice > 1 ? 's' : ''} of your choice.
+              </p>
+              <div className="chip-row">
+                {SKILLS.filter((s) => !character.ancestryFeatSkillChoices.includes(s.id)).map((s) => (
+                  <button
+                    key={s.id}
+                    className={`chip ${character.heritageSkillChoices.includes(s.id) ? 'selected' : ''}`}
+                    onClick={() => toggleHeritageSkill(s.id)}
+                    disabled={
+                      !character.heritageSkillChoices.includes(s.id) &&
+                      character.heritageSkillChoices.length >= heritage.grantsSkillChoice
+                    }
+                  >
+                    <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section className="sub-section" ref={featRef}>
             <h3>Ancestry Feat (1st level)</h3>
             <div className="card-grid">
@@ -196,6 +264,31 @@ export default function AncestryStep({ character, update }) {
               ))}
             </div>
           </section>
+
+          {needsFeatSkill && (
+            <section className="sub-section" ref={featSkillRef}>
+              <h3>Choose {character.ancestryFeat.name}'s skill{character.ancestryFeat.grantsSkillChoice > 1 ? 's' : ''}</h3>
+              <p className="hint">
+                {character.ancestryFeat.name} trains you in {character.ancestryFeat.grantsSkillChoice} skill
+                {character.ancestryFeat.grantsSkillChoice > 1 ? 's' : ''} of your choice.
+              </p>
+              <div className="chip-row">
+                {SKILLS.filter((s) => !character.heritageSkillChoices.includes(s.id)).map((s) => (
+                  <button
+                    key={s.id}
+                    className={`chip ${character.ancestryFeatSkillChoices.includes(s.id) ? 'selected' : ''}`}
+                    onClick={() => toggleFeatSkill(s.id)}
+                    disabled={
+                      !character.ancestryFeatSkillChoices.includes(s.id) &&
+                      character.ancestryFeatSkillChoices.length >= character.ancestryFeat.grantsSkillChoice
+                    }
+                  >
+                    <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {needsGeneralFeat && (
             <section className="sub-section" ref={generalFeatRef}>

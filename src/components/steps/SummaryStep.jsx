@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, getEffectiveFixedSkills } from '../../data/skills';
+import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, getEffectiveFixedSkills, getAncestryGrantedSkills } from '../../data/skills';
 import { CANTRIPS, SPELLS_RANK_1, TRADITION_LABELS } from '../../data/spells';
 import { SUBCLASSES, getSubclassOption } from '../../data/subclasses';
 import { InspectText, GlossaryTerm } from '../../context/InspectContext';
@@ -44,6 +44,22 @@ export default function SummaryStep({ character, update, onRestart }) {
 
   const subclassGroup = SUBCLASSES[cls.id];
   const subOption = subclassGroup ? getSubclassOption(cls.id, character.subclassChoice) : null;
+
+  // Every skill already accounted for by one of the other rows below, so the
+  // ancestry-granted and "additional trained" lists can be deduped against
+  // it -- a character saved before trainedSkills started getting reset on
+  // upstream changes (see App.jsx/AncestryStep/BackgroundStep/ClassStep)
+  // could still have a stale pick that collides with a fixed skill, which
+  // would otherwise print (and React-key) that skill twice.
+  const fixedSkillIds = getEffectiveFixedSkills(character, cls);
+  const alreadyShownIds = new Set([
+    ...fixedSkillIds,
+    ...(character.classSkillChoice ? [character.classSkillChoice] : []),
+    ...(backgroundSkillId ? [backgroundSkillId] : []),
+  ]);
+  const ancestryGrantedSkills = getAncestryGrantedSkills(character).filter((id) => !alreadyShownIds.has(id));
+  ancestryGrantedSkills.forEach((id) => alreadyShownIds.add(id));
+  const extraTrainedSkills = character.trainedSkills.filter((id) => !alreadyShownIds.has(id));
 
   const [sheetStatus, setSheetStatus] = useState('idle');
 
@@ -226,7 +242,15 @@ export default function SummaryStep({ character, update, onRestart }) {
               <GlossaryTerm id={backgroundSkillId}>{SKILLS.find((sk) => sk.id === backgroundSkillId)?.name}</GlossaryTerm>:{' '}
               {mod(mods[SKILLS.find((sk) => sk.id === backgroundSkillId)?.ability] + profBonus('trained'))}
             </li>
-            {character.trainedSkills.map((id) => {
+            {ancestryGrantedSkills.map((id) => {
+              const skill = SKILLS.find((sk) => sk.id === id);
+              return (
+                <li key={id}>
+                  <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm>: {mod(mods[skill.ability] + profBonus('trained'))}
+                </li>
+              );
+            })}
+            {extraTrainedSkills.map((id) => {
               const skill = SKILLS.find((sk) => sk.id === id);
               return (
                 <li key={id}>

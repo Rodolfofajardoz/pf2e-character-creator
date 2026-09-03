@@ -1289,6 +1289,75 @@ severity — efficiency/reuse polish or latent-but-currently-unreachable
 edge cases — and were left as documented follow-ups rather than fixed
 this pass.
 
+## Patch: rules + functionality audit before the 2-20 leveling push (v0.9.3)
+
+Ran a second, targeted audit ahead of the level 2-20 work: one agent
+checking the `src/data/*` rules content against **Archives of Nethys**
+(2e.aonprd.com) directly rather than from memory (explicitly requested
+after the first draft was about to rely on trained knowledge alone), and
+a second auditing app/state logic in `src/components`, `src/hooks`,
+`src/context`, `src/utils`. Findings verified live in the browser
+(including a full ancestry-through-summary run and a PDF export) before
+being fixed:
+
+1. **Witch's `cantripsKnown`/`rank1Known` were the daily-prepared count
+   (5/2), not the familiar's known pool** — same class of mistake the
+   Wizard's spellbook numbers already had a fix for. Per AoN's Witch
+   Spellcasting (Player Core pg. 214), the familiar starts knowing 10
+   cantrips and five 1st-rank spells (plus one patron-specific spell,
+   which — like every other patron-granted spell — stays a documented,
+   not-yet-modeled gap; see `subclasses.js`'s witch section comment).
+   Fixed in `classes.js`.
+2. **`trainedSkills` and `bonusLanguages` weren't reset when an earlier,
+   upstream choice changed** — going back to change ancestry, heritage,
+   ancestry feat, background, class, or subclass after already
+   finishing the Skills/Languages steps left the old picks in place,
+   even when they no longer matched (or now collided with) what the new
+   upstream choice grants automatically. Verified live: built a
+   character through Skills, went back and switched Fighter → Barbarian,
+   confirmed the skill pool correctly dropped back to 0/4 instead of
+   keeping the 4 stale picks. Fixed by adding the reset to every
+   relevant `update()` call in `AncestryStep.jsx`, `BackgroundStep.jsx`,
+   and `ClassStep.jsx`.
+3. **Human's Skilled Heritage and Natural Skill granted nothing** — both
+   are described in `ancestries.js` ("You become trained in a skill of
+   your choice" / "...in two skills of your choice") but had no picker,
+   no state, and weren't counted anywhere, so a Human built with either
+   ended up with fewer trained skills than the sheet's own text
+   promised. Implemented as a real mechanic: `grantsSkillChoice` on the
+   heritage/feat data, new pickers in `AncestryStep.jsx`
+   (`heritageSkillChoices`/`ancestryFeatSkillChoices`, each excluding
+   whatever the other one already picked), and a new
+   `getAncestryGrantedSkills()` in `skills.js` that every consumer
+   (Skills step's pool-exclusion and background-collision check,
+   Summary, the PDF export) folds in alongside the existing
+   `getEffectiveFixedSkills()` — kept as a separate function rather than
+   merged into it because every caller of `getEffectiveFixedSkills()`
+   labels its results "from your class", which would be wrong for an
+   ancestry grant. Verified live end-to-end: picked Skilled
+   Heritage → Stealth and Natural Skill → Athletics/Society, confirmed
+   Athletics correctly collapsed into a single "from your class" line
+   once the Fighter's own class-skill-choice also landed on it (no
+   duplicate row, no double-counted pool slot), and confirmed a
+   Detective background's fixed Society skill correctly triggered the
+   background-substitute picker with a source-agnostic message ("you're
+   already trained in it from your class or ancestry" — the old text
+   hardcoded "your class", which would have been wrong here since the
+   real source was the ancestry).
+4. **`AbilityScoresStep`'s `useMemo` was missing
+   `useAlternateAncestryBoosts`** from its dependency array — toggling
+   Alternate Ancestry Boosts changes `boostFixedList`/`boostMax` (see
+   `AncestryStep.jsx`) but the pre-free-boost score memo wouldn't
+   recompute from a dependency change alone. The known, harmless
+   `useMemo` gap flagged in the v0.9.2 audit (missing the whole
+   `character` dependency) is intentionally left as-is — its trigger
+   depends on a field this app doesn't expose a way to change mid-build
+   yet — since it's covered by other listed dependencies today.
+5. Hardened `SummaryStep.jsx`'s Trained Skills list to dedupe against
+   every other automatic-training source before rendering
+   `trainedSkills` — defensive, for any character saved before fix #2
+   above that might still carry a stale duplicate pick.
+
 ```bash
 cd pf2e-character-creator
 npm install   # first time only, or after pulling dependency changes
