@@ -36,6 +36,15 @@
 
 export const STARTING_GOLD = 15;
 
+// Every weapon group in the remaster (verified against AoN's own
+// `weapon_group` field across all 300 weapon entries, not guessed) --
+// used wherever a rule grants proficiency/mastery in a *group* rather than
+// a specific weapon (Fighter Weapon Mastery, Advanced Weapon Training).
+export const WEAPON_GROUPS = [
+  'Axe', 'Bomb', 'Bow', 'Brawling', 'Club', 'Crossbow', 'Dart', 'Firearm', 'Flail',
+  'Hammer', 'Knife', 'Pick', 'Polearm', 'Shield', 'Sling', 'Spear', 'Sword',
+];
+
 export const WEAPONS = [
   // Simple
   { id: 'club', name: 'Club', price: 0, category: 'simple', damage: '1d6 B', traits: ['Thrown 10 ft.'] },

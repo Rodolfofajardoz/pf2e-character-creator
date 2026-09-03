@@ -1358,6 +1358,30 @@ being fixed:
    `trainedSkills` — defensive, for any character saved before fix #2
    above that might still carry a stale duplicate pick.
 
+## Roadmap item 9: Level-up, Fighter-first pass, levels 1-10 (v0.10.0)
+
+Full write-up is in `ROADMAP.md`'s item 9 ("Fighter-first pass" subsection).
+Short version: the generic leveling engine (`src/utils/leveling.js` —
+cadence, HP as a 3-segment step function so a mid-build Con boost doesn't
+retroactively change earlier levels, skill-rank tracking, per-class
+proficiency-rank progression, feat-prerequisite filtering) plus Fighter's
+own AoN-verified data (proficiency table, a curated feat catalog for
+2/4/6/8/10, Weapon Mastery, Human's `feats5`/`feats9`) shipped as a new
+"Leveling Up" section on `SummaryStep.jsx`. Every other class gets the
+engine for free but no rank progression or feat catalog yet — an honest
+"not curated yet" placeholder instead of a fabricated guess or a dead end.
+
+**The most important bug this pass caught wasn't about leveling at all**:
+every proficiency checkbox on the bundled PDF (`fillCharacterSheet.js`) had
+been silently rendering "Trained" regardless of actual rank since custom
+PDF printing shipped in v0.7.0 — Perception, saves, Class DC, skills, Lore,
+spell DC/attack, armor/weapon proficiency, all of it. The bundled PDF's
+`_TEML` fields aren't simple checkboxes; each is one field with 4 widgets
+(one per rank) and `.check()` with no argument always picks the first.
+Full detail, plus three smaller UI bugs found the same session (a feat
+pickable in two slots at once, shields not showing their AC bonus, missing
+Inspect entries for Hardness/BT), is in `ROADMAP.md`.
+
 ```bash
 cd pf2e-character-creator
 npm install   # first time only, or after pulling dependency changes

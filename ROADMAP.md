@@ -25,7 +25,7 @@ milestone to schedule in the middle of it.
 | 6 | ~~Class sub-choices~~ | M | ✅ Done (v0.9.0) — the choice + its 1st-level benefit; unlocking the spells it gates access to is a follow-up (see item 6's writeup). |
 | 7 | Familiars | M | ⚠ blocked — full scope needs item 9 (Level-up) done first. |
 | 8 | Multiclass & Archetypes | L | ⚠ blocked — needs item 9 (Level-up) done first; also the largest data surface after leveling itself. |
-| 9 | Level-up (2–20) | XL | The biggest item by far — see below for why it's basically its own multi-part project. |
+| 9 | Level-up (2–20) | XL | 🔧 In progress (v0.10.0) — generic engine + Fighter's own data shipped for levels 1–10; other 15 classes and levels 11–20 still open. See below. |
 
 **Important caveat on items 7 and 8**: they're ranked by how much work
 *they themselves* involve, not by when they can actually be picked up.
@@ -473,6 +473,111 @@ level 20 in one pass.
 Open question: whether to cap at a lower level first (e.g. ship 2–10,
 then 11–20 as a follow-up) to get real usage sooner — worth deciding once
 this phase is actually being scoped in detail.
+
+### Fighter-first pass, levels 1-10 (v0.10.0)
+
+Scoped per explicit direction: cap at level 10 first (11-20 later), build
+the generic engine against Fighter only (no spellcasting, simplest class),
+verify end-to-end, then extend to the other 15 classes one at a time.
+
+Shipped the generic engine, all in new `src/utils/leveling.js` unless
+noted: `getLevelRequirements()` (the universal cadence — class/skill feat
+every even level, general feat 3/7, ancestry feat 5/9, skill increase odd
+levels from 3rd, 4 ability boosts at 5/10 — confirmed identical across
+classes via AoN, not assumed), `computeScoresAtLevel()`/`computeTotalHP()`
+(in `abilityScores.js` and `leveling.js` respectively — HP is a 3-segment
+step function, not `hp*level`, since a Con boost at 5th/10th changes the
+modifier used from that level on without retroactively changing earlier
+levels), `getSkillRank()` (`skills.js` — walks `skillIncreases` on top of
+the existing level-1 trained/not logic), `getCurrentRank()` (per-class
+proficiency-rank progression, falling back to the level-1 baseline rather
+than fabricating a bump for a class with no data yet), and `meetsPrereq()`
+(checks a feat's `prereq` text — trained-in-skill, ability floor, rank
+floor, or a named-feat chain — filtering the Level-Up feat pickers to only
+what's actually available; deliberately *not* applied to the level-1
+Ancestry/Background pickers, since background/class/skills don't exist yet
+at that point in the wizard and filtering there would wrongly hide
+legitimately-available future options).
+
+New "Leveling Up" section in `SummaryStep.jsx`: one `Collapsible` card per
+level 2 through `min(character.level+1, 10)`, each rendering the new
+`LevelUpCard.jsx` with whatever slots that level calls for. Editing an
+already-confirmed level's pick is allowed (not locked) since every derived
+stat recomputes from the raw per-level arrays rather than caching a
+snapshot.
+
+Fighter's own data, verified against AoN (`2e.aonprd.com/Classes.aspx?ID=35`,
+Feats search via the Elasticsearch technique — see PROJECT_NOTES.md):
+`proficiencyProgression` (Perception Expert→Master at 7th, Will
+Trained→Expert at 3rd, Fortitude Expert→Master at 9th; Class DC and armor
+stay at their 1st-level rank through 10th — Fighter's own bumps for those
+land at 11th, outside this cap), and a curated 5-feat catalog per even
+level 2-10. Also added Human's real `feats5`/`feats9` ancestry catalog
+(all 3 and all 5 of them — nothing trimmed, Player Core pg. 64-65) so the
+pilot's ancestry-feat slot isn't just a placeholder, and a `Fighter Weapon
+Mastery` section (automatic at 5th, not part of the universal cadence) plus
+a `subChoice` mechanism on `Advanced Weapon Training` (6th) — both pick
+from a real 17-entry `WEAPON_GROUPS` list (`equipment.js`, pulled from
+AoN's own `weapon_group` field across all 300 weapons, not guessed).
+
+**Bugs found and fixed while dogfooding this against a real Fighter
+build**, most severe first:
+
+1. **Every "_TEML" proficiency checkbox on the bundled PDF was silently
+   always rendering Trained, regardless of actual rank** — Perception,
+   every save, Class DC, every skill, Lore, spell DC/attack, and every
+   armor/weapon proficiency box. Confirmed by inspecting the PDF's AcroForm
+   directly: each of these fields isn't a real single-value checkbox, it's
+   one field with 4 separate widgets (one per rank), each with its own
+   on-value (either literal "2/4/6/8" or "T/E/M/L" depending on the
+   field) — `form.getCheckBox(name).check()` with no argument always
+   selects the *first* widget. This predates leveling entirely (Fighter is
+   Expert in Perception/Fortitude/Reflex at 1st level already) — every
+   character's PDF export has shown the wrong rank since v0.7.0. Fixed in
+   `fillCharacterSheet.js`: sorts each field's widgets left-to-right and
+   selects by rank-index position instead of calling `.check()` blind.
+   Verified by intercepting the real download's Blob (patching
+   `URL.createObjectURL`) and re-parsing it with pdf-lib to confirm the
+   correct widget's `/AS` state, not just eyeballing the rendered PDF.
+2. Picking the same feat for both a class's normal 1st-level feat and a
+   Natural Ambition bonus feat was allowed and both cards showed selected
+   — PF2e doesn't let you take a non-repeatable feat twice. Fixed in
+   `ClassStep.jsx` by having each of the two grids filter out whatever the
+   *other* one currently holds, so a claimed feat simply can't be clicked
+   in the other slot (same mutual-exclusion pattern already used for
+   Skilled Heritage vs. Natural Skill's skill choices).
+3. Shields never showed their AC bonus in the Equipment step — the
+   display condition required both `acBonus` and `category`, but only
+   armor has `category` (shields don't). Fixed in `EquipmentStep.jsx`,
+   worded "+N AC when raised" (not the same always-on bonus armor gives)
+   to avoid implying it's passive.
+4. Hardness/BT (Broken Threshold) had no Inspect definition — plain text,
+   never wrapped in a `GlossaryTerm`; `broken-threshold` didn't even exist
+   in `glossary.js` yet. Added the entry and wrapped both terms (plus HP)
+   in the shield/armor shop rows.
+
+Verified live end-to-end: built a Human Fighter with Natural Ambition,
+leveled 1→9 confirming HP/Perception/saves/Class DC/skill ranks at every
+rank-change boundary by hand, confirmed the master-skill-increase gate
+(disabled before 7th, enabled at 7th+), confirmed a Barreling Charge-style
+prereq (Trained in Athletics) correctly shows/hides based on actual
+training, confirmed Adaptive Adept (needs the Adapted Cantrip feat this
+build didn't take) is correctly filtered out of the 5th-level ancestry
+options, and confirmed the Weapon Mastery / Advanced Weapon Training
+weapon-group pickers block level confirmation until answered. `npm run
+lint` clean (same baseline warnings only) throughout.
+
+**Deliberately out of scope this pass**: `LivePreviewPanel.jsx` (only
+rendered before leveling exists, steps 1-9); spellcasting proficiency
+progression (every caster stays pinned at Trained regardless of level —
+irrelevant to Fighter, a real gap for whichever caster's data comes next);
+weapon-category proficiency *rank* (Simple/Martial/Unarmed on the PDF
+still show Trained-if-proficient rather than Fighter's real Expert, since
+no per-category rank progression is modeled yet — narrower than the
+`_TEML` bug just fixed, which was about reading the wrong widget, not
+missing data); every other class's `proficiencyProgression` and
+`feats2`-`feats10`; every ancestry's `feats5`/`feats9` except Human;
+levels 11-20.
 
 ---
 

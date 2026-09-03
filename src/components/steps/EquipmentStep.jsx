@@ -95,12 +95,22 @@ function ShopRow({ item, qty, remaining, deniedId, onAdd, onRemove }) {
       <div className="shop-row-info">
         <span className="shop-row-name">{item.name}</span>
         {item.damage && <DamageLine damage={item.damage} />}
-        {item.acBonus !== undefined && item.category !== undefined && (
-          <span className="shop-row-meta">AC +{item.acBonus}</span>
-        )}
+        {/* item.category !== undefined used to gate this to armor only --
+            wrong, since shields carry acBonus too (hardness is what's
+            actually armor-vs-shield-exclusive) and that condition silently
+            hid every shield's AC bonus instead. Shields' bonus only applies
+            while Raised (an action, not passive like armor's), so it's
+            worded differently here to avoid implying it's always active. */}
+        {item.acBonus !== undefined &&
+          (item.hardness !== undefined ? (
+            <span className="shop-row-meta">+{item.acBonus} AC when raised</span>
+          ) : (
+            <span className="shop-row-meta">AC +{item.acBonus}</span>
+          ))}
         {item.hardness !== undefined && (
           <span className="shop-row-meta">
-            Hardness {item.hardness}, HP {item.hp} (BT {item.bt}){item.speedPenalty ? `, ${item.speedPenalty} Speed` : ''}
+            <GlossaryTerm id="hardness">Hardness</GlossaryTerm> {item.hardness}, <GlossaryTerm id="hit-points">HP</GlossaryTerm> {item.hp} (
+            <GlossaryTerm id="broken-threshold">BT</GlossaryTerm> {item.bt}){item.speedPenalty ? `, ${item.speedPenalty} Speed` : ''}
           </span>
         )}
         <TraitTags traits={item.traits} />

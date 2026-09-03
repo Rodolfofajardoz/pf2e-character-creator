@@ -89,6 +89,7 @@ export const GLOSSARY = [
   { id: 'lore', term: 'Lore', desc: 'A narrow knowledge Skill about one specific topic (a city, an organization, a craft, and so on), trained separately from the 16 broad skills.' },
   { id: 'recall-knowledge', term: 'Recall Knowledge', desc: 'An action to dredge up known information about something using an appropriate Skill.' },
   { id: 'hardness', term: 'Hardness', desc: "An object's (or shield's) resistance to damage — incoming damage is reduced by this amount before affecting its Hit Points." },
+  { id: 'broken-threshold', term: 'BT', desc: "Broken Threshold — an object (or shield) with damage remaining equal to half its maximum HP or less becomes broken, which impairs its use (a broken shield can't be raised to grant its AC bonus)." },
 
   // Skills
   { id: 'acrobatics', term: 'Acrobatics', desc: 'A Dexterity-based Skill: balance, tumble, and contort your body to avoid danger. Used for a Skill Check like Balance or Squeeze.' },

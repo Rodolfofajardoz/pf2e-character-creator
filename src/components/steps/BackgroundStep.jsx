@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { BACKGROUNDS, getEffectiveBackground } from '../../data/backgrounds';
-import { GENERAL_FEATS } from '../../data/generalFeats';
+import { SKILL_FEATS } from '../../data/generalFeats';
 import { ABILITIES, SKILLS } from '../../data/skills';
 import { InspectText, GlossaryTerm, AbilityTerm } from '../../context/InspectContext';
 import { scrollIntoViewCentered } from '../../utils/scrollFocus';
 
 // Skill feats -- the ones a background could plausibly grant -- are exactly
-// the GENERAL_FEATS entries whose prereq is "Trained in X". A custom
-// background's feat picker defaults to whichever of those match the skill
-// just chosen (mirrors the real rule: your background's skill feat trains
-// the same skill your background trains), with a "show all" escape hatch
-// for concepts the trained-skill match doesn't fit.
-const SKILL_FEATS = GENERAL_FEATS.filter((f) => f.prereq && /^Trained in /i.test(f.prereq));
+// the GENERAL_FEATS entries whose prereq is "Trained in X" (see
+// generalFeats.js's shared SKILL_FEATS). A custom background's feat picker
+// defaults to whichever of those match the skill just chosen (mirrors the
+// real rule: your background's skill feat trains the same skill your
+// background trains), with a "show all" escape hatch for concepts the
+// trained-skill match doesn't fit.
 
 export default function BackgroundStep({ character, update }) {
   const background = character.backgroundId ? getEffectiveBackground(character) : null;

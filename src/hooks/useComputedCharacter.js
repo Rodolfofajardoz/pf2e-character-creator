@@ -2,15 +2,10 @@ import { useMemo } from 'react';
 import { getAncestry } from '../data/ancestries';
 import { getEffectiveBackground } from '../data/backgrounds';
 import { getClass } from '../data/classes';
-import { abilityMod, getBackgroundSkillInfo, PROFICIENCY_RANKS } from '../data/skills';
+import { abilityMod, getBackgroundSkillInfo } from '../data/skills';
 import { computeFinalScores } from '../utils/abilityScores';
+import { computeTotalHP, getCurrentRank, profBonus } from '../utils/leveling';
 import { WEAPONS, ARMORS, SHIELDS, AMMUNITION, GEAR, groupPurchases, totalSpent, STARTING_GOLD } from '../data/equipment';
-
-const LEVEL = 1;
-
-function profBonus(rank) {
-  return PROFICIENCY_RANKS[rank].bonus(LEVEL);
-}
 
 // Every derived stat SummaryStep and the live preview panel both need,
 // computed once from raw `character` state. Ancestry/background/class are
@@ -19,6 +14,7 @@ function profBonus(rank) {
 // null rather than throwing, and callers render a placeholder for those.
 export function useComputedCharacter(character) {
   return useMemo(() => {
+    const level = character.level || 1;
     const ancestry = character.ancestryId ? getAncestry(character.ancestryId) : null;
     const background = character.backgroundId ? getEffectiveBackground(character) : null;
     const cls = character.classId ? getClass(character.classId) : null;
@@ -53,7 +49,7 @@ export function useComputedCharacter(character) {
     const scores = ancestry ? computeFinalScores(character, ancestry) : null;
     const mods = scores ? Object.fromEntries(Object.entries(scores).map(([k, v]) => [k, abilityMod(v)])) : null;
 
-    const hp = ancestry && cls && mods ? ancestry.hp + cls.hp + mods.con : null;
+    const hp = ancestry && cls && mods ? computeTotalHP(character, ancestry, cls) : null;
 
     let ac = null;
     let armorProfRank = null;
@@ -61,33 +57,50 @@ export function useComputedCharacter(character) {
     if (cls && mods) {
       const dexCap = armor.dexCap === null ? Infinity : armor.dexCap;
       isProficientInArmor = armor.category === 'none' || (cls.armorProficiency || []).includes(armor.category);
-      armorProfRank = armor.category === 'none' ? cls.unarmoredProficiency || 'trained' : isProficientInArmor ? 'trained' : 'untrained';
-      ac = 10 + Math.min(mods.dex, dexCap) + armor.acBonus + profBonus(armorProfRank);
+      const baseArmorRank = armor.category === 'none' ? cls.unarmoredProficiency || 'trained' : isProficientInArmor ? 'trained' : 'untrained';
+      // Only a rank the character actually has advances with level -- an
+      // armor category they're untrained in stays untrained regardless of
+      // cls.proficiencyProgression.armor (that table only ever bumps a rank
+      // the class already has, never grants a wholly new proficiency).
+      armorProfRank = baseArmorRank === 'untrained' ? 'untrained' : getCurrentRank(baseArmorRank, cls.proficiencyProgression?.armor, level);
+      ac = 10 + Math.min(mods.dex, dexCap) + armor.acBonus + profBonus(armorProfRank, level);
     }
 
-    const perceptionMod = cls && mods ? mods.wis + profBonus(cls.perception) : null;
+    const perceptionRank = cls ? getCurrentRank(cls.perception, cls.proficiencyProgression?.perception, level) : null;
+    const perceptionMod = cls && mods ? mods.wis + profBonus(perceptionRank, level) : null;
 
     const classDCAbility = character.classKeyAbility;
-    const classDC = cls && mods && classDCAbility ? 10 + profBonus(cls.classDC) + mods[classDCAbility] : null;
+    const classDCRank = cls ? getCurrentRank(cls.classDC, cls.proficiencyProgression?.classDC, level) : null;
+    const classDC = cls && mods && classDCAbility ? 10 + profBonus(classDCRank, level) + mods[classDCAbility] : null;
 
+    const saveRanks = cls
+      ? {
+          fort: getCurrentRank(cls.saves.fort, cls.proficiencyProgression?.saves?.fort, level),
+          ref: getCurrentRank(cls.saves.ref, cls.proficiencyProgression?.saves?.ref, level),
+          will: getCurrentRank(cls.saves.will, cls.proficiencyProgression?.saves?.will, level),
+        }
+      : null;
     const saves =
       cls && mods
         ? {
-            fort: mods.con + profBonus(cls.saves.fort),
-            ref: mods.dex + profBonus(cls.saves.ref),
-            will: mods.wis + profBonus(cls.saves.will),
+            fort: mods.con + profBonus(saveRanks.fort, level),
+            ref: mods.dex + profBonus(saveRanks.ref, level),
+            will: mods.wis + profBonus(saveRanks.will, level),
           }
         : null;
 
-    // Every caster starts Trained in spellcasting at 1st level (no class
-    // has a higher starting rank) -- same assumption Class DC/Perception
-    // already make by defaulting to 'trained' rather than reading a
-    // per-class rank field that doesn't exist yet.
+    // Spellcasting proficiency progression (e.g. a Wizard reaching Expert)
+    // isn't modeled yet -- every caster is treated as Trained regardless of
+    // level, same simplification the level-1 build already made (no class
+    // has a higher STARTING rank). Fighter doesn't cast, so this doesn't
+    // affect the pilot; it's a known gap for whichever caster class's
+    // Level-Up data comes next.
     const spellAbility = cls?.spellcasting?.cantripsKnown ? character.classKeyAbility : null;
-    const spellDC = spellAbility && mods ? 10 + profBonus('trained') + mods[spellAbility] : null;
-    const spellAttack = spellAbility && mods ? profBonus('trained') + mods[spellAbility] : null;
+    const spellDC = spellAbility && mods ? 10 + profBonus('trained', level) + mods[spellAbility] : null;
+    const spellAttack = spellAbility && mods ? profBonus('trained', level) + mods[spellAbility] : null;
 
     return {
+      level,
       ancestry,
       background,
       cls,
@@ -108,12 +121,15 @@ export function useComputedCharacter(character) {
       ac,
       armorProfRank,
       isProficientInArmor,
+      perceptionRank,
       perceptionMod,
       spellAbility,
       spellDC,
       spellAttack,
       classDCAbility,
+      classDCRank,
       classDC,
+      saveRanks,
       saves,
     };
   }, [character]);

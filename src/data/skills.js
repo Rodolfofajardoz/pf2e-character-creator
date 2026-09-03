@@ -113,3 +113,30 @@ export function getBackgroundSkillInfo(character, cls, background) {
   const effectiveId = hasCollision ? character.backgroundSkillSubstitute : rawId;
   return { rawId, hasCollision, effectiveId, classFixedIds };
 }
+
+export const RANK_ORDER = ['untrained', 'trained', 'expert', 'master', 'legendary'];
+
+// A skill's current proficiency rank, level 1 through however far
+// `character.skillIncreases` (Level-Up, levels 3/5/7/9) has gone: the
+// level-1 baseline (untrained, or trained if it's fixed by class/subclass/
+// ancestry/background or a free `trainedSkills` pick) plus one rank step per
+// skillIncreases entry naming this skill. A single mechanic covers both
+// halves of the real rule ("train a new skill, or increase a trained skill")
+// since untrained -> trained is just the first step up, same as any other.
+export function getSkillRank(character, cls, ancestry, background, skillId) {
+  const { effectiveId: backgroundSkillId } = getBackgroundSkillInfo(character, cls, background);
+  const fixedIds = new Set([
+    ...getEffectiveFixedSkills(character, cls),
+    ...(character.classSkillChoice ? [character.classSkillChoice] : []),
+    ...getAncestryGrantedSkills(character),
+    ...(backgroundSkillId ? [backgroundSkillId] : []),
+  ]);
+  let rankIndex = fixedIds.has(skillId) || character.trainedSkills.includes(skillId) ? 1 : 0;
+  const increases = (character.skillIncreases || [])
+    .filter((s) => s.skillId === skillId)
+    .sort((a, b) => a.level - b.level);
+  increases.forEach(() => {
+    rankIndex = Math.min(rankIndex + 1, RANK_ORDER.length - 1);
+  });
+  return RANK_ORDER[rankIndex];
+}

@@ -100,3 +100,11 @@ export const GENERAL_FEATS = [
 export function getGeneralFeat(id) {
   return GENERAL_FEATS.find((f) => f.id === id);
 }
+
+// Skill feats -- the subset of GENERAL_FEATS that carry the Skill trait,
+// identified the same way BackgroundStep.jsx's custom-background feat
+// suggestions already did (every skill feat's prereq starts with "Trained
+// in "). Extracted here so a skill-feat slot elsewhere (Level-Up's every-
+// even-level skill feat, see leveling.js) reads from the same one list
+// instead of re-deriving it.
+export const SKILL_FEATS = GENERAL_FEATS.filter((f) => f.prereq && /^Trained in /i.test(f.prereq));

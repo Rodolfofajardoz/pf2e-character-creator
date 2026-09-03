@@ -35,6 +35,15 @@ const STEPS = [
 
 const initialCharacter = {
   name: '',
+  level: 1,
+  level5Boosts: [],
+  level10Boosts: [],
+  skillIncreases: [],
+  ancestryFeatsByLevel: [],
+  classFeatsByLevel: [],
+  skillFeatsByLevel: [],
+  generalFeatsByLevel: [],
+  weaponMasteryGroup: null,
   ancestryId: null,
   heritageId: null,
   ancestryFreeBoosts: [],

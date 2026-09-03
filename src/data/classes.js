@@ -211,12 +211,78 @@ export const CLASSES = [
     armor: 'All armor and shields',
     armorProficiency: ['light', 'medium', 'heavy'],
     summary: 'The ultimate master of weapons: precise, versatile, and lethal in any fighting style. The only class that starts as Expert (not just Trained) with its weapons.',
+    // Verified against AoN's Fighter class page (2e.aonprd.com/Classes.aspx?ID=35,
+    // Player Core pg. 140-141) — the only proficiency-rank changes within
+    // levels 1-10: Perception Expert->Master at 7th (Battlefield Surveyor),
+    // Will Trained->Expert at 3rd (Bravery), Fortitude Expert->Master at 9th
+    // (Battle Hardened). Class DC and armor proficiency both stay at their
+    // 1st-level rank through 10th (Fighter's own bumps for those, Fighter
+    // Expertise and Armor Expertise, land at 11th) — deliberately left with
+    // no entries below rather than guessed, per leveling.js's
+    // getCurrentRank fallback. Reflex has no confirmed bump within 1-10
+    // either. Fighter Weapon Mastery (5th) grants master rank in one chosen
+    // weapon *group* — not a blanket table bump, and this app doesn't
+    // compute per-weapon-group strike bonuses anyway (see
+    // fillCharacterSheet.js's comment on that), so it's surfaced as text
+    // only via feats5-adjacent level features, not modeled here.
+    proficiencyProgression: {
+      perception: [[7, 'master']],
+      saves: { fort: [[9, 'master']], will: [[3, 'expert']] },
+      classDC: [],
+      armor: [],
+    },
     feats1: [
       { name: 'Double Slice', desc: 'Requires two melee weapons, one in each hand: make one Strike with each, both against the same target, then combine their damage.' },
       { name: 'Point-Blank Shot', desc: "Stance, requires a ranged weapon: volley weapons lose their close-range penalty, and other ranged weapons gain a damage bonus within their first range increment." },
       { name: 'Reactive Shield', desc: 'Reaction, requires a shield. Trigger: a melee Strike hits you. You Raise a Shield in time for its AC bonus to apply to that attack.' },
       { name: 'Snagging Strike', desc: 'Requires a hand free with the target in its reach: your Strike leaves the target off-guard until your next turn or until it leaves your reach.' },
       { name: 'Sudden Charge', desc: 'You move and make a melee Strike in a single two-action activity.' },
+    ],
+    // feats2/4/6/8/10 — curated (not exhaustive, same precedent feats1 set)
+    // subsets of the real per-level Fighter feat lists, verified against
+    // AoN (Player Core pg. 141-148). Two of Player Core's own picks at
+    // their natural level (Furious Focus needs Vicious Swing; Crashing Slam
+    // needs Slam Down) were swapped for standalone alternatives at the same
+    // level, since neither prerequisite feat is offered anywhere in this
+    // app's curated catalog — everything listed below is either
+    // prerequisite-free or requires only something every Fighter already
+    // has (Reactive Strike) or reaches automatically by that level
+    // (Blind-Fight's "master in Perception," met at 8th since Perception
+    // hits master at 7th per the table above).
+    feats2: [
+      { name: 'Aggressive Block', desc: "Free Action, requires the Shield Block reaction and an adjacent same-size-or-smaller foe: as you Shield Block, either Shove that foe 5 feet or leave it off-guard until your next turn (its choice)." },
+      { name: 'Assisting Shot', desc: 'Requires a ranged weapon: make a ranged Strike; on a hit, the next ally to attack the same target before your next turn gets a +1 circumstance bonus (+2 on a critical hit).' },
+      { name: 'Combat Grab', desc: 'Requires a hand free with the target in reach: make a melee Strike keeping that hand free; on a hit, you grab the target until it Escapes or your next turn ends.' },
+      { name: 'Intimidating Strike', desc: 'Two actions: make a melee Strike; a hit that deals damage leaves the target frightened 1 (frightened 2 on a critical hit).' },
+      { name: 'Lunge', desc: "Requires a melee weapon: make a Strike (or a Disarm/Shove/Trip, if the weapon has that trait) with your reach increased by 5 feet." },
+    ],
+    feats4: [
+      { name: 'Barreling Charge', prereq: 'Trained in Athletics', desc: "Requires training in Athletics: Stride through enemies' spaces (an Athletics check per creature you try to pass) and Strike at the end, regardless of how far you got." },
+      { name: 'Double Shot', desc: 'Requires a ranged weapon with reload 0: make two Strikes against separate targets, each at -2, without the multiple attack penalty increasing until both land.' },
+      { name: 'Dual-Handed Assault', desc: 'Requires a one-handed melee weapon and a free hand: Strike gripping it with both hands for a bigger damage die (or, if it already has the two-hand trait, an extra damage-dice bonus), then return to a one-handed grip.' },
+      { name: 'Swipe', desc: 'Two actions: make one melee Strike and compare it against up to two adjacent foes in reach, rolling damage once and applying it to each you hit; counts as two attacks toward your multiple attack penalty.' },
+      { name: 'Twin Parry', desc: 'Requires two melee weapons, one in each hand: gain a +1 circumstance bonus to AC until your next turn (+2 if either weapon has the parry trait), lost if you stop meeting the requirement.' },
+    ],
+    feats6: [
+      { name: 'Advantageous Assault', desc: "Make a Strike against a grabbed, prone, or restrained creature for bonus damage equal to your weapon's damage dice (+2 more two-handed) — even a miss deals that same damage." },
+      { name: 'Dazing Blow', desc: 'Requires a creature you have grabbed: a bludgeoning melee Strike against it forces a Fortitude save against your class DC, or the target becomes stunned 1-3 depending on the result.' },
+      { name: 'Advanced Weapon Training', subChoice: 'weaponGroup', desc: 'Choose a weapon group: you gain proficiency with every advanced weapon in that group as if it were a martial weapon of that group.' },
+      { name: 'Shatter Defenses', desc: 'Requires a frightened creature in melee reach: a damaging Strike against it leaves it off-guard for as long as it stays frightened.' },
+      { name: 'Triple Shot', prereq: 'Double Shot', desc: 'Requires Double Shot: use it against a single target instead of two separate ones, or add an action to fire three shots at -4 each instead of two.' },
+    ],
+    feats8: [
+      { name: 'Blind-Fight', prereq: 'master in Perception', desc: "Requires master in Perception: no flat check needed to target concealed foes, hidden foes only need a DC 5 flat check, and you're never off-guard to a hidden creature; an undetected foe at your level or lower counts as merely hidden to you." },
+      { name: 'Disorienting Opening', desc: "Requires Reactive Strike (every Fighter has it): a creature you hit with a Reactive Strike becomes off-guard until the start of your next turn." },
+      { name: 'Incredible Aim', desc: "Two actions: make a ranged Strike with a +2 circumstance bonus to the attack roll, ignoring the target's concealed condition." },
+      { name: 'Mobile Shot Stance', desc: "While in this stance, your ranged Strikes don't trigger foes' reactions to ranged attacks; if you have Reactive Strike, you can use it with a loaded ranged weapon against a foe within 5 feet." },
+      { name: 'Sudden Leap', desc: "Two actions: Leap, High Jump, or Long Jump and Strike once mid-jump, then land safely (no fall damage) as long as you don't fall farther than the jump's height." },
+    ],
+    feats10: [
+      { name: 'Agile Grace', desc: 'Your multiple attack penalty with agile weapons and agile unarmed attacks becomes -3/-6 instead of the usual -4/-8.' },
+      { name: 'Certain Strike', desc: 'Make a melee Strike; even on a miss, it deals its damage minus all damage dice (weapon, rune, spell, and ability dice alike).' },
+      { name: 'Disruptive Stance', desc: 'While in this stance, Reactive Strike also triggers on concentrate actions (not just manipulate/move), and any hit — not just a critical one — disrupts the triggering action.' },
+      { name: 'Fearsome Brute', desc: "Gain a circumstance bonus to damage against frightened creatures equal to double their frightened value (triple if you're a master in Intimidation)." },
+      { name: 'Tactical Reflexes', desc: 'At the start of each of your turns, gain an extra reaction usable only for a Reactive Strike.' },
     ],
   },
   {

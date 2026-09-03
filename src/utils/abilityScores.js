@@ -44,10 +44,32 @@ export function computeScoresBeforeFreeBoosts(character, ancestry) {
   return scores;
 }
 
-export function computeFinalScores(character, ancestry) {
+// Generalizes computeScoresBeforeFreeBoosts/the old computeFinalScores to any
+// level 1-10: replays every boost "event" tagged with the character level it
+// takes effect at (1: everything already applied above, plus the 4 free
+// boosts; 5/10: the level5Boosts/level10Boosts sets from Level-Up), stopping
+// at `uptoLevel`. Needed because a Constitution boost at level 5 or 10
+// changes HP gained from that level onward without retroactively changing
+// levels 1-4's HP (see leveling.js's computeTotalHP) -- a single frozen
+// "final" score isn't enough once boosts can land at different levels.
+export function computeScoresAtLevel(character, ancestry, uptoLevel) {
   let scores = computeScoresBeforeFreeBoosts(character, ancestry);
   character.freeBoosts.forEach((a) => {
     scores = boostScore(scores, a);
   });
+  if (uptoLevel >= 5) {
+    (character.level5Boosts || []).forEach((a) => {
+      scores = boostScore(scores, a);
+    });
+  }
+  if (uptoLevel >= 10) {
+    (character.level10Boosts || []).forEach((a) => {
+      scores = boostScore(scores, a);
+    });
+  }
   return scores;
+}
+
+export function computeFinalScores(character, ancestry) {
+  return computeScoresAtLevel(character, ancestry, character.level || 1);
 }

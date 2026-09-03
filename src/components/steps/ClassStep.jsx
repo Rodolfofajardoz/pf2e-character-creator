@@ -232,7 +232,14 @@ export default function ClassStep({ character, update }) {
               </p>
             ) : (
               <div className="card-grid">
-                {cls.feats1.map((f) => (
+                {/* A feat already claimed as the Natural Ambition bonus feat
+                    below can't also be your normal 1st-level pick -- PF2e
+                    doesn't let you take the same non-repeatable feat twice.
+                    Filtered out rather than merely blocked on click so the
+                    "selected" highlight in one section can never falsely
+                    mirror the other's pick (see bonusClassFeat's matching
+                    filter below). */}
+                {cls.feats1.filter((f) => f.name !== character.bonusClassFeat?.name).map((f) => (
                   <button
                     key={f.name}
                     className={`option-card small ${character.classFeat?.name === f.name ? 'selected' : ''}`}
@@ -256,7 +263,7 @@ export default function ClassStep({ character, update }) {
                 </p>
               ) : (
                 <div className="card-grid">
-                  {cls.feats1.map((f) => (
+                  {cls.feats1.filter((f) => f.name !== character.classFeat?.name).map((f) => (
                     <button
                       key={f.name}
                       className={`option-card small ${character.bonusClassFeat?.name === f.name ? 'selected' : ''}`}

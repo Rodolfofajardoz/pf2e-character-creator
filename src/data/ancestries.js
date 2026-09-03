@@ -201,6 +201,22 @@ export const ANCESTRIES = [
       { name: 'Natural Skill', desc: 'You gain the trained proficiency rank in two skills of your choice.', grantsSkillChoice: 2 },
       { name: 'Unconventional Weaponry', desc: 'You gain access to an uncommon simple or martial weapon associated with another ancestry or culture.' },
     ],
+    // feats5/feats9 -- verified against AoN (Player Core pg. 64-65), same
+    // curated-not-exhaustive precedent as feats1 (all of Human's real 5th-
+    // and 9th-level feats are listed here, since there are only 3 and 5 of
+    // them respectively -- no trimming needed this time).
+    feats5: [
+      { name: 'Adaptive Adept', prereq: 'Adapted Cantrip', desc: "Requires Adapted Cantrip and the ability to cast 3rd-rank spells: gain a cantrip or 1st-rank spell from the same tradition as your Adapted Cantrip pick, castable as your own class's tradition." },
+      { name: 'Clever Improviser', desc: 'You gain the Untrained Improvisation general feat, and can attempt normally-trained-only skill actions even while untrained.' },
+      { name: 'Sense Allies', desc: "Willing allies within 60 feet who'd be undetected to you are hidden instead, and the flat check to target a hidden willing ally within that range drops to 5 (from 11)." },
+    ],
+    feats9: [
+      { name: 'Cooperative Soul', desc: "If you're at least an expert in the skill you're Aiding with, a failure or critical failure on that Aid becomes a success instead." },
+      { name: 'Group Aid', desc: 'After Aiding an ally on a skill check (no attack trait), you can also Aid any other ally attempting that same check the same round, as a free action instead of a reaction.' },
+      { name: 'Hardy Traveler', desc: 'Your maximum and encumbered Bulk limits increase by 1, and you gain a +10-foot circumstance bonus to Speed during overland travel.' },
+      { name: 'Incredible Improvisation', desc: "Free Action, once per day, triggered by a check using a skill you're untrained in: gain a +4 circumstance bonus to that check." },
+      { name: 'Multitalented', desc: "You gain a 2nd-level multiclass dedication feat, even if you couldn't normally take another dedication feat yet." },
+    ],
   },
   {
     id: 'leshy',

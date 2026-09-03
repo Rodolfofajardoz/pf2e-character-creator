@@ -1,30 +1,52 @@
 import { useState } from 'react';
-import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, getEffectiveFixedSkills, getAncestryGrantedSkills } from '../../data/skills';
+import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, getSkillRank } from '../../data/skills';
 import { CANTRIPS, SPELLS_RANK_1, TRADITION_LABELS } from '../../data/spells';
 import { SUBCLASSES, getSubclassOption } from '../../data/subclasses';
 import { InspectText, GlossaryTerm } from '../../context/InspectContext';
 import { ABILITY_TERM_ID } from '../../data/glossary';
 import { useComputedCharacter } from '../../hooks/useComputedCharacter';
 import { fillCharacterSheet } from '../../utils/fillCharacterSheet';
+import { profBonus } from '../../utils/leveling';
+import Collapsible from '../Collapsible';
+import LevelUpCard from '../LevelUpCard';
 
-const LEVEL = 1;
+const MAX_MODELED_LEVEL = 10;
 
 function mod(n) {
   return n >= 0 ? `+${n}` : `${n}`;
 }
 
-function profBonus(rank) {
-  return PROFICIENCY_RANKS[rank].bonus(LEVEL);
+// The header/meta line for an already-passed level's (collapsed) card --
+// just the picked feat/skill-increase names, so scrolling back through a
+// build's history doesn't require re-opening every card.
+function summarizeLevel(character, level) {
+  const parts = [];
+  const classFeatEntry = character.classFeatsByLevel.find((f) => f.level === level);
+  if (classFeatEntry) {
+    parts.push(classFeatEntry.subChoiceValue ? `${classFeatEntry.feat.name} (${classFeatEntry.subChoiceValue})` : classFeatEntry.feat.name);
+  }
+  const skillFeat = character.skillFeatsByLevel.find((f) => f.level === level)?.feat;
+  if (skillFeat) parts.push(skillFeat.name);
+  const generalFeat = character.generalFeatsByLevel.find((f) => f.level === level)?.feat;
+  if (generalFeat) parts.push(generalFeat.name);
+  const ancestryFeat = character.ancestryFeatsByLevel.find((f) => f.level === level)?.feat;
+  if (ancestryFeat) parts.push(ancestryFeat.name);
+  const skillIncrease = character.skillIncreases.find((s) => s.level === level)?.skillId;
+  if (skillIncrease) parts.push(`${SKILLS.find((sk) => sk.id === skillIncrease)?.name} increase`);
+  const boostField = level === 5 ? 'level5Boosts' : level === 10 ? 'level10Boosts' : null;
+  if (boostField && character[boostField].length > 0) parts.push('4 ability boosts');
+  if (level === 5 && character.weaponMasteryGroup) parts.push(`Weapon Mastery (${character.weaponMasteryGroup})`);
+  return parts.length > 0 ? parts.join(', ') : 'Not yet confirmed';
 }
 
 export default function SummaryStep({ character, update, onRestart }) {
   const computed = useComputedCharacter(character);
   const {
+    level,
     ancestry,
     background,
     cls,
     heritage,
-    backgroundSkillId,
     weapon,
     armor,
     weaponPurchases,
@@ -37,29 +59,21 @@ export default function SummaryStep({ character, update, onRestart }) {
     hp,
     ac,
     isProficientInArmor,
+    perceptionRank,
     perceptionMod,
     classDCAbility,
+    classDCRank,
     classDC,
+    saveRanks,
+    saves,
   } = computed;
 
   const subclassGroup = SUBCLASSES[cls.id];
   const subOption = subclassGroup ? getSubclassOption(cls.id, character.subclassChoice) : null;
 
-  // Every skill already accounted for by one of the other rows below, so the
-  // ancestry-granted and "additional trained" lists can be deduped against
-  // it -- a character saved before trainedSkills started getting reset on
-  // upstream changes (see App.jsx/AncestryStep/BackgroundStep/ClassStep)
-  // could still have a stale pick that collides with a fixed skill, which
-  // would otherwise print (and React-key) that skill twice.
-  const fixedSkillIds = getEffectiveFixedSkills(character, cls);
-  const alreadyShownIds = new Set([
-    ...fixedSkillIds,
-    ...(character.classSkillChoice ? [character.classSkillChoice] : []),
-    ...(backgroundSkillId ? [backgroundSkillId] : []),
-  ]);
-  const ancestryGrantedSkills = getAncestryGrantedSkills(character).filter((id) => !alreadyShownIds.has(id));
-  ancestryGrantedSkills.forEach((id) => alreadyShownIds.add(id));
-  const extraTrainedSkills = character.trainedSkills.filter((id) => !alreadyShownIds.has(id));
+  const trainedSkillList = SKILLS.map((s) => ({ ...s, rank: getSkillRank(character, cls, ancestry, background, s.id) })).filter(
+    (s) => s.rank !== 'untrained'
+  );
 
   const [sheetStatus, setSheetStatus] = useState('idle');
 
@@ -112,7 +126,7 @@ export default function SummaryStep({ character, update, onRestart }) {
             </p>
           )}
           <p>
-            Level {LEVEL} · <GlossaryTerm id="hit-points">HP</GlossaryTerm> {hp} · Size {ancestry.size} ·{' '}
+            Level {level} · <GlossaryTerm id="hit-points">HP</GlossaryTerm> {hp} · Size {ancestry.size} ·{' '}
             <GlossaryTerm id="speed">Speed</GlossaryTerm> {ancestry.speed} feet
           </p>
           <p>Languages: {[...ancestry.languages, ...character.bonusLanguages].join(', ')}</p>
@@ -152,17 +166,18 @@ export default function SummaryStep({ character, update, onRestart }) {
           </p>
           <p>
             <GlossaryTerm id="perception">Perception</GlossaryTerm>: {mod(perceptionMod)} (
-            <GlossaryTerm id={cls.perception}>{PROFICIENCY_RANKS[cls.perception].label}</GlossaryTerm>)
+            <GlossaryTerm id={perceptionRank}>{PROFICIENCY_RANKS[perceptionRank].label}</GlossaryTerm>)
           </p>
           <p>
             <GlossaryTerm id="saving-throw">Saving Throws</GlossaryTerm>:{' '}
-            <GlossaryTerm id="fortitude">Fortitude</GlossaryTerm> {mod(mods.con + profBonus(cls.saves.fort))},{' '}
-            <GlossaryTerm id="reflex">Reflex</GlossaryTerm> {mod(mods.dex + profBonus(cls.saves.ref))},{' '}
-            <GlossaryTerm id="will">Will</GlossaryTerm> {mod(mods.wis + profBonus(cls.saves.will))}
+            <GlossaryTerm id="fortitude">Fortitude</GlossaryTerm> {mod(saves.fort)} ({PROFICIENCY_RANKS[saveRanks.fort].label}),{' '}
+            <GlossaryTerm id="reflex">Reflex</GlossaryTerm> {mod(saves.ref)} ({PROFICIENCY_RANKS[saveRanks.ref].label}),{' '}
+            <GlossaryTerm id="will">Will</GlossaryTerm> {mod(saves.will)} ({PROFICIENCY_RANKS[saveRanks.will].label})
           </p>
           <p>
             <GlossaryTerm id="class-dc">Class DC</GlossaryTerm>: {classDC} (
-            <GlossaryTerm id={ABILITY_TERM_ID[classDCAbility]}>{ABILITY_LABELS[classDCAbility]}</GlossaryTerm>)
+            <GlossaryTerm id={ABILITY_TERM_ID[classDCAbility]}>{ABILITY_LABELS[classDCAbility]}</GlossaryTerm>,{' '}
+            {PROFICIENCY_RANKS[classDCRank].label})
           </p>
         </div>
 
@@ -222,44 +237,14 @@ export default function SummaryStep({ character, update, onRestart }) {
         <div className="sheet-card">
           <h3>Trained Skills</h3>
           <ul className="plain-list">
-            {getEffectiveFixedSkills(character, cls).map((s) => {
-              const skill = SKILLS.find((sk) => sk.id === s);
-              return (
-                <li key={s}>
-                  <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm>: {mod(mods[skill.ability] + profBonus('trained'))}
-                </li>
-              );
-            })}
-            {character.classSkillChoice && (
-              <li>
-                <GlossaryTerm id={character.classSkillChoice}>
-                  {SKILLS.find((sk) => sk.id === character.classSkillChoice)?.name}
-                </GlossaryTerm>:{' '}
-                {mod(mods[SKILLS.find((sk) => sk.id === character.classSkillChoice)?.ability] + profBonus('trained'))}
+            {trainedSkillList.map((s) => (
+              <li key={s.id}>
+                <GlossaryTerm id={s.id}>{s.name}</GlossaryTerm>: {mod(mods[s.ability] + profBonus(s.rank, level))}
+                {s.rank !== 'trained' && ` (${PROFICIENCY_RANKS[s.rank].label})`}
               </li>
-            )}
+            ))}
             <li>
-              <GlossaryTerm id={backgroundSkillId}>{SKILLS.find((sk) => sk.id === backgroundSkillId)?.name}</GlossaryTerm>:{' '}
-              {mod(mods[SKILLS.find((sk) => sk.id === backgroundSkillId)?.ability] + profBonus('trained'))}
-            </li>
-            {ancestryGrantedSkills.map((id) => {
-              const skill = SKILLS.find((sk) => sk.id === id);
-              return (
-                <li key={id}>
-                  <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm>: {mod(mods[skill.ability] + profBonus('trained'))}
-                </li>
-              );
-            })}
-            {extraTrainedSkills.map((id) => {
-              const skill = SKILLS.find((sk) => sk.id === id);
-              return (
-                <li key={id}>
-                  <GlossaryTerm id={skill.id}>{skill.name}</GlossaryTerm>: {mod(mods[skill.ability] + profBonus('trained'))}
-                </li>
-              );
-            })}
-            <li>
-              {background.lore}: {mod(mods.int + profBonus('trained'))} (<GlossaryTerm id="lore">Lore</GlossaryTerm> uses Intelligence)
+              {background.lore}: {mod(mods.int + profBonus('trained', level))} (<GlossaryTerm id="lore">Lore</GlossaryTerm> uses Intelligence)
             </li>
           </ul>
         </div>
@@ -287,6 +272,34 @@ export default function SummaryStep({ character, update, onRestart }) {
             )}
           </ul>
         </div>
+      </section>
+
+      <section className="sub-section leveling-up no-print">
+        <h3>Leveling Up</h3>
+        <p className="hint">
+          This character is level {level}. Levels 2-10 are modeled so far; 11-20 are a planned follow-up.
+        </p>
+        {Array.from({ length: Math.min(level + 1, MAX_MODELED_LEVEL) - 1 }, (_, i) => i + 2).map((lvl) => (
+          <Collapsible
+            key={lvl}
+            title={`Level ${lvl}`}
+            meta={<span className="option-meta">{summarizeLevel(character, lvl)}</span>}
+            defaultOpen={lvl === level + 1}
+          >
+            <LevelUpCard
+              level={lvl}
+              character={character}
+              update={update}
+              cls={cls}
+              ancestry={ancestry}
+              background={background}
+              isFrontier={lvl === level + 1}
+            />
+          </Collapsible>
+        ))}
+        {level >= MAX_MODELED_LEVEL && (
+          <p className="hint">Level {MAX_MODELED_LEVEL} of {MAX_MODELED_LEVEL} — levels 11-20 are a planned follow-up.</p>
+        )}
       </section>
 
       <div className="summary-actions no-print">
