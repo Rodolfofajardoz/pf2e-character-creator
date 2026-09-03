@@ -1,5 +1,6 @@
-import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS } from '../data/skills';
+import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, getEffectiveFixedSkills } from '../data/skills';
 import { CANTRIPS, SPELLS_RANK_1 } from '../data/spells';
+import { getSubclassOption } from '../data/subclasses';
 import { GlossaryTerm } from '../context/InspectContext';
 import { ABILITY_TERM_ID } from '../data/glossary';
 import { useComputedCharacter } from '../hooks/useComputedCharacter';
@@ -38,11 +39,12 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
     saves,
   } = useComputedCharacter(character);
   const allPurchases = [...weaponPurchases, ...ammoPurchases, ...armorPurchases, ...shieldPurchases, ...gearPurchases];
+  const subOption = cls ? getSubclassOption(cls.id, character.subclassChoice) : null;
 
   const trainedSkillIds = Array.from(
     new Set(
       [
-        ...(cls?.fixedSkills || []),
+        ...(cls ? getEffectiveFixedSkills(character, cls) : []),
         character.classSkillChoice,
         backgroundSkillId,
         ...character.trainedSkills,
@@ -66,6 +68,7 @@ export default function LivePreviewPanel({ character, open, onToggle }) {
           {ancestry ? ancestry.name : 'Ancestry —'}
           {heritage ? ` (${heritage.name})` : ''}
           {cls ? ` · ${cls.name}` : ''}
+          {subOption ? ` (${subOption.name})` : ''}
         </p>
         {background && <p className="live-preview-line">Background: {background.name}</p>}
         {ancestry && (

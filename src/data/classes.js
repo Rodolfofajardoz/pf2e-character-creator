@@ -177,9 +177,10 @@ export const CLASSES = [
     summary: 'Guardian of the natural cycles, with an Order that shapes how they wield that power.',
     // Verified against AoN (Player Core pg. 122): 1st-level class features are anathema,
     // druidic order, Shield Block, voice of nature, and Wildsong — the first druid feat
-    // isn't gained until 2nd level, hence classFeatAtLevel1: false below (most of the
-    // feats below are Order-locked, e.g. "Requires the Wild Order", and Order isn't
-    // modeled yet — see ROADMAP item 5).
+    // isn't gained until 2nd level, hence classFeatAtLevel1: false below. Order is now
+    // modeled as a subclass choice (subclasses.js, roadmap item 6) — the feats below are
+    // Order-locked, and their "Requires the X Order" text is shown, not enforced, same
+    // as every other feat prerequisite in this app.
     //
     // feats1 stays populated despite classFeatAtLevel1 being false: Human's Natural
     // Ambition grants "a 1st-level class feat" with no class exception, so a Druid who
@@ -191,7 +192,7 @@ export const CLASSES = [
       { name: 'Reach Spell', desc: "Single action before Casting a Spell: increase that spell's range by 30 feet (a touch spell reaches 30 feet)." },
       { name: 'Storm Born', desc: "Requires the Storm Order: weather doesn't penalize your ranged spell attacks or Perception, and you ignore the flat check to target a creature concealed by weather." },
       { name: 'Widen Spell', desc: "Single action before Casting a Spell with a burst, cone, or line area (and no duration): increase that area by 5-10 feet." },
-      { name: 'Wild Shape', desc: 'Requires the Wild Order: you can transform into basic animal shapes.' },
+      { name: 'Wild Shape', desc: 'Requires the Untamed Order (renamed from "Wild Order" in the remaster): you can transform into basic animal shapes.' },
     ],
   },
   {

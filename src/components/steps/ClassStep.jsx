@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { CLASSES, getClass } from '../../data/classes';
-import { SKILLS } from '../../data/skills';
+import { SKILLS, getEffectiveFixedSkills } from '../../data/skills';
+import { SUBCLASSES } from '../../data/subclasses';
 import { InspectText, GlossaryTerm, AbilityTerm } from '../../context/InspectContext';
 import { scrollIntoViewCentered } from '../../utils/scrollFocus';
 
@@ -14,16 +15,20 @@ export default function ClassStep({ character, update }) {
   const cls = character.classId ? getClass(character.classId) : null;
 
   const keyAbilityRef = useRef(null);
+  const subclassRef = useRef(null);
   const skillChoiceRef = useRef(null);
   const classFeatRef = useRef(null);
   const bonusFeatRef = useRef(null);
 
   const needsBonusFeat = Boolean(cls && cls.feats1.length > 0 && character.ancestryFeat?.grantsClassFeat);
+  const subclassGroup = cls ? SUBCLASSES[cls.id] : null;
 
   const focusKey = !cls
     ? null
     : cls.keyAbility.length > 1 && !character.classKeyAbility
     ? 'keyAbility'
+    : subclassGroup && !character.subclassChoice
+    ? 'subclass'
     : cls.fixedSkillChoiceOptions && !character.classSkillChoice
     ? 'skillChoice'
     : cls.classFeatAtLevel1 !== false && !character.classFeat
@@ -33,7 +38,7 @@ export default function ClassStep({ character, update }) {
     : null;
 
   useEffect(() => {
-    const refs = { keyAbility: keyAbilityRef, skillChoice: skillChoiceRef, classFeat: classFeatRef, bonusFeat: bonusFeatRef };
+    const refs = { keyAbility: keyAbilityRef, subclass: subclassRef, skillChoice: skillChoiceRef, classFeat: classFeatRef, bonusFeat: bonusFeatRef };
     if (focusKey) scrollIntoViewCentered(refs[focusKey]);
   }, [focusKey]);
 
@@ -46,11 +51,21 @@ export default function ClassStep({ character, update }) {
       classFeat: null,
       bonusClassFeat: null,
       classSkillChoice: null,
+      subclassChoice: null,
       backgroundSkillSubstitute: null,
       spellTradition: null,
       knownCantrips: [],
       knownSpells1: [],
     });
+  }
+
+  // Changing a Sorcerer/Witch's subclass can change their tradition (a new
+  // Bloodline/Patron's spell list), so any spells already picked under the
+  // old tradition need to be cleared along with it -- same reasoning as
+  // selectClass resetting them.
+  function selectSubclass(id) {
+    if (id === character.subclassChoice) return;
+    update({ subclassChoice: id, spellTradition: null, knownCantrips: [], knownSpells1: [] });
   }
 
   return (
@@ -134,18 +149,40 @@ export default function ClassStep({ character, update }) {
               )}
               <div>
                 <strong>Trained skills:</strong>{' '}
-                {cls.fixedSkills.map((s, i) => (
+                {getEffectiveFixedSkills(character, cls).map((s, i) => (
                   <span key={s}>
                     {i > 0 ? ', ' : ''}
                     <GlossaryTerm id={s}>{SKILLS.find((sk) => sk.id === s)?.name}</GlossaryTerm>
                   </span>
                 ))}
-                {cls.fixedSkills.length > 0 ? ' + ' : ''}
+                {getEffectiveFixedSkills(character, cls).length > 0 ? ' + ' : ''}
                 {cls.skillsBase} additional (+ your Intelligence modifier)
-                {cls.fixedSkillChoice ? ` · ${cls.fixedSkillChoice}` : ''}
+                {cls.fixedSkillChoice && !subclassGroup ? ` · ${cls.fixedSkillChoice}` : ''}
               </div>
             </div>
           </section>
+
+          {subclassGroup && (
+            <section className="sub-section" ref={subclassRef}>
+              <h3>{subclassGroup.fieldLabel}</h3>
+              <p className="hint">
+                Choose your {cls.name}'s {subclassGroup.label.toLowerCase()} — it shapes your 1st-level
+                benefits{cls.id === 'sorcerer' || cls.id === 'witch' ? ' and determines your spellcasting tradition' : ''}.
+              </p>
+              <div className="card-grid">
+                {subclassGroup.options.map((o) => (
+                  <button
+                    key={o.id}
+                    className={`option-card small ${character.subclassChoice === o.id ? 'selected' : ''}`}
+                    onClick={() => selectSubclass(o.id)}
+                  >
+                    <h4>{o.name}</h4>
+                    <p className="option-desc"><InspectText text={o.desc} /></p>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
 
           {cls.fixedSkillChoiceOptions && (
             <section className="sub-section" ref={skillChoiceRef}>

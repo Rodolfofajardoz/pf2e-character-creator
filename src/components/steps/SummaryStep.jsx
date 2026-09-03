@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS } from '../../data/skills';
+import { SKILLS, ABILITY_LABELS, PROFICIENCY_RANKS, getEffectiveFixedSkills } from '../../data/skills';
 import { CANTRIPS, SPELLS_RANK_1, TRADITION_LABELS } from '../../data/spells';
+import { SUBCLASSES, getSubclassOption } from '../../data/subclasses';
 import { InspectText, GlossaryTerm } from '../../context/InspectContext';
 import { ABILITY_TERM_ID } from '../../data/glossary';
 import { useComputedCharacter } from '../../hooks/useComputedCharacter';
@@ -40,6 +41,9 @@ export default function SummaryStep({ character, update, onRestart }) {
     classDCAbility,
     classDC,
   } = computed;
+
+  const subclassGroup = SUBCLASSES[cls.id];
+  const subOption = subclassGroup ? getSubclassOption(cls.id, character.subclassChoice) : null;
 
   const [sheetStatus, setSheetStatus] = useState('idle');
 
@@ -86,6 +90,11 @@ export default function SummaryStep({ character, update, onRestart }) {
             {ancestry.name} ({heritage?.name}) — {cls.name}
           </p>
           <p>Background: {background.name}</p>
+          {subOption && (
+            <p>
+              <strong>{subclassGroup.label}:</strong> {subOption.name} — <InspectText text={subOption.desc} />
+            </p>
+          )}
           <p>
             Level {LEVEL} · <GlossaryTerm id="hit-points">HP</GlossaryTerm> {hp} · Size {ancestry.size} ·{' '}
             <GlossaryTerm id="speed">Speed</GlossaryTerm> {ancestry.speed} feet
@@ -175,7 +184,7 @@ export default function SummaryStep({ character, update, onRestart }) {
           <div className="sheet-card">
             <h3>Spells</h3>
             <p>
-              Tradition: {TRADITION_LABELS[cls.spellcasting.traditionCode || character.spellTradition]}
+              Tradition: {TRADITION_LABELS[cls.spellcasting.traditionCode || subOption?.tradition || character.spellTradition]}
             </p>
             <p>
               <strong><GlossaryTerm id="cantrip">Cantrips</GlossaryTerm>:</strong>{' '}
@@ -197,7 +206,7 @@ export default function SummaryStep({ character, update, onRestart }) {
         <div className="sheet-card">
           <h3>Trained Skills</h3>
           <ul className="plain-list">
-            {cls.fixedSkills.map((s) => {
+            {getEffectiveFixedSkills(character, cls).map((s) => {
               const skill = SKILLS.find((sk) => sk.id === s);
               return (
                 <li key={s}>

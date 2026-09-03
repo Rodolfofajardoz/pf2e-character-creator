@@ -1,4 +1,4 @@
-import { SKILLS, PROFICIENCY_RANKS } from '../data/skills';
+import { SKILLS, PROFICIENCY_RANKS, getEffectiveFixedSkills } from '../data/skills';
 import { CANTRIPS, SPELLS_RANK_1 } from '../data/spells';
 
 const LEVEL = 1;
@@ -190,7 +190,7 @@ export function buildFieldValues(character, computed) {
   // only the actually-trained ones get their checkbox marked.
   if (mods) {
     const trainedIds = new Set([
-      ...(cls?.fixedSkills || []),
+      ...(cls ? getEffectiveFixedSkills(character, cls) : []),
       ...(character.classSkillChoice ? [character.classSkillChoice] : []),
       ...(computed.backgroundSkillId ? [computed.backgroundSkillId] : []),
       ...character.trainedSkills,

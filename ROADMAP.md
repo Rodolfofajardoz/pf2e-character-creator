@@ -22,7 +22,7 @@ milestone to schedule in the middle of it.
 | 3 | ~~Custom backgrounds~~ | S–M | ✅ Done (v0.6.8). |
 | 4 | ~~Custom PDF sheet printing~~ | S–M | ✅ Done (v0.7.0). |
 | 5 | ~~Save/load character catalog~~ | M | ✅ Done (v0.8.0). |
-| 6 | Class sub-choices | M | AoN verification across 8 classes, plus new spell data it unlocks. |
+| 6 | ~~Class sub-choices~~ | M | ✅ Done (v0.9.0) — the choice + its 1st-level benefit; unlocking the spells it gates access to is a follow-up (see item 6's writeup). |
 | 7 | Familiars | M | ⚠ blocked — full scope needs item 9 (Level-up) done first. |
 | 8 | Multiclass & Archetypes | L | ⚠ blocked — needs item 9 (Level-up) done first; also the largest data surface after leveling itself. |
 | 9 | Level-up (2–20) | XL | The biggest item by far — see below for why it's basically its own multi-part project. |
@@ -244,32 +244,83 @@ lands back on Ancestry, and a fully completed one, which lands on
 Summary with every field intact) → Duplicate, Delete (with its two-click
 confirm), and Export all work with no console errors.
 
-## 6. Class sub-choices
+## 6. Class sub-choices — ✅ Done (v0.9.0)
 
-**Size: M.** Adds the Bard Muse, Cleric Doctrine, Druid Order, Oracle
-Mystery, Sorcerer Bloodline, Witch Patron, Wizard Arcane School, and
-Champion Cause as an explicit choice step for each of those 8 classes,
-the same pattern already used for heritage/background feat choice
-(a `chip-row` or `card-grid` of options stored on `character`). Ranks
-below Save/load despite being the same nominal size because it needs a
-full AoN-verification pass across 8 classes plus new spell data, not
-just engineering.
+Added the Bard Muse, Cleric Doctrine, Druid Order, Oracle Mystery,
+Sorcerer Bloodline, Witch Patron, Wizard Arcane School, and Champion
+Cause as an explicit "Choose your X" step for each of those 8 classes,
+in `ClassStep.jsx` right after Key Ability. All 49 options (4 Muses, 2
+Doctrines, 4 Orders, 8 Mysteries, 10 Bloodlines, 7 Patrons, 8 Arcane
+Schools, 7 Causes) verified against AoN, filtered to Player Core /
+Player Core 2 sources, in a new `src/data/subclasses.js`.
 
-What it unlocks:
-- Removes the Phase 3 caveat that spell lists only include
-  tradition-universal spells — Muse compositions, Doctrine font spells,
-  Patron hexes, etc. become selectable once their gating choice exists.
-- Sorcerer/Witch currently ask the player to pick a tradition directly
-  (`sc.traditionOptions`) as a stand-in for Bloodline/Patron — once the
-  real choice exists, tradition should be *derived* from it instead of
-  asked separately.
-- Each choice typically also grants a small 1st-level benefit (e.g. a
-  Bloodline grants a bonus spell and a resistance; a Doctrine changes a
-  Cleric's font options) that needs its own verified AoN data, same
-  rigor as the Phase 1 feat-text correctness pass.
+Shipped:
+- **Tradition is now derived, not asked**, for Sorcerer and Witch — the
+  chosen Bloodline/Patron carries a `tradition` field that
+  `SpellsStep.jsx` reads directly. The old direct tradition question
+  (`sc.traditionOptions`) survives only as a fallback for the one option
+  where it's genuinely still needed: the Draconic bloodline, whose
+  tradition depends on a further "draconic exemplar" sub-choice this app
+  doesn't model.
+- **Bloodline/Patron/Mystery-granted skills train automatically**,
+  folded into `cls.fixedSkills` via a new `getEffectiveFixedSkills()` in
+  `skills.js` that every consumer (ClassStep, SkillsStep, SummaryStep,
+  LivePreviewPanel, fillCharacterSheet, and `getBackgroundSkillInfo`'s
+  own collision check) now calls instead of reading `cls.fixedSkills`
+  directly — so a background-skill collision with, say, a Fey Sorcerer's
+  Nature training is caught correctly with no subclass-specific code.
+  `getSkillPoolSize()`/`getExtraSkillsFromChoice()` stopped double
+  -counting once concrete skills exist (Sorcerer's old "+2 abstract
+  skills from bloodline" placeholder bonus is now 0, since the 2 skills
+  are concrete and already counted via fixedSkills).
+- Fixed a legacy-naming bug found while writing Druid's Order
+  descriptions: `classes.js`'s Wild Shape feat still said "Requires the
+  Wild Order" — the remaster renamed that 4th order to **Untamed**.
 
-Open question: none — this is scoped and ready to start whenever picked
-up next.
+**Caught and fixed before shipping**: the first pass at this emptied
+`feats1` for the newly-`classFeatAtLevel1: false` classes as part of the
+RULE-04 fix (see the "External audit" section above) without realizing
+Human's Natural Ambition ("a 1st-level class feat", no class exception)
+still needs a catalog to grant from — verified live with a Human Wizard
++ Natural Ambition, which now correctly shows the Bonus Class Feat
+picker instead of "no feats to choose from."
+
+**Deliberately not in this pass** (documented gap, not silently
+dropped):
+- The specific bonus cantrips/spells each option grants (a Muse's "Muse
+  Spell", a Bloodline's cantrip, a Patron's hex + familiar spell, a
+  School's curriculum spells) are named in the option's description but
+  not auto-added to `knownCantrips`/`knownSpells1` — that's a state-model
+  change (a "bonus known spell beyond your normal count" concept doesn't
+  exist yet) layered on top of real content work per class.
+- Muse/Doctrine/Patron-gated spells (compositions, font spells, hexes)
+  still aren't unlocked in the `SpellsStep` catalog — the Phase 3 caveat
+  this item was meant to remove. Needs the actual spell text added to
+  `spells.js`, verified per spell, same rigor as everything else in that
+  file — real content work, not a data-shape problem.
+- Universalist/School of Unified Magical Theory's bonus wizard class
+  feat isn't auto-granted (would need a second independent
+  `bonusClassFeat`-style slot, since a Human Wizard could have both this
+  *and* Natural Ambition active at once).
+- Draconic Sorcerer's exemplar choice and Elemental Sorcerer's element
+  choice are described as sub-choices in the option text but don't have
+  their own nested picker — a real gap for those two specifically, not
+  every bloodline.
+- Champion Cause descriptions cover the *Relentless* reaction tier only
+  (what applies at 1st level); the *Exalted* tier (gained later) isn't
+  included, same reasoning as Doctrine only covering its 1st-level tier.
+- Witch's pre-existing `feats1: []` gap (noted when `classFeatAtLevel1`
+  was added — no AoN-verified Witch Feat-1 data exists yet, so Natural
+  Ambition still grants nothing for a Human Witch) remains open;
+  unrelated to this item but adjacent enough to note here again.
+
+Verified live end-to-end for Sorcerer (Fey bloodline: skills correctly
+show Deception/Nature with no double-counted pool bonus, tradition
+auto-resolves to Primal with no manual picker, spell pool and Summary
+both reflect it) and Champion (Cause picker renders, its `feats1`
+entries' "Requires the Justice/Liberation/Iniquity/Obedience cause" text
+lines up with the real cause names). `npm run lint` (0 errors, same
+baseline warnings) and `npm run build` both clean.
 
 ## 7. Familiars
 

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { getClass } from '../../data/classes';
 import { CANTRIPS, SPELLS_RANK_1, getSpellsForTradition, TRADITION_LABELS } from '../../data/spells';
+import { SUBCLASSES, getSubclassOption } from '../../data/subclasses';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
 import Collapsible from '../Collapsible';
 
@@ -216,7 +217,14 @@ export default function SpellsStep({ character, update }) {
     );
   }
 
-  const traditionCode = sc.traditionCode || character.spellTradition;
+  // A subclass's Bloodline/Patron sets the tradition directly (see
+  // subclasses.js) for every option except the Draconic bloodline, whose
+  // tradition depends on a further exemplar choice this app doesn't model
+  // — sc.traditionOptions stays as a manual fallback picker for that one
+  // case only.
+  const subOption = getSubclassOption(cls.id, character.subclassChoice);
+  const traditionCode = sc.traditionCode || subOption?.tradition || character.spellTradition;
+  const needsManualTradition = Boolean(sc.traditionOptions) && !subOption?.tradition;
   const cantripPool = traditionCode ? getSpellsForTradition(CANTRIPS, traditionCode) : [];
   const spell1Pool = traditionCode ? getSpellsForTradition(SPELLS_RANK_1, traditionCode) : [];
 
@@ -248,18 +256,26 @@ export default function SpellsStep({ character, update }) {
       <p className="hint">
         {cls.name} ({sc.type}, <GlossaryTerm id="cantrip">cantrips</GlossaryTerm> +{' '}
         1st-rank spells only — this is a level-1 builder). This list only includes spells any {sc.traditionOptions ? 'caster of the chosen tradition' : `${sc.tradition} caster`} can
-        freely pick; it excludes spells tied to a class sub-choice this app doesn't model (a Bard's Muse, a
-        Cleric's Doctrine, a Witch's Patron theme, and the like). Descriptions are the complete rules text, not a
-        summary, so you shouldn't need to look anything up elsewhere.
+        freely pick — it excludes spells specifically granted or unlocked by your {SUBCLASSES[cls.id] ? SUBCLASSES[cls.id].label.toLowerCase() : 'class sub-choice'}
+        {subOption ? ` (${subOption.name})` : ''} (a Muse composition, a Doctrine's font spells, a Patron's hex, and
+        the like) — those are named in your {SUBCLASSES[cls.id]?.label} on the Class step, but not yet added to this
+        picker's catalog. Descriptions here are the complete rules text, not a summary, so you shouldn't need to
+        look anything up elsewhere.
       </p>
 
-      {sc.traditionOptions && (
+      {subOption?.tradition && (
+        <p className="hint">
+          Your {SUBCLASSES[cls.id].label.toLowerCase()} ({subOption.name}) sets your tradition to{' '}
+          <strong>{TRADITION_LABELS[subOption.tradition]}</strong>.
+        </p>
+      )}
+
+      {needsManualTradition && (
         <section className="sub-section">
           <h3>Tradition</h3>
           <p className="hint">
-            {cls.name === 'Sorcerer'
-              ? "Your bloodline (not modeled) determines your tradition — pick the one that fits your concept."
-              : "Your patron (not modeled) determines your tradition — pick the one that fits your concept."}
+            The Draconic bloodline's tradition depends on which draconic exemplar you choose (not modeled) — pick
+            the tradition that fits your concept.
           </p>
           <div className="chip-row">
             {sc.traditionOptions.map((code) => (

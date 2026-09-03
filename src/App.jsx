@@ -16,6 +16,7 @@ import { getEffectiveBackground } from './data/backgrounds';
 import { getClass } from './data/classes';
 import { getAncestry } from './data/ancestries';
 import { abilityMod, getSkillPoolSize, getBackgroundSkillInfo } from './data/skills';
+import { SUBCLASSES, getSubclassOption } from './data/subclasses';
 import { computeFinalScores } from './utils/abilityScores';
 import { InspectProvider, InspectToggle, InspectPopovers } from './context/InspectContext';
 import { scrollIntoViewCentered } from './utils/scrollFocus';
@@ -52,6 +53,7 @@ const initialCharacter = {
   classFeat: null,
   bonusClassFeat: null,
   classSkillChoice: null,
+  subclassChoice: null,
   spellTradition: null,
   knownCantrips: [],
   knownSpells1: [],
@@ -99,13 +101,21 @@ function isStepComplete(stepId, character) {
       const needsBonusFeat = cls && cls.feats1.length > 0 && character.ancestryFeat?.grantsClassFeat;
       const bonusFeatOk = !needsBonusFeat || Boolean(character.bonusClassFeat);
       const skillChoiceOk = !cls?.fixedSkillChoiceOptions || Boolean(character.classSkillChoice);
-      return Boolean(character.classId && character.classKeyAbility && feat1Ok && bonusFeatOk && skillChoiceOk);
+      const subclassOk = !cls || !SUBCLASSES[cls.id] || Boolean(character.subclassChoice);
+      return Boolean(character.classId && character.classKeyAbility && feat1Ok && bonusFeatOk && skillChoiceOk && subclassOk);
     }
     case 'spells': {
       const cls = character.classId ? getClass(character.classId) : null;
       const sc = cls?.spellcasting;
       if (!sc || !sc.cantripsKnown) return true;
-      const traditionOk = !sc.traditionOptions || Boolean(character.spellTradition);
+      // A subclass's tradition (Bloodline/Patron) replaces the old direct
+      // tradition question for every option except the Draconic bloodline,
+      // whose tradition depends on a further exemplar choice this app
+      // doesn't model — traditionOptions stays as the fallback picker for
+      // that one case. See subclasses.js and SpellsStep.jsx.
+      const subOption = getSubclassOption(cls.id, character.subclassChoice);
+      const needsManualTradition = Boolean(sc.traditionOptions) && !subOption?.tradition;
+      const traditionOk = !needsManualTradition || Boolean(character.spellTradition);
       const cantripsOk = character.knownCantrips.length === sc.cantripsKnown;
       const spells1Ok = character.knownSpells1.length === sc.rank1Known;
       return traditionOk && cantripsOk && spells1Ok;
@@ -125,7 +135,7 @@ function isStepComplete(stepId, character) {
       const background = character.backgroundId ? getEffectiveBackground(character) : null;
       if (!cls || !ancestry || !background) return true;
       const scores = computeFinalScores(character, ancestry);
-      const poolSize = getSkillPoolSize(cls, abilityMod(scores.int));
+      const poolSize = getSkillPoolSize(cls, abilityMod(scores.int), character);
       const { hasCollision, effectiveId } = getBackgroundSkillInfo(character, cls, background);
       const substituteOk = !hasCollision || Boolean(effectiveId);
       return character.trainedSkills.length === poolSize && substituteOk;

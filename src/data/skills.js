@@ -1,3 +1,5 @@
+import { getSubclassOption } from './subclasses';
+
 export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 
 export const ABILITY_LABELS = {
@@ -42,17 +44,33 @@ export function abilityMod(score) {
 
 // Extra trained-skill slots granted by a class's "choose N skills" feature,
 // beyond skillsBase + Int modifier. Classes with a concrete, enumerable
-// choice (currently only the Fighter's Acrobatics-or-Athletics) get a
-// dedicated required pick in ClassStep instead (see fixedSkillChoiceOptions)
-// and aren't counted here, since that slot isn't part of the free pool.
-export function getExtraSkillsFromChoice(cls) {
+// choice (the Fighter's Acrobatics-or-Athletics, or a Sorcerer/Witch whose
+// subclass has been picked — see getEffectiveFixedSkills) get those skills
+// as fixed training instead and aren't counted here, since that slot isn't
+// part of the free pool. The `cls.id === 'sorcerer' ? 2 : 1` fallback only
+// still matters for the brief window before a subclass is chosen (e.g. the
+// live preview panel, which renders from step 1 onward).
+export function getExtraSkillsFromChoice(cls, character) {
   if (cls.fixedSkillChoiceOptions) return 0;
   if (!cls.fixedSkillChoice) return 0;
+  const sub = getSubclassOption(cls.id, character?.subclassChoice);
+  if (sub?.skills) return 0;
   return cls.id === 'sorcerer' ? 2 : 1;
 }
 
-export function getSkillPoolSize(cls, intMod) {
-  return Math.max(0, cls.skillsBase + intMod) + getExtraSkillsFromChoice(cls);
+export function getSkillPoolSize(cls, intMod, character) {
+  return Math.max(0, cls.skillsBase + intMod) + getExtraSkillsFromChoice(cls, character);
+}
+
+// A class's automatically-trained skills, folding in whatever its subclass
+// (Bloodline/Patron/Mystery — see subclasses.js) grants on top of
+// cls.fixedSkills. The single place every consumer (SkillsStep,
+// SummaryStep, LivePreviewPanel, ClassStep, fillCharacterSheet,
+// getBackgroundSkillInfo below) should read instead of cls.fixedSkills
+// directly, so a subclass's granted skills are never missed.
+export function getEffectiveFixedSkills(character, cls) {
+  const sub = getSubclassOption(cls.id, character?.subclassChoice);
+  return [...(cls.fixedSkills || []), ...(sub?.skills || [])];
 }
 
 // PF2e rule: "If you would become trained in a skill you're already trained
@@ -65,7 +83,7 @@ export function getSkillPoolSize(cls, intMod) {
 export function getBackgroundSkillInfo(character, cls, background) {
   const rawId = background.skillChoice ? character.backgroundSkillChoice : background.skill;
   const classFixedIds = new Set([
-    ...(cls.fixedSkills || []),
+    ...getEffectiveFixedSkills(character, cls),
     ...(character.classSkillChoice ? [character.classSkillChoice] : []),
   ]);
   const hasCollision = Boolean(rawId) && classFixedIds.has(rawId);

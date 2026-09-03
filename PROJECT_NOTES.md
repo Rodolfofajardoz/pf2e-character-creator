@@ -241,16 +241,19 @@ Ability Scores → Skills → Equipment → Summary. All text is in English.
    `armorProficiency` in `classes.js` needs an upgrade path beyond the
    current binary trained/untrained (same fix pattern as `unarmoredProficiency`).
    Folded into leveling, not a separate fix — see ROADMAP.md's closing note.
-3. **Class sub-choices aren't modeled** (Bard Muse, Cleric Doctrine, Druid
-   Order, Oracle Mystery, Sorcerer Bloodline, Witch Patron, Wizard Arcane
-   School, Champion Cause). This was already true for feats before phase 3
-   (several feats already say "Requires the X Order/Cause" with no way to
-   actually pick one), and phase 3 hit the same wall harder: whole spells
-   are gated behind these (Bard's Composition cantrips need a Muse, Cleric's
-   Divine Lance-style doctrine cantrips need a Doctrine, Witch hexes need a
-   Patron). The spell catalog (see below) only includes spells with no such
-   gate. **First item on [ROADMAP.md](./ROADMAP.md)** — deliberately
-   deferred rather than silently guessed at.
+3. **Class sub-choices are modeled (v0.9.0), but the spells they gate
+   still aren't unlocked.** Bard Muse, Cleric Doctrine, Druid Order,
+   Oracle Mystery, Sorcerer Bloodline, Witch Patron, Wizard Arcane
+   School, and Champion Cause are now a real choice in `ClassStep.jsx`
+   (`src/data/subclasses.js`), so feats that say "Requires the X
+   Order/Cause" can actually be checked against a real choice, and
+   Sorcerer/Witch's tradition derives from it instead of being asked
+   separately. What's still missing: whole spells gated behind these
+   (Bard's Composition cantrips need a Muse, Cleric's doctrine cantrips
+   need a Doctrine, Witch hexes need a Patron) aren't in the spell
+   catalog (see below) — that catalog only includes spells with no such
+   gate. See ROADMAP.md item 6 for the full scope of what shipped vs.
+   what's still open.
 
 ### Phase 3: Spellcasting selection — done
 
@@ -1157,6 +1160,23 @@ reintroduce: **any code path that jumps straight to a specific step
 ever reached by finishing every prior step in order, and doesn't null-
 check the class/ancestry/background it reads — true again the moment
 save/load could land you there directly with a half-built character.
+
+## Roadmap item 6: class sub-choices — done (v0.9.0)
+
+Full write-up is in `ROADMAP.md`'s item 6. Short version: Bard Muse,
+Cleric Doctrine, Druid Order, Oracle Mystery, Sorcerer Bloodline, Witch
+Patron, Wizard Arcane School, and Champion Cause are now a real choice
+step in `ClassStep.jsx`, backed by 49 AoN-verified options in the new
+`src/data/subclasses.js`. Sorcerer/Witch tradition and their subclass's
+granted skills are now derived automatically instead of asked or
+double-counted — see `getEffectiveFixedSkills()` in `skills.js`, the one
+place every consumer reads instead of `cls.fixedSkills` directly.
+
+Bonus spells the subclass grants (a Muse Spell, a Bloodline cantrip, a
+Patron's hex, a School's curriculum spells) and the Muse/Doctrine/
+Patron-gated spells this item was meant to unlock in `SpellsStep` are
+both still out of scope — real content work, tracked in `ROADMAP.md`'s
+item 6 rather than repeated here.
 
 ```bash
 cd pf2e-character-creator

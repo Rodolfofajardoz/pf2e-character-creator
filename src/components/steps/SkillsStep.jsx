@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { getAncestry } from '../../data/ancestries';
 import { getEffectiveBackground } from '../../data/backgrounds';
 import { getClass } from '../../data/classes';
-import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo } from '../../data/skills';
+import { SKILLS, abilityMod, getExtraSkillsFromChoice, getSkillPoolSize, getBackgroundSkillInfo, getEffectiveFixedSkills } from '../../data/skills';
 import { computeFinalScores } from '../../utils/abilityScores';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
 import { getGlossaryTerm } from '../../data/glossary';
@@ -15,8 +15,8 @@ export default function SkillsStep({ character, update }) {
   const finalScores = useMemo(() => computeFinalScores(character, ancestry), [character, ancestry]);
   const intMod = abilityMod(finalScores.int);
 
-  const extraFromChoice = getExtraSkillsFromChoice(cls);
-  const poolSize = getSkillPoolSize(cls, intMod);
+  const extraFromChoice = getExtraSkillsFromChoice(cls, character);
+  const poolSize = getSkillPoolSize(cls, intMod, character);
 
   const { rawId: rawBackgroundSkillId, hasCollision, effectiveId: backgroundSkillId, classFixedIds } = getBackgroundSkillInfo(character, cls, background);
   const fixedIds = new Set([...classFixedIds, ...(backgroundSkillId ? [backgroundSkillId] : [])]);
@@ -52,7 +52,7 @@ export default function SkillsStep({ character, update }) {
       <section className="sub-section">
         <h3>Automatic training</h3>
         <ul className="plain-list">
-          {cls.fixedSkills.map((s) => (
+          {getEffectiveFixedSkills(character, cls).map((s) => (
             <li key={s}>
               <GlossaryTerm id={s}>{SKILLS.find((sk) => sk.id === s)?.name}</GlossaryTerm> (from your class)
             </li>
@@ -73,9 +73,6 @@ export default function SkillsStep({ character, update }) {
           )}
           <li><InspectText text={background.lore} /> (from your background)</li>
         </ul>
-        {cls.fixedSkillChoice && !cls.fixedSkillChoiceOptions && (
-          <p className="hint">Your class also grants: {cls.fixedSkillChoice} (choose from the skills below).</p>
-        )}
       </section>
 
       {hasCollision && (
