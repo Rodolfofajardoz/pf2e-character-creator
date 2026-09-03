@@ -231,6 +231,12 @@ export const CLASSES = [
       classDC: [],
       armor: [],
     },
+    // Category-wide bumps (Weapon Legend, 13th) land outside this app's
+    // 1-10 cap, so no weaponProficiencyProgression entries are needed yet --
+    // only Fighter Weapon Mastery (5th) changes anything within 1-10, and
+    // that's a single chosen weapon *group*, not a category-wide bump (see
+    // getWeaponProficiencyRank's comment for why it isn't reflected here).
+    weaponProficiency: { simple: 'expert', martial: 'expert', unarmed: 'expert', advanced: 'trained' },
     feats1: [
       { name: 'Double Slice', desc: 'Requires two melee weapons, one in each hand: make one Strike with each, both against the same target, then combine their damage.' },
       { name: 'Point-Blank Shot', desc: "Stance, requires a ranged weapon: volley weapons lose their close-range penalty, and other ranged weapons gain a damage bonus within their first range increment." },

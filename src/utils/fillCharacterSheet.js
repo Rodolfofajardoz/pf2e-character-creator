@@ -1,13 +1,54 @@
 import { SKILLS, getSkillRank } from '../data/skills';
 import { CANTRIPS, SPELLS_RANK_1 } from '../data/spells';
 import { getSubclassOption } from '../data/subclasses';
-import { profBonus, getCurrentRank } from './leveling';
+import { profBonus, getCurrentRank, getWeaponProficiencyRank } from './leveling';
 
 const SHEET_URL = `${import.meta.env.BASE_URL}pf2e-character-sheet.pdf`;
 
 function signed(n) {
   if (n === null || n === undefined) return '';
   return n >= 0 ? `+${n}` : `${n}`;
+}
+
+// WEAPONS' own convention: `damage` carries a literal " (ranged)" suffix
+// exactly when the weapon has no melee profile at all (bows, crossbows,
+// slings, and thrown-only weapons like Javelin/Dart/Bola) -- a melee
+// weapon that merely *has* the Thrown trait as a secondary option (Dagger,
+// Spear, Hatchet...) doesn't carry the suffix, since its primary profile
+// is still melee. See equipment.js's WEAPONS array.
+function isRangedWeapon(weapon) {
+  return weapon.damage.includes('(ranged)');
+}
+
+// Which ability applies to the attack roll: Finesse lets you use whichever
+// of Str/Dex is higher (melee or ranged), otherwise it's Dex for a ranged
+// weapon and Str for melee.
+function attackAbility(weapon, mods) {
+  if (weapon.traits.includes('Finesse')) return mods.dex > mods.str ? 'dex' : 'str';
+  return isRangedWeapon(weapon) ? 'dex' : 'str';
+}
+
+// Which ability (if any) adds to damage: melee weapons (including a melee
+// weapon's Thrown option) always add full Str; a ranged weapon only adds
+// Str if it's Thrown (full) or Propulsive (half, rounded down, but a
+// negative Str mod applies in full per the Propulsive rule); a bow/
+// crossbow/sling-without-Propulsive adds nothing.
+function damageAbilityMod(weapon, mods) {
+  if (!isRangedWeapon(weapon)) return mods.str;
+  if (weapon.traits.some((t) => t.startsWith('Thrown'))) return mods.str;
+  if (weapon.traits.includes('Propulsive')) return mods.str >= 0 ? Math.floor(mods.str / 2) : mods.str;
+  return 0;
+}
+
+// "1d8 P" (+ the damage ability mod, if any) -> "1d8+4 P". Handles a flat
+// (non-dice) damage value the same way (e.g. Blowgun's "1 P").
+function formatDamage(weapon, mods) {
+  const stripped = weapon.damage.replace(' (ranged)', '');
+  const m = stripped.match(/^(.+) (\w)$/);
+  if (!m) return stripped;
+  const [, dice, type] = m;
+  const dmgMod = damageAbilityMod(weapon, mods);
+  return `${dice}${dmgMod === 0 ? '' : signed(dmgMod)} ${type}`;
 }
 
 // The spellbook table on page 3 is a 20-row x 2-column grid, but only the
@@ -91,13 +132,14 @@ const SKILL_TEML_PREFIX = { ...SKILL_FIELD_PREFIX, acrobatics: 'ACROBATICS' };
 
 // Builds { fieldName: value } for every field this app can confidently
 // compute -- see PROJECT_NOTES.md's "Custom PDF sheet printing" section for
-// what's deliberately left blank and why (mainly: per-strike attack bonus,
-// since weapon proficiency isn't tracked per category/finesse yet).
+// what's deliberately left blank and why (mainly: item/rune bonuses, since
+// no magic items or runes are modeled -- the strike math below is only
+// proficiency + ability mod, same as every other total on this sheet).
 export function buildFieldValues(character, computed) {
   const {
     level, ancestry, background, cls, heritage, weapon, armor, shieldPurchases,
-    mods, hp, ac, armorProfRank, perceptionRank, perceptionMod, classDCRank, classDC,
-    saveRanks, saves, spellAbility, spellDC, spellAttack,
+    gearPurchases, ammoPurchases, mods, hp, ac, armorProfRank, perceptionRank, perceptionMod,
+    classDCRank, classDC, saveRanks, saves, spellAbility, spellDC, spellAttack,
   } = computed;
 
   const text = {};
@@ -190,9 +232,43 @@ export function buildFieldValues(character, computed) {
     text['AC BONUS'] = String(shield.acBonus);
   }
 
-  if (weapon) {
+  if (weapon && mods && cls) {
     text['WEAPON NAME'] = weapon.name;
-    text['DAMAGE'] = weapon.damage;
+    text['TRAITS  RUNES'] = weapon.traits.join(', ');
+    text['DAMAGE'] = formatDamage(weapon, mods);
+
+    const ability = attackAbility(weapon, mods);
+    const weaponRank = getWeaponProficiencyRank(cls, weapon.category, level);
+    const attackTotal = mods[ability] + (weaponRank !== 'untrained' ? profBonus(weaponRank, level) : 0);
+    // Agile weapons take a smaller multiple-attack penalty (-4/-8) than
+    // everything else (-5/-10) -- MAP itself is just the reference text;
+    // 2ND ATK/3RD ATK are the actual bonus after one/two penalty steps.
+    const mapStep = weapon.traits.includes('Agile') ? 4 : 5;
+    text['ATK BONUS'] = signed(attackTotal);
+    text['2ND ATK'] = signed(attackTotal - mapStep);
+    text['3RD ATK'] = signed(attackTotal - mapStep * 2);
+    text['MAP'] = weapon.traits.includes('Agile') ? '-4/-8' : '-5/-10';
+    dropdowns['ATK MOD 1'] = ability.toUpperCase();
+    if (weaponRank !== 'untrained') ranks['STRIKE 1_TEML'] = weaponRank;
+  }
+
+  // Adventuring Gear -- the Inventory page's 6-row x 2-column Gear table
+  // (NAME_3/BULK..NAME_14/BULK_13; the clean "NAME"/"BULK" names only exist
+  // on page 3's spellbook row, hence the odd numbering here). No item's
+  // Bulk is tracked yet (equipment.js has no `bulk` field), so only the
+  // name column is filled -- left blank rather than a guessed value.
+  const INVENTORY_GEAR_SLOTS = [
+    'NAME_3', 'NAME_4', 'NAME_5', 'NAME_6', 'NAME_7', 'NAME_8',
+    'NAME_9', 'NAME_10', 'NAME_11', 'NAME_12', 'NAME_13', 'NAME_14',
+  ];
+  if (gearPurchases?.length > 0) {
+    const gearEntries = gearPurchases.map(({ item, qty }) => (qty > 1 ? `${item.name} ×${qty}` : item.name));
+    gearEntries.slice(0, INVENTORY_GEAR_SLOTS.length).forEach((name, i) => {
+      text[INVENTORY_GEAR_SLOTS[i]] = name;
+    });
+  }
+  if (ammoPurchases?.length > 0) {
+    text['AMMUNITION'] = ammoPurchases.map(({ item, qty }) => (qty > 1 ? `${item.name} ×${qty}` : item.name)).join(', ');
   }
 
   // Skills: every skill gets a total (untrained = ability mod alone), and

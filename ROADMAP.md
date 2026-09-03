@@ -587,3 +587,12 @@ The previously-noted **AC Expert+ armor** gap (a class's armor
 proficiency advancing past Trained isn't reflected in the AC formula) is
 not a standalone fix — it's simply missing proficiency-progression data,
 which is exactly what Level-up (item 9) builds. No separate work needed.
+
+## Next up: Inspect descriptions for Adventuring Gear
+
+`EquipmentStep.jsx`'s Gear section (Adventurer's Pack, Alchemist's Tools,
+etc. — `equipment.js`'s `GEAR` array) has no Inspect definitions the way
+weapon/armor traits and Hardness/BT do — item names render as plain text,
+not `GlossaryTerm`. Needs an AoN-verified `desc` per item added to
+`glossary.js` (or inline, matching whatever pattern `GEAR` entries end up
+using) and each name wrapped in the shop row. Not started yet.

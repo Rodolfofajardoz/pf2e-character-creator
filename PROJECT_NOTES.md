@@ -1382,6 +1382,41 @@ Full detail, plus three smaller UI bugs found the same session (a feat
 pickable in two slots at once, shields not showing their AC bonus, missing
 Inspect entries for Hardness/BT), is in `ROADMAP.md`.
 
+## Patch: real Strike math + Adventuring Gear on the PDF (v0.10.1)
+
+Two more PDF gaps caught while dogfooding v0.10.0's build against a real
+character:
+
+1. **The Strike block's Attack Bonus/Damage were always blank.** Added
+   `cls.weaponProficiency` (Fighter's is AoN-verified: Expert in
+   simple/martial/unarmed at 1st) plus `getWeaponProficiencyRank()` in
+   `leveling.js`, which falls back to the same "mentioned in the class's
+   free-text `weapons` description → Trained" detection the armor/weapon
+   checkboxes already used, for every class without structured data yet.
+   `fillCharacterSheet.js` now computes: attack ability (Finesse → better
+   of Str/Dex, else Dex if ranged else Str), the attack total (that mod +
+   proficiency), 2nd/3rd attack after the MAP step (-4/-8 if Agile, else
+   -5/-10), and damage (the weapon's die + an ability mod that's full Str
+   for melee or a Thrown ranged weapon, half Str for Propulsive, 0 for a
+   plain bow/crossbow). Verified against the real exported PDF for both a
+   Finesse melee weapon (Rapier, Str > Dex picked correctly) and a ranged
+   one (Shortbow, Dex used, no Str added to damage).
+   **Known gap, not fixed this pass**: Fighter Weapon Mastery's per-group
+   Master rank (5th level) isn't reflected — needs a per-weapon `group`
+   field this app doesn't track yet.
+2. **Adventuring Gear (and ammunition) bought in the Equipment step never
+   appeared on the PDF at all.** Found the actual field names for the
+   Inventory page's "GEAR" table (6 rows × 2 columns = 12 Name/Bulk slots)
+   by extracting the PDF's text layer with pdf.js and cross-referencing
+   against field rects — the clean-vs-`undefined_NNN` field-naming quirk
+   documented for the spellbook table applies here too, plus the page has
+   several *other*, differently-shaped tables (Gems & Art Objects,
+   Holdings & Assets) that share similar-looking field names and would
+   have been wrong to guess at. `gearPurchases` now fill the 12 Name
+   slots (Bulk left blank — no item in `equipment.js` has bulk data yet,
+   a documented gap rather than a fabricated number); `ammoPurchases` fill
+   the page's single free-text Ammunition box.
+
 ```bash
 cd pf2e-character-creator
 npm install   # first time only, or after pulling dependency changes

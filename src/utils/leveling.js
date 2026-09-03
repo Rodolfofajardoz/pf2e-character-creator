@@ -54,6 +54,23 @@ export function getCurrentRank(baseRank, progression, level) {
   return rank;
 }
 
+// A class's current proficiency rank with a given weapon category
+// ('simple'/'martial', matching WEAPONS' own `category` field). Only
+// Fighter has real structured `weaponProficiency`/`weaponProficiencyProgression`
+// data so far (see classes.js); every other class falls back to the same
+// "mentioned at all in the free-text `weapons` description -> Trained"
+// detection `fillCharacterSheet.js`'s proficiency checkboxes already used,
+// since no other class's prose distinguishes a higher starting rank.
+// Doesn't account for Fighter Weapon Mastery's per-weapon-group Master rank
+// (5th level) -- that needs a per-weapon `group` field this app doesn't
+// track yet, a separate, documented gap.
+export function getWeaponProficiencyRank(cls, category, level) {
+  const base = cls.weaponProficiency?.[category];
+  if (base) return getCurrentRank(base, cls.weaponProficiencyProgression?.[category], level);
+  const text = (cls.weapons || '').toLowerCase();
+  return text.includes(category) ? 'trained' : 'untrained';
+}
+
 // Shared by useComputedCharacter.js, SummaryStep.jsx, and
 // fillCharacterSheet.js -- previously each had its own copy (flagged, not
 // yet fixed, by the prior full-codebase audit); worth collapsing to one now
