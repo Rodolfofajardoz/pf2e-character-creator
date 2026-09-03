@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { getClass } from '../../data/classes';
-import { CANTRIPS, SPELLS_RANK_1, getSpellsForTradition, TRADITION_LABELS } from '../../data/spells';
+import { CANTRIPS, SPELLS_RANK_1, getSpellsForTradition, getPatronHex, TRADITION_LABELS } from '../../data/spells';
 import { SUBCLASSES, getSubclassOption } from '../../data/subclasses';
 import { GlossaryTerm, InspectText } from '../../context/InspectContext';
 import Collapsible from '../Collapsible';
@@ -37,16 +37,20 @@ function InfoLine({ spell }) {
   );
 }
 
-function SpellCard({ spell, selected, disabled, onClick }) {
+function SpellCard({ spell, selected, disabled, locked, onClick }) {
   return (
     <button
       className={`spell-card ${selected ? 'selected' : ''}`}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || locked}
     >
       <div className="spell-card-header">
         <h4>{spell.name}</h4>
-        <span className="spell-card-badge">{actionBadge(spell.cast)}</span>
+        {locked ? (
+          <span className="spell-card-badge">Granted</span>
+        ) : (
+          <span className="spell-card-badge">{actionBadge(spell.cast)}</span>
+        )}
       </div>
       <div className="spell-card-traits">
         {spell.traits.map((t) => (
@@ -84,7 +88,7 @@ function SpellCard({ spell, selected, disabled, onClick }) {
   );
 }
 
-function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
+function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix, lockedId }) {
   const [search, setSearch] = useState('');
   const [traitFilters, setTraitFilters] = useState([]);
 
@@ -149,6 +153,7 @@ function SpellPicker({ title, pool, known, maxKnown, onToggle, idPrefix }) {
             spell={s}
             selected={known.includes(s.id)}
             disabled={!known.includes(s.id) && known.length >= maxKnown}
+            locked={s.id === lockedId}
             onClick={() => onToggle(s.id)}
           />
         ))}
@@ -195,6 +200,18 @@ export default function SpellsStep({ character, update }) {
   const cls = getClass(character.classId);
   const sc = cls.spellcasting;
 
+  // A Witch's chosen Patron grants exactly one hex cantrip automatically —
+  // computed (and its useEffect placed) before the early returns below so
+  // the hook always runs in the same order, per Rules of Hooks, even though
+  // it's only ever non-null for a Witch mid-build.
+  const patronHex = cls.id === 'witch' ? getPatronHex(character.subclassChoice) : null;
+  useEffect(() => {
+    if (patronHex && !character.knownCantrips.includes(patronHex.id)) {
+      update({ knownCantrips: [...character.knownCantrips, patronHex.id] });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patronHex?.id]);
+
   if (!sc) {
     return (
       <div className="step">
@@ -225,14 +242,21 @@ export default function SpellsStep({ character, update }) {
   const subOption = getSubclassOption(cls.id, character.subclassChoice);
   const traditionCode = sc.traditionCode || subOption?.tradition || character.spellTradition;
   const needsManualTradition = Boolean(sc.traditionOptions) && !subOption?.tradition;
-  const cantripPool = traditionCode ? getSpellsForTradition(CANTRIPS, traditionCode) : [];
-  const spell1Pool = traditionCode ? getSpellsForTradition(SPELLS_RANK_1, traditionCode) : [];
+  // patronHex is injected into the pool directly (rather than via
+  // getSpellsForTradition's classId filter, which excludes every
+  // patronId-tagged entry) and locked once known — it isn't a free pick.
+  // See the CANTRIPS comment above the Witch hex entries in spells.js.
+  const cantripPool = traditionCode
+    ? [...getSpellsForTradition(CANTRIPS, traditionCode, cls.id), ...(patronHex ? [patronHex] : [])]
+    : [];
+  const spell1Pool = traditionCode ? getSpellsForTradition(SPELLS_RANK_1, traditionCode, cls.id) : [];
 
   function selectTradition(code) {
     update({ spellTradition: code, knownCantrips: [], knownSpells1: [] });
   }
 
   function toggleCantrip(id) {
+    if (patronHex && id === patronHex.id) return; // granted, not a free pick
     const current = character.knownCantrips;
     if (current.includes(id)) {
       update({ knownCantrips: current.filter((s) => s !== id) });
@@ -255,12 +279,19 @@ export default function SpellsStep({ character, update }) {
       <h2>Spells</h2>
       <p className="hint">
         {cls.name} ({sc.type}, <GlossaryTerm id="cantrip">cantrips</GlossaryTerm> +{' '}
-        1st-rank spells only — this is a level-1 builder). This list only includes spells any {sc.traditionOptions ? 'caster of the chosen tradition' : `${sc.tradition} caster`} can
-        freely pick — it excludes spells specifically granted or unlocked by your {SUBCLASSES[cls.id] ? SUBCLASSES[cls.id].label.toLowerCase() : 'class sub-choice'}
-        {subOption ? ` (${subOption.name})` : ''} (a Muse composition, a Doctrine's font spells, a Patron's hex, and
-        the like) — those are named in your {SUBCLASSES[cls.id]?.label} on the Class step, but not yet added to this
-        picker's catalog. Descriptions here are the complete rules text, not a summary, so you shouldn't need to
-        look anything up elsewhere.
+        1st-rank spells only — this is a level-1 builder). This list includes every spell any{' '}
+        {sc.traditionOptions ? 'caster of the chosen tradition' : `${sc.tradition} caster`} can freely pick
+        {cls.id === 'bard' && ' plus every Bard Composition cantrip (available regardless of Muse)'}
+        {cls.id === 'witch' && subOption && " plus the one hex cantrip your Patron grants automatically (shown locked below)"}
+        . {cls.id !== 'bard' && cls.id !== 'witch' && SUBCLASSES[cls.id] && (
+          <>
+            It excludes spells specifically granted by your {SUBCLASSES[cls.id].label.toLowerCase()}
+            {subOption ? ` (${subOption.name})` : ''} — those are named on the Class step, but not yet added to
+            this picker's catalog.{' '}
+          </>
+        )}
+        Descriptions here are the complete rules text, not a summary, so you shouldn't need to look anything up
+        elsewhere.
       </p>
 
       {subOption?.tradition && (
@@ -300,6 +331,7 @@ export default function SpellsStep({ character, update }) {
             maxKnown={sc.cantripsKnown}
             onToggle={toggleCantrip}
             idPrefix="cantrip"
+            lockedId={patronHex?.id}
           />
           <SpellPicker
             title="1st-rank spells"

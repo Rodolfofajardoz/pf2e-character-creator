@@ -1,13 +1,21 @@
 // Cantrips and 1st-rank spells, verified against Archives of Nethys (queried
 // via its Elasticsearch index — see PROJECT_NOTES.md). Scope note: this only
 // includes spells with a `tradition` field in AoN's data — i.e. spells any
-// caster of that tradition can freely pick. It deliberately excludes spells
-// gated behind a class sub-choice that this app doesn't model (Bard Muse
-// "Composition" spells, Cleric Doctrine cantrips, Witch Patron hexes, and
-// similar) — same simplification already used elsewhere (Cleric defaults to
-// the Cloistered baseline, Druid Order/Champion Cause aren't modeled).
+// caster of that tradition can freely pick — plus, as of v0.9.1, spells
+// gated to one specific class (`classId`, see below) once that class's own
+// sub-choice mechanic is understood well enough to model correctly. Spells
+// gated behind a class sub-choice this app *doesn't* model well enough yet
+// (Cleric Doctrine font cantrips — needs Deity; Witch Patron hexes — needs
+// Familiars, since a Witch's cantrips come from "the spells your familiar
+// knows," not the open tradition list) stay excluded — same simplification
+// already used elsewhere (Cleric defaults to the Cloistered baseline).
 //
 // `traditions` uses lowercase codes: arcane, divine, occult, primal.
+// `classId` (optional): set only on spells restricted to one class beyond
+// the tradition filter — e.g. Bard Composition cantrips are Uncommon/
+// Bard-trait spells any Bard has access to (regardless of which Muse),
+// not spells every occult caster can pick. getSpellsForTradition() takes
+// classId as a second filter so these only surface for that one class.
 // `cast` is only set when the casting time isn't the default two actions.
 // `desc` is the complete, unabridged rules text (not a summary) — this app
 // is meant to be usable by brand-new players without a rulebook on hand, so
@@ -57,6 +65,41 @@ export const CANTRIPS = [
   { id: 'telekinetic-projectile', name: 'Telekinetic Projectile', traits: ['Attack', 'Cantrip', 'Concentrate', 'Manipulate'], source: 'Player Core pg. 363', range: '30 feet', target: '1 creature', defense: 'AC', traditions: ['arcane', 'occult'], desc: 'You hurl a loose, unattended object that is within range and that has 1 Bulk or less at the target. Make a spell attack roll against the target\'s AC. If you hit, you deal 2d6 bludgeoning, piercing, or slashing damage—as appropriate for the object you hurled. No specific traits or magic properties of the hurled item affect the attack or the damage. Critical Success You deal double damage. Success You deal full damage.', heightened: 'Heightened (+1) The damage increases by 1d6.', },
   { id: 'vitality-lash', name: 'Vitality Lash', traits: ['Cantrip', 'Concentrate', 'Manipulate', 'Vitality', 'Positive'], source: 'Player Core pg. 366', range: '30 feet', target: '1 creature that is undead or otherwise has void healing', defense: 'basic Fortitude', traditions: ['divine', 'primal'], desc: 'You demolish the target\'s corrupted essence with energy from Creation\'s Forge. You deal 2d6 vitality damage with a basic Fortitude save. If the creature critically fails the save, it is also enfeebled 1 until the start of your next turn.', heightened: 'Heightened (+1) The damage increases by 1d6.', },
   { id: 'void-warp', name: 'Void Warp', traits: ['Cantrip', 'Concentrate', 'Manipulate', 'Void', 'Negative'], source: 'Player Core pg. 366', range: '30 feet', target: '1 living creature', defense: 'basic Fortitude', traditions: ['arcane', 'divine', 'occult'], desc: 'You call upon the Void to harm life force. The target takes 2d4 void damage with a basic Fortitude save. On a critical failure, the target is also enfeebled 1 until the start of your next turn.', heightened: 'Heightened (+1) The damage increases by 1d4.', },
+
+  // Witch Patron hex cantrips (roadmap item 6 follow-up, v0.9.1). Each is
+  // gated to one *specific* Patron (`patronId`, matching subclasses.js'
+  // option ids), not freely pickable — a Witch's cantrips come from "the
+  // spells your familiar knows" (Witch Spellcasting, Player Core pg. 178),
+  // and at 1st level the familiar knows exactly one hex cantrip, whichever
+  // one the chosen Patron grants. `traditions` still reflects each hex's
+  // real tradition (from its Patron's Spell List) for glossary/display
+  // consistency, but getSpellsForTradition() excludes any `patronId`-tagged
+  // entry from the general pool — SpellsStep.jsx injects the one matching
+  // the character's actual Patron directly instead, pre-selected and
+  // locked (can't be deselected), the same "shown, not just described"
+  // principle used for skills a subclass grants automatically.
+  { id: 'clinging-ice', name: 'Clinging Ice', traits: ['Cantrip', 'Cold', 'Hex', 'Manipulate', 'Witch'], source: 'Player Core pg. 386', cast: 'Single Action', range: '30 feet', target: '1 creature', defense: 'Reflex', duration: 'sustained up to 1 minute', traditions: ['primal'], classId: 'witch', patronId: 'silence-in-snow', desc: "Freezing sleet and heavy snowfall collect on the target's feet and legs, dealing 1d4 cold damage and other effects depending on its Reflex save. Critical Success The target is unaffected. Success The target takes half damage. Failure The target takes full damage and a –5-foot circumstance penalty to its Speeds until the spell ends. Critical Failure The target takes double damage and a –10-foot circumstance penalty to its Speeds until the spell ends.", heightened: 'Heightened (+1) The damage increases by 1d4.', },
+  { id: 'discern-secrets', name: 'Discern Secrets', traits: ['Cantrip', 'Hex', 'Manipulate', 'Witch'], source: 'Player Core pg. 386', cast: 'Single Action', range: '30 feet', target: '1 creature', duration: 'sustained up to 1 minute', traditions: ['arcane'], classId: 'witch', patronId: 'inscribed-one', desc: 'Your patron deigns to whisper a few secrets. The target can Recall Knowledge, Seek, or Sense Motive as a free action. The target gains a +1 status bonus to the statistic used for the roll (a skill or Perception) on the roll and as long as you Sustain the spell. The target is temporarily immune to discern secrets for 1 minute.', heightened: 'Heightened (5th) You can target two creatures instead of one.', },
+  { id: 'evil-eye', name: 'Evil Eye', traits: ['Cantrip', 'Curse', 'Hex', 'Manipulate', 'Witch'], source: 'Player Core pg. 386', cast: 'Single Action', range: '30 feet', target: '1 creature', defense: 'Will', duration: 'sustained up to 1 minute', traditions: ['occult'], classId: 'witch', patronId: 'resentment', desc: "Your patron's resentment manifests in a baleful, envious gaze. The target becomes sickened 1 if it fails a Will save (or sickened 2 on a critical failure). This condition value can't be reduced below 1 while the spell is active and you can see the target.", },
+  { id: 'nudge-fate', name: 'Nudge Fate', traits: ['Cantrip', 'Concentrate', 'Hex', 'Witch'], source: 'Player Core pg. 387', cast: 'Single Action', range: '30 feet', target: '1 creature', duration: '1 minute', traditions: ['occult'], classId: 'witch', patronId: 'spinner-of-threads', desc: "The barest spin of your patron's spool is enough to alter fate. When the target fails an attack roll, skill check, or saving throw and a +1 status bonus would turn a critical failure into a failure, or failure into a success, you grant the target a +1 status bonus to the check retroactively, changing the outcome appropriately. The spell then ends. If you cast nudge fate while a previous casting of this hex is still in effect, the previous effect ends.", },
+  { id: 'shroud-of-night', name: 'Shroud of Night', traits: ['Cantrip', 'Darkness', 'Hex', 'Manipulate', 'Witch'], source: 'Player Core pg. 387', cast: 'Single Action', range: '30 feet', target: '1 creature', defense: 'Will', duration: 'sustained up to 1 minute', traditions: ['occult'], classId: 'witch', patronId: 'starless-shadow', desc: "Your patron blankets the target's eyes in darkness. If you cast this hex on a willing ally (for instance, one with light blindness), the ally can choose which result it gets without rolling. Success The target is unaffected. Failure The target is shrouded in murky darkness. It treats bright light as dim light, and unless it has greater darkvision, all creatures are concealed to it.", },
+  { id: 'stoke-the-heart', name: 'Stoke the Heart', traits: ['Cantrip', 'Concentrate', 'Emotion', 'Hex', 'Witch'], source: 'Player Core pg. 387', cast: 'Single Action', range: '30 feet', target: '1 creature', duration: 'sustained up to 1 minute', traditions: ['divine'], classId: 'witch', patronId: 'faiths-flamekeeper', desc: 'Your patron fills a creature with fervor, empowering their blows. The target gains a +2 status bonus to damage rolls.', heightened: 'Heightened (+2) The status bonus to damage increases by 1.', },
+  { id: 'wilding-word', name: 'Wilding Word', traits: ['Cantrip', 'Hex', 'Mental', 'Witch'], source: 'Player Core pg. 387', cast: 'Single Action', range: '30 feet', target: '1 creature', defense: 'Will', duration: 'sustained up to 1 minute', traditions: ['primal'], classId: 'witch', patronId: 'wilding-steward', desc: "Your patron's majesty—or their displeasure—comes in a growl from your throat, making other creatures reluctant to harm you. The target must attempt a Will save; if the creature is an animal, fungus, or plant, it takes a –1 circumstance penalty to its save. Critical Success The target is unaffected. Success When the target attempts an attack roll or skill check that would harm you, it takes a –2 status penalty to its roll. Failure As success, but the target also becomes sickened 1 each time it damages you. Critical Failure As failure, but the sickened value is 2.", },
+
+  // Bard Composition cantrips (roadmap item 6 follow-up, v0.9.1): Uncommon +
+  // Bard-trait spells every Bard has access to regardless of which Muse they
+  // chose (the Muse instead grants one extra specific "Muse Spell" — see
+  // subclasses.js — and, for some Muses, a feat). Occult tradition, gated to
+  // Bard via `classId` since they're not open to every occult caster.
+  { id: 'allegro', name: 'Allegro', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Emotion', 'Mental'], source: 'Player Core pg. 370', cast: 'Single Action', range: '30 feet', target: '1 ally', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: 'You perform rapidly, speeding up your ally. The ally becomes quickened and can use the additional action to Strike, Stride, or Step.', },
+  { id: 'courageous-anthem', name: 'Courageous Anthem', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Emotion', 'Mental'], source: 'Player Core pg. 370', cast: 'Single Action', area: '60-foot emanation', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: 'You inspire yourself and your allies with words or tunes of encouragement. You and all allies in the area gain a +1 status bonus to attack rolls, damage rolls, and saves against fear effects.', },
+  { id: 'dirge-of-doom', name: 'Dirge of Doom', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Emotion', 'Fear', 'Mental'], source: 'Player Core pg. 370', cast: 'Single Action', area: '30-foot emanation', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: "Enemies within the area are frightened 1. They can't reduce their frightened value below 1 while they remain in the area.", },
+  { id: 'house-of-imaginary-walls', name: 'House of Imaginary Walls', traits: ['Bard', 'Cantrip', 'Composition', 'Illusion', 'Manipulate', 'Visual'], source: 'Player Core pg. 370', cast: 'Single Action', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: "You mime an invisible 10-foot-by-10-foot wall adjacent to you and within your reach. The wall is solid to those creatures that don't disbelieve it, even incorporeal creatures. You and your allies can voluntarily believe the wall exists to continue to treat it as solid, for instance to climb onto it. A creature that disbelieves the illusion is temporarily immune to your house of imaginary walls for 1 minute. The wall doesn't block creatures that didn't see your visual performance, nor does it block objects. The wall has AC 10, Hardness equal to double the spell's rank, and HP equal to quadruple the spell's rank.", },
+  { id: 'rallying-anthem', name: 'Rallying Anthem', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Emotion', 'Mental'], source: 'Player Core pg. 371', cast: 'Single Action', area: '60-foot emanation', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: "Your song moves allies to protect themselves more effectively. You and all allies in the area gain a +1 status bonus to AC and saving throws, as well as resistance equal to half the spell's rank to physical damage.", },
+  { id: 'song-of-marching', name: 'Song of Marching', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Mental'], source: 'Player Core pg. 371', cast: 'Single Action', area: '60-foot emanation', duration: 'sustained up to 1 hour', traditions: ['occult'], classId: 'bard', desc: 'You maintain a brisk performance that keeps allies on the move. You and your allies in the area can Hustle for the spell\'s duration, in addition to your other exploration activities (your exploration activity is Sustaining this spell). You and your allies then become temporarily immune for 1 day. If you enter an encounter while performing this song, you can use your Performance modifier for the initiative roll. You and your affected allies also receive a +1 status bonus to that initiative roll.', heightened: 'Heightened (6th) You can Sustain the Spell for up to 2 hours. Heightened (9th) You can Sustain the Spell for up to 4 hours.', },
+  { id: 'song-of-strength', name: 'Song of Strength', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Emotion', 'Mental'], source: 'Player Core pg. 371', cast: 'Single Action', area: '60-foot emanation', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: "You bolster your allies' physical strength with a hearty exhortation. You and your allies gain a +1 status bonus to Athletics checks and to their DCs against Athletics skill actions such as Disarm, Reposition, Shove, and Trip.", },
+  { id: 'triple-time', name: 'Triple Time', traits: ['Bard', 'Cantrip', 'Composition', 'Emotion', 'Manipulate', 'Mental'], source: 'Player Core pg. 372', cast: 'Single Action', area: '60-foot emanation', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: 'Your music sets a fast pace. You and all allies in the area gain a +10-foot status bonus to all Speeds for 1 round.', },
+  { id: 'uplifting-overture', name: 'Uplifting Overture', traits: ['Bard', 'Cantrip', 'Composition', 'Concentrate', 'Emotion', 'Mental'], source: 'Player Core pg. 372', cast: 'Single Action', range: '60 feet', target: '1 ally', duration: '1 round', traditions: ['occult'], classId: 'bard', desc: "Your performance makes allies feel they can succeed at anything. This counts as having prepared to Aid your ally on a skill check of your choice. When you later use the Aid reaction, you can roll Performance instead of the normal skill check, and if you roll a failure, you get a success instead. If you are legendary in Performance, you automatically critically succeed. The GM might rule that you can't use this ability if the act of encouraging your ally would interfere with the skill check (such as a check to Sneak quietly or maintain a disguise).", },
 ];
 
 export const SPELLS_RANK_1 = [
@@ -155,8 +198,16 @@ export const SPELLS_RANK_1 = [
   { id: 'ventriloquism', name: 'Ventriloquism', traits: ['Auditory', 'Concentrate', 'Illusion', 'Manipulate'], source: 'Player Core pg. 366', duration: '10 minutes', traditions: ['arcane', 'divine', 'occult', 'primal'], desc: 'Whenever you speak or make any other sound vocally, you can make your vocalization seem to originate from somewhere else within 60 feet, and you can change that apparent location freely as you vocalize. Any creature that hears the sound can attempt to disbelieve your illusion.', heightened: 'Heightened (2nd) The spell\'s duration increases to 1 hour, and you can also change the tone, quality, and other aspects of your voice. Before a creature can attempt to disbelieve your illusion, it must actively attempt a Perception check or otherwise use actions to interact with the sound.', },
 ];
 
-export function getSpellsForTradition(list, traditionCode) {
-  return list.filter((s) => s.traditions.includes(traditionCode));
+export function getSpellsForTradition(list, traditionCode, classId) {
+  return list.filter((s) => s.traditions.includes(traditionCode) && (!s.classId || s.classId === classId) && !s.patronId);
+}
+
+// The one hex cantrip a Witch's chosen Patron grants automatically (see the
+// CANTRIPS comment above the Witch hex entries) — looked up directly by
+// patronId rather than through getSpellsForTradition, since it's never a
+// free pick from the general pool.
+export function getPatronHex(patronId) {
+  return CANTRIPS.find((s) => s.patronId === patronId);
 }
 
 export const TRADITION_LABELS = {

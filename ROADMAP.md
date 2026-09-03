@@ -293,11 +293,12 @@ dropped):
   not auto-added to `knownCantrips`/`knownSpells1` — that's a state-model
   change (a "bonus known spell beyond your normal count" concept doesn't
   exist yet) layered on top of real content work per class.
-- Muse/Doctrine/Patron-gated spells (compositions, font spells, hexes)
-  still aren't unlocked in the `SpellsStep` catalog — the Phase 3 caveat
-  this item was meant to remove. Needs the actual spell text added to
-  `spells.js`, verified per spell, same rigor as everything else in that
-  file — real content work, not a data-shape problem.
+- Doctrine-gated spells (Cleric font cantrips) still aren't unlocked in
+  the `SpellsStep` catalog — the Phase 3 caveat this item was meant to
+  remove, blocked on Deity modeling. **Bard Compositions and Witch
+  Patron hexes were both done in v0.9.1** (see below) — Witch turned out
+  not to need Familiars after all, since each Patron's granted hex is a
+  closed, fully-specified 1st-level case.
 - Universalist/School of Unified Magical Theory's bonus wizard class
   feat isn't auto-granted (would need a second independent
   `bonusClassFeat`-style slot, since a Human Wizard could have both this
@@ -321,6 +322,85 @@ both reflect it) and Champion (Cause picker renders, its `feats1`
 entries' "Requires the Justice/Liberation/Iniquity/Obedience cause" text
 lines up with the real cause names). `npm run lint` (0 errors, same
 baseline warnings) and `npm run build` both clean.
+
+### Follow-up: Bard Composition cantrips + Witch Patron hexes unlocked (v0.9.1)
+
+Investigated all 8 classes' gated spells before picking a starting point
+(explicitly "least complicated first"), starting with Bard.
+
+**Bard**: Composition cantrips turned out to be the simplest — Uncommon +
+Bard-trait occult spells every Bard has access to *regardless of which
+Muse*, not spells tied to one specific Muse option. That meant no new UI
+or state was needed, just extending the existing pool with
+correctly-gated entries. Added 9 cantrip-rank compositions (Allegro,
+Courageous Anthem, Dirge of Doom, House of Imaginary Walls, Rallying
+Anthem, Song of Marching, Song of Strength, Triple Time, Uplifting
+Overture) to `CANTRIPS` in `spells.js`, each carrying a new optional
+`classId: 'bard'` field. `getSpellsForTradition()` gained a third
+`classId` parameter — a spell with a `classId` only surfaces for that
+exact class, everything else is unaffected. (8 more Player Core
+compositions exist but carry the Focus trait instead of Cantrip — Focus
+Points aren't modeled at all, so those stay out; they're feat-granted
+rather than freely known anyway, e.g. Lingering Composition already
+grants one.)
+
+**Witch**: initially assumed blocked on Familiars (a Witch's cantrips
+come from "the spells your familiar knows," an open-ended list this app
+doesn't model) — but on closer reading, at 1st level that list isn't
+actually open-ended. Each Patron's own description already names exactly
+one hex cantrip it grants ("you gain the [x] hex cantrip"); the
+familiar's *other* learned spell ("your familiar learns [y]") is
+something the familiar itself casts, a separate mechanic correctly still
+deferred to item 7. That made the Patron hex a closed, fully-specified
+case, not something requiring real Familiar modeling. Added all 7
+Player Core hex cantrips (Clinging Ice, Discern Secrets, Evil Eye, Nudge
+Fate, Shroud of Night, Stoke the Heart, Wilding Word) to `CANTRIPS`,
+each tagged `classId: 'witch'` and a new `patronId` field (matching
+`subclasses.js`'s option ids) — `getSpellsForTradition()` excludes any
+`patronId`-tagged entry from the general pool, since none of them are a
+free pick. `SpellsStep.jsx` instead looks up the one matching the
+character's actual Patron directly (`getPatronHex()`, new in
+`spells.js`) and injects it into the cantrip grid pre-selected and
+locked (a new `locked` prop on `SpellCard`, shown with a "Granted"
+badge instead of its action-cost badge) — counted toward the normal 5
+cantrips known, not a bonus 6th, matching the rule's "prepare... from
+the spells your familiar knows" phrasing. A `useEffect` guarantees it
+stays in `knownCantrips` even for a character saved before this shipped,
+or right after switching Patron.
+
+**Caught by lint before shipping, twice**: (1) a straight copy-paste
+mistake landed the 9 Bard cantrips inside `SPELLS_RANK_1` instead of
+`CANTRIPS` — the anchor text used for the insertion edit matched the
+wrong array's closing bracket, and a same-session browser check gave a
+false positive by only confirming the spell *name* appeared on the page
+without checking which picker it was under. Moved to the correct array
+and re-verified by checking `CANTRIPS`/`SPELLS_RANK_1`'s line boundaries
+directly, not just page text. (2) The Witch hex's `useEffect` initially
+sat after `SpellsStep`'s two early `return` statements (for non-casters
+and feat-only casters), which is a real Rules-of-Hooks violation — oxlint
+caught it immediately (`react-hooks/rules-of-hooks`), fixed by hoisting
+the hook (and the `patronHex` lookup it depends on) above both early
+returns.
+
+Verified live for both: a Bard's cantrip pool includes Allegro and
+Courageous Anthem while a same-tradition (occult) Sorcerer's doesn't; a
+Silence in Snow Witch's cantrip grid shows Clinging Ice pre-selected,
+disabled, and badged "Granted," counted as 1 of 5, with Nature trained
+automatically from the same Patron — confirmed through to Summary
+(`Cantrips: Clinging Ice, Acid Splash, ...`). No console errors, `npm
+run lint`/`npm run build` clean.
+
+**Still open** for the remaining 6 classes, roughly in rising order of
+complexity: Wizard's Arcane School curriculum spells (data-only, same
+pattern as Bard — next likely candidate), Sorcerer/Oracle's
+Bloodline/Mystery-granted bonus spell (needs a "known beyond your normal
+count" state concept, since unlike Witch's single guaranteed hex, these
+are *extra* spells on top of a full freely-chosen repertoire), Druid
+Order feats' gating (already shown, just needs the same `classId`-style
+check extended to feats), Champion's per-Cause base reaction (needs the
+actual reaction text per Cause, not just the Relentless-tier bonus
+already captured), and Cleric font/domain spells (blocked on Deity
+modeling, not currently scoped anywhere).
 
 ## 7. Familiars
 

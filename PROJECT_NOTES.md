@@ -1178,6 +1178,36 @@ Patron-gated spells this item was meant to unlock in `SpellsStep` are
 both still out of scope — real content work, tracked in `ROADMAP.md`'s
 item 6 rather than repeated here.
 
+## Roadmap item 6 follow-up: Bard Compositions + Witch hexes — done (v0.9.1)
+
+Full write-up is in `ROADMAP.md`'s item 6 ("Follow-up" subsection).
+Short version: of the 8 classes' gated spells, tackled the two simplest.
+Bard Compositions — 9 cantrip-rank ones added to `spells.js`'s
+`CANTRIPS` with a new `classId: 'bard'` field, `getSpellsForTradition()`
+grew a third `classId` parameter to filter on it, no new UI or state
+needed. Witch Patron hexes — initially assumed blocked on Familiars, but
+each Patron's own text already names exactly one hex cantrip it grants,
+a closed case, not an open familiar-known-spells list; added all 7 with
+a new `patronId` field, excluded from the general pool, injected
+directly into the cantrip grid pre-selected and locked (`SpellCard`
+grew a `locked` prop, `spells.js` grew `getPatronHex()`).
+
+**Two real bugs caught by tooling before shipping, worth remembering
+for next time**: a copy-paste edit landed the Bard cantrips in the wrong
+array (`SPELLS_RANK_1` instead of `CANTRIPS`) because the anchor text
+matched the wrong array's closing bracket — and a same-session browser
+check gave a false positive by only confirming the spell name appeared
+on the page, not which section it was under. Lesson: check the exporting
+array's actual line boundaries (`grep -n "^export const X\|^\];"`), not
+just that a string is present somewhere on the page. Separately, oxlint
+caught a genuine `react-hooks/rules-of-hooks` violation (a `useEffect`
+placed after `SpellsStep`'s early returns) immediately — a good example
+of `npm run lint` earning its place in the "before every push" checklist
+in `CLAUDE.md`.
+
+The other 6 classes' gated spells remain open, roughly ordered by
+complexity in `ROADMAP.md`.
+
 ```bash
 cd pf2e-character-creator
 npm install   # first time only, or after pulling dependency changes
